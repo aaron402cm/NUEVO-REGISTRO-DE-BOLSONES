@@ -316,7 +316,7 @@ let activeSubTab = 'muelle';
 try {
   let rawHist = localStorage.getItem('iqbf_historial_agente');
   if (rawHist) {
-    localStorage.removeItem('iqbf_historial_agente'); // Elimina residuos antiguos
+    localStorage.removeItem('iqbf_historial_agente'); 
   }
 } catch (e) {}
 
@@ -349,7 +349,6 @@ function mostrarAplicativo() {
     initComponentes();
   } catch (e) {
     console.error("Error al mostrar el aplicativo:", e);
-    // Asegurar renderizado mínimo de emergencia
     document.getElementById('app').style.display = 'flex';
     document.getElementById('screenSelector').style.display = 'block';
   }
@@ -427,7 +426,8 @@ function perteneceAlTurnoActual(fechaHoraStr) {
       startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 18, 46, 0);
       endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1, 6, 44, 59);
     } else { 
-      startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), cadence = ahora.getDate() - 1, 18, 46, 0);
+      // CORRECCIÓN MATEMÁTICA: Remoción del error 'cadence' que detenía la ejecución en móviles
+      startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - 1, 18, 46, 0);
       endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 6, 44, 59);
     }
   }
@@ -444,7 +444,6 @@ function parsearFechaExcel(fStr) {
     let mins = parseInt(hPts[1]);
     let secs = parseInt(hPts[2] || 0);
 
-    // Compatibilidad para AM y PM en español de Excel
     if (fStr.toLowerCase().includes('p. m.') || fStr.toLowerCase().includes('pm')) {
       if (hrs < 12) hrs += 12;
     } else if (fStr.toLowerCase().includes('a. m.') || fStr.toLowerCase().includes('am')) {
@@ -692,10 +691,10 @@ function volverSelector() {
   }
 }
 
-// CORRECCIÓN HISTORIAL / INICIO: EL BOTÓN INICIO SIEMPRE LIMPIA Y VA AL SELECTOR DE PUESTOS (PROTEGIDO)
+// CORRECCIÓN DEFINITIVA: EL BOTÓN INICIO SIEMPRE LIMPIA Y VA AL SELECTOR DE PUESTOS (PROTEGIDO)
 function changeTab(tab) {
   try {
-    puestoActual = null; // Reinicia y limpia siempre el puesto actual
+    puestoActual = null; // Reinicia y limpia siempre el puesto actual de forma obligatoria
     resetFormulario();
 
     if (tab === 'form') {
@@ -708,7 +707,7 @@ function changeTab(tab) {
       if (bi) bi.classList.add('active');
       if (bh) bh.classList.remove('active');
       
-      // Mostrar todos los elementos de la cabecera e inicio
+      // Mostrar todos los elementos de la cabecera e inicio de forma segura
       const bHeader = document.getElementById('buqueHeaderMovil');
       const tFlotante = document.getElementById('totalFlotante');
       const bNav = document.querySelector('.bottom-nav');
@@ -870,7 +869,80 @@ function renderFotosGrid() {
   }
 }
 
-// TIMEOUT PROTEGIDO DE ENVÍO DE DATOS CONTRA CONGELACIONES EN 3G/4G DÉBIL
+function procesarFotoYComprimir(event) {
+  try {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.src = e.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 700; 
+        let w = img.width;
+        let h = img.height;
+
+        if (w > h && w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; }
+        else if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; }
+
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const b64 = canvas.toDataURL('image/jpeg', 0.45);
+        fotosList.push(b64);
+        renderFotosGrid();
+      };
+    };
+    reader.readAsDataURL(file);
+  } catch (e) {
+    console.error("Error al procesar foto:", e);
+  }
+}
+
+function eliminarFoto(idx) {
+  fotosList.splice(idx, 1);
+  renderFotosGrid();
+}
+
+function abrirConfirmacion() {
+  const isD = puestoActual === 'despacho';
+  const numTT = !isD ? document.getElementById('numTT').value.trim() : '';
+
+  if (!isD && !numTT) { showToast('⚠️ Digite el número de TT', true); return; }
+  if (isD && !conductorSeleccionado) { showToast('⚠️ Seleccione un conductor', true); return; }
+  if (bolsonesSeleccionados === 0) { showToast('⚠️ Seleccione los bolsones', true); return; }
+  if (productosSeleccionados.length === 0) { showToast('⚠️ Seleccione el producto', true); return; }
+  
+  const minFotos = isD ? 4 : 2; 
+  if (fotosList.length < minFotos) {
+    showToast(`⚠️ Requiere mínimo ${minFotos} fotos de evidencia`, true);
+    return;
+  }
+
+  const rows = [
+    ['PUESTO', puestoActual.toUpperCase()],
+    isD ? ['CONDUCTOR', conductorSeleccionado.nombre] : ['TT', `TT-${numTT}`],
+    ['BOLSONES', `${bolsonesSeleccionados} Bolsones`],
+    ['PRODUCTO', productosSeleccionados.join(', ')],
+    ['EVIDENCIAS', `${fotosList.length} Foto(s)`]
+  ];
+
+  document.getElementById('confirmBody').innerHTML = rows.map(([l, v]) => `
+    <div class="confirm-row"><span class="lbl">${l}</span><span class="val">${v}</span></div>
+  `).join('');
+
+  document.getElementById('modalConfirm').classList.add('open');
+}
+
+function cerrarConfirmacion() {
+  document.getElementById('modalConfirm').classList.remove('open');
+}
+
+// ENVÍO DE DATOS ESTÁNDAR Y RE-HABILITADO AUTOMÁTICO DE PANTALLA EN CUALQUIER ESCENARIO
 async function guardarDatosFinal() {
   cerrarConfirmacion();
   const isD = puestoActual === 'despacho';
@@ -898,43 +970,29 @@ async function guardarDatosFinal() {
     }
   };
 
-  // CONTROL DE TIMEOUT DE 4.5 SEGUNDOS PARA EL FLUJO DE RETORNO INMEDIATO
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 4500);
-
   try {
     const res = await fetch(GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload),
-      signal: controller.signal
+      body: JSON.stringify(payload)
     });
-    clearTimeout(timeoutId);
     const result = await res.json();
 
-    if (result.ok) {
+    if (result && result.ok) {
       showToast('✅ REGISTRO CONFIRMADO Y SUBIDO');
+      resetFormulario();
+      volverSelector();
+      // Actualización en segundo plano sin interrumpir la fluidez del UI
+      setTimeout(() => sincronizarConExcel(false), 500);
     } else {
-      showToast('❌ Error al subir: ' + result.error, true);
+      showToast('❌ Error al guardar en Excel: ' + (result ? result.error : 'error desconocido'), true);
     }
   } catch(e) {
-    clearTimeout(timeoutId);
-    if (e.name === 'AbortError') {
-      showToast('📋 Registro enviado (Verificar en CCTV)');
-    } else {
-      showToast('⚠️ Envío en proceso o red lenta...');
-    }
+    console.error("Error al enviar registro:", e);
+    showToast('❌ Error de red. Intente de nuevo.', true);
   }
 
-  // DESCONGELA LA PANTALLA, LIMPIA LOS CAMPOS Y RETORNA AL SELECTOR SÍ O SÍ
-  try {
-    resetFormulario();
-    volverSelector(); 
-    sincronizarConExcel(false); 
-  } catch (err) {
-    console.error("Error en flujo de retorno:", err);
-  }
-
+  // DESCONGELA LA PANTALLA EN CUALQUIER ESCENARIO (SÍ O SÍ)
   if (btn) {
     btn.disabled = false;
     btn.textContent = "REVISAR Y GUARDAR";
