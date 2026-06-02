@@ -54,7 +54,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 .puesto-info p { font-size: 1.1rem; color: var(--muted); font-weight: bold; }
 
 /* PANTALLA FORMULARIO */
-#screenForm { display: none; padding: 1rem; padding-bottom: 6rem; }
+#screenForm { display: none; padding: 1rem; padding-bottom: 2rem; }
 .card { background: white; border-radius: 16px; padding: 1.2rem; margin-bottom: 1.2rem; border: 3px solid var(--border); }
 .card-title { font-size: 1.2rem; font-weight: 800; color: var(--text); margin-bottom: 1rem; text-transform: uppercase; display: flex; justify-content: space-between; }
 
@@ -105,11 +105,11 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 .hist-qty { font-size: 1.8rem; font-weight: 900; color: var(--blue); }
 .hist-meta { font-size: 1.1rem; color: var(--muted); font-weight: bold; }
 
-/* BOTTOM NAV */
-.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 3px solid var(--border); display: flex; z-index: 200; }
-.bnav-btn { flex: 1; padding: 1rem 0; display: flex; flex-direction: column; align-items: center; font-size: 1.1rem; font-weight: bold; color: var(--muted); background: none; border: none; }
+/* BOTTOM NAV (REDUCIDA A LA MITAD DE SU TAMAÑO) */
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 3px solid var(--border); display: flex; z-index: 200; height: 52px; }
+.bnav-btn { flex: 1; padding: 0.4rem 0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: bold; color: var(--muted); background: none; border: none; cursor: pointer; }
 .bnav-btn.active { color: var(--blue); background: var(--blue-light); }
-.bnav-icon { font-size: 1.8rem; }
+.bnav-icon { font-size: 1.2rem; margin-bottom: 1px; }
 
 /* MODAL CONFIRMACIÓN */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: flex-end; justify-content: center; z-index: 500; }
@@ -151,7 +151,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
       <button class="btn-back" id="btnBack" onclick="volverSelector()">← Puestos</button>
       <div class="header-title" id="headerTitle">📦 IQBF Control</div>
       <!-- BOTÓN DE SINCRONIZACIÓN FORZOSA -->
-      <button id="btnSyncHeader" onclick="sincronizarConExcel()" style="background:var(--blue-light); color:var(--blue); border:none; font-weight:bold; padding:0.5rem 0.8rem; border-radius:8px; font-size:1rem; cursor:pointer;">🔄 Sincronizar</button>
+      <button id="btnSyncHeader" onclick="sincronizarConExcel()" style="background:var(--blue-light); color:var(--blue); border:none; font-weight:bold; padding:0.4rem 0.6rem; border-radius:8px; font-size:0.9rem; cursor:pointer;">🔄 Sincronizar</button>
       <div class="header-puesto" id="headerPuesto" style="display:none; visibility:hidden">—</div>
     </div>
   </div>
@@ -269,7 +269,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
     <div id="listaHistorial"></div>
   </div>
 
-  <!-- NAVEGACIÓN INFERIOR -->
+  <!-- NAVEGACIÓN INFERIOR (TAMAÑO REDUCIDO) -->
   <div class="bottom-nav">
     <button class="bnav-btn active" id="bnavReg" onclick="changeTab('form')">
       <span class="bnav-icon">✏️</span>Registrar
@@ -305,12 +305,12 @@ let productosSeleccionados = [];
 let fotosList = [];
 let conductorSeleccionado = null;
 
-// Base de datos de red globalizada para celular (Turnos)
+// Base de datos globalizada
 let dbGlobal = { muelle: [], labarthe: [], despacho: [] };
 let listadoProductos = [];
 let productosDisponibles = ["Harina", "Azúcar", "Soya", "Trigo"];
 let conductoresDisponibles = [];
-let activeSubTab = 'muelle'; // Pestaña de historial activa
+let activeSubTab = 'muelle'; 
 
 window.onload = () => {
   if (localStorage.getItem(SESSION_KEY) === 'true') {
@@ -339,7 +339,7 @@ function mostrarAplicativo() {
 function initComponentes() {
   crearSelectorNum('bPicker', false);
   crearSelectorNum('bPickerD', true);
-  sincronizarConExcel(); // Sincroniza al cargar
+  sincronizarConExcel(); 
 }
 
 // CONTROL DE TURNOS (06:45 - 18:45)
@@ -380,7 +380,7 @@ function parsearFechaExcel(fStr) {
   }
 }
 
-// SINCRONIZACIÓN AUTOMÁTICA Y EXTRACCIÓN DE LA BD GLOBAL (GOOGLE SHEETS)
+// SINCRONIZACIÓN AUTOMÁTICA Y EXTRACCIÓN DE LA BD GLOBAL
 async function sincronizarConExcel() {
   const btnSync = document.getElementById('btnSyncHeader');
   if (btnSync) {
@@ -408,7 +408,7 @@ async function sincronizarConExcel() {
       if (puestoActual === 'despacho') renderConductoresUI();
     }
 
-    // 3. Obtener filas totales para calcular KPIs y mostrar Historial global
+    // 3. Obtener filas totales para calcular KPIs e Historial
     const rRes = await fetch(`${GAS_URL}?action=obtenerFilasExcel`);
     const rData = await rRes.json();
     if (rData.ok) {
@@ -446,7 +446,6 @@ function renderEncabezadoBuqueMovil(bNombre, bMuelle) {
 }
 
 function actualizarKPIsYHistorial() {
-  // Conteo de KPIs filtrado estrictamente por el Turno Activo
   const muelleTurno = dbGlobal.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
   const labartheTurno = dbGlobal.labarthe.filter(f => perteneceAlTurnoActual(f.fechaHora));
   const despachoTurno = dbGlobal.despacho.filter(f => perteneceAlTurnoActual(f.fechaHora));
@@ -483,7 +482,6 @@ function renderHistorialPuesto() {
     return;
   }
 
-  // Ordenar más recientes primero
   filtrados.sort((a,b) => parsearFechaExcel(b.fechaHora) - parsearFechaExcel(a.fechaHora));
 
   container.innerHTML = filtrados.map(r => `
@@ -500,13 +498,18 @@ function renderHistorialPuesto() {
   `).join('');
 }
 
-// RESTO DE FUNCIONALIDADES OPERATIVAS DE REGISTRO
+// INGRESO Y OCULTACIÓN DE CABECERAS PARA EVITAR DISTRACCIONES
 function entrarPuesto(puesto) {
   puestoActual = puesto;
   resetFormulario();
   document.getElementById('screenSelector').style.display = 'none';
   document.getElementById('screenForm').style.display = 'block';
   
+  // OCULTAR BUQUE, KPIs Y NAVEGACIÓN INFERIOR PARA FORMULARIO LIMPIO
+  document.getElementById('buqueHeaderMovil').style.display = 'none';
+  document.getElementById('totalFlotante').style.display = 'none';
+  document.querySelector('.bottom-nav').style.display = 'none';
+
   const hTitle = document.getElementById('headerTitle');
   const hPuesto = document.getElementById('headerPuesto');
   const btnB = document.getElementById('btnBack');
@@ -530,6 +533,12 @@ function volverSelector() {
   document.getElementById('screenSelector').style.display = 'block';
   document.getElementById('screenForm').style.display = 'none';
   document.getElementById('screenHistorial').style.display = 'none';
+  
+  // RESTAURAR ELEMENTOS DE CABECERA Y NAVEGACIÓN
+  document.getElementById('buqueHeaderMovil').style.display = 'block';
+  document.getElementById('totalFlotante').style.display = 'flex';
+  document.querySelector('.bottom-nav').style.display = 'flex';
+
   document.getElementById('headerTitle').textContent = "📦 IQBF Control";
   document.getElementById('headerPuesto').style.visibility = 'hidden';
   document.getElementById('btnBack').classList.remove('visible');
@@ -543,12 +552,27 @@ function changeTab(tab) {
     document.getElementById('screenHistorial').style.display = 'none';
     document.getElementById('bnavReg').classList.add('active');
     document.getElementById('bnavHist').classList.remove('active');
+    
+    if (puestoActual) {
+      document.getElementById('buqueHeaderMovil').style.display = 'none';
+      document.getElementById('totalFlotante').style.display = 'none';
+      document.querySelector('.bottom-nav').style.display = 'none';
+    } else {
+      document.getElementById('buqueHeaderMovil').style.display = 'block';
+      document.getElementById('totalFlotante').style.display = 'flex';
+      document.querySelector('.bottom-nav').style.display = 'flex';
+    }
   } else {
     document.getElementById('screenForm').style.display = 'none';
     document.getElementById('screenSelector').style.display = 'none';
     document.getElementById('screenHistorial').style.display = 'block';
     document.getElementById('bnavReg').classList.remove('active');
     document.getElementById('bnavHist').classList.add('active');
+    
+    // EN HISTORIAL SE DEBEN MOSTRAR SIEMPRE
+    document.getElementById('buqueHeaderMovil').style.display = 'block';
+    document.getElementById('totalFlotante').style.display = 'flex';
+    document.querySelector('.bottom-nav').style.display = 'flex';
     renderHistorialPuesto();
   }
 }
@@ -755,7 +779,7 @@ async function guardarDatosFinal() {
     const result = await res.json();
 
     if (result.ok) {
-      // VIBRACIÓN DACTIL DE ÉXITO (Doble corta)
+      // VIBRACIÓN HÁPTICA DEL CELULAR AL GUARDAR CON ÉXITO
       try {
         if (navigator.vibrate) {
           navigator.vibrate([100, 50, 100]); 
@@ -764,7 +788,8 @@ async function guardarDatosFinal() {
 
       showToast('✅ REGISTRO CONFIRMADO Y SUBIDO');
       resetFormulario();
-      await sincronizarConExcel(); // Fuerza actualización para sincronizar counters en vivo
+      volverSelector(); // RETORNA AUTOMÁTICAMENTE AL SELECTOR AL GUARDAR CON ÉXITO
+      await sincronizarConExcel(); 
     } else {
       showToast('❌ Error al subir: ' + result.error, true);
     }
@@ -776,36 +801,6 @@ async function guardarDatosFinal() {
     btn.disabled = false;
     btn.textContent = "REVISAR Y GUARDAR";
   }
-}
-
-function resetFormulario() {
-  const t = document.getElementById('numTT');
-  if (t) t.value = "";
-  bolsonesSeleccionados = 0;
-  productosSeleccionados = [];
-  fotosList = [];
-  conductorSeleccionado = null;
-
-  document.querySelectorAll('.bols-num').forEach(el => el.classList.remove('sel'));
-  const disp = document.getElementById('bolsDisplay');
-  const dispD = document.getElementById('bolsDisplayD');
-  if (disp) disp.textContent = "—";
-  if (dispD) dispD.textContent = "—";
-  
-  renderProductosUI();
-  renderFotosGrid();
-  
-  const dCampos = document.getElementById('despachoCampos');
-  if (dCampos) dCampos.style.display = 'none';
-  document.querySelectorAll('.conductor-item').forEach(el => el.classList.remove('selected'));
-}
-
-function showToast(msg, isError = false) {
-  const toast = document.getElementById('toast');
-  if (!toast) return;
-  toast.textContent = msg;
-  toast.className = 'toast show' + (isError ? ' error' : '');
-  setTimeout(() => { toast.className = 'toast'; }, 3000);
 }
 </script>
 </body>
