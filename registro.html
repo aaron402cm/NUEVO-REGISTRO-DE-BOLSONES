@@ -270,7 +270,6 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 <div class="toast" id="toast"></div>
 
 <script>
-// Recuerde cambiar esta URL si vuelve a publicar una versión distinta de su Google Apps Script
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxZ4qwyvvuWd_IfedsWR1R65niSwlYPKtgcDU_e5f0H4P1cCbOvIGDICksXe3tIdDrfrw/exec";
 const PASSWORD_CORRECTA = "Apm2026";
 const SESSION_KEY = "iqbf_agent_persistent_session";
@@ -281,10 +280,27 @@ let productosSeleccionados = [];
 let fotosList = [];
 let conductorSeleccionado = null;
 
-// Valores de contingencia por si la red del celular es inestable al abrir la app
 let productosDisponibles = ["Harina", "Azúcar", "Soya", "Trigo"];
 let conductoresDisponibles = [];
-let localHistorial = JSON.parse(localStorage.getItem('iqbf_historial_agente') || '[]');
+let localHistorial = [];
+
+// 1. AUTOLIMPIEZA PREVENTIVA DE MEMORIA CORRUPTA AL CARGAR
+try {
+  let rawHist = localStorage.getItem('iqbf_historial_agente');
+  if (rawHist) {
+    let parsed = JSON.parse(rawHist);
+    if (Array.isArray(parsed)) {
+      // Filtrar y sanar datos corruptos de versiones anteriores
+      localHistorial = parsed.filter(item => item && typeof item === 'object' && ('bols' in item || 'tt' in item));
+      localStorage.setItem('iqbf_historial_agente', JSON.stringify(localHistorial));
+    } else {
+      localStorage.removeItem('iqbf_historial_agente');
+    }
+  }
+} catch (e) {
+  localStorage.removeItem('iqbf_historial_agente');
+  localHistorial = [];
+}
 
 window.onload = () => {
   if (localStorage.getItem(SESSION_KEY) === 'true') {
@@ -319,9 +335,13 @@ function initComponentes() {
 }
 
 function actualizarContadores() {
-  const sum = localHistorial.reduce((a, b) => a + (parseInt(b.bols) || 0), 0);
-  document.getElementById('totalBolsonesHoy').textContent = sum;
-  document.getElementById('misRegistros').textContent = localHistorial.length;
+  if (!Array.isArray(localHistorial)) localHistorial = [];
+  const sum = localHistorial.reduce((a, b) => a + (parseInt(b ? b.bols : 0) || 0), 0);
+  
+  const totEl = document.getElementById('totalBolsonesHoy');
+  const misEl = document.getElementById('misRegistros');
+  if (totEl) totEl.textContent = sum;
+  if (misEl) misEl.textContent = localHistorial.length;
 }
 
 function entrarPuesto(puesto) {
@@ -378,6 +398,7 @@ function changeTab(tab) {
 
 function crearSelectorNum(id, isD) {
   const container = document.getElementById(id);
+  if (!container) return;
   container.innerHTML = "";
   for (let i = 1; i <= 30; i++) {
     const btn = document.createElement('div');
@@ -391,7 +412,7 @@ function crearSelectorNum(id, isD) {
 function selectBolsones(n, id, isD) {
   bolsonesSeleccionados = n;
   const display = document.getElementById(isD ? 'bolsDisplayD' : 'bolsDisplay');
-  display.textContent = `${n} BOLSONES`;
+  if (display) display.textContent = `${n} BOLSONES`;
   document.querySelectorAll(`#${id} .bols-num`).forEach(el => {
     el.classList.toggle('sel', parseInt(el.textContent) === n);
   });
@@ -401,14 +422,13 @@ function obtenerConfiguracionGAS() {
   fetch(`${GAS_URL}?action=obtenerProductos`)
     .then(r => r.json())
     .then(data => {
-      if (data.ok && data.productos.length > 0) {
+      if (data.ok && data.productos && data.productos.length > 0) {
         productosDisponibles = data.productos.map(p => typeof p === 'object' ? p.producto : p);
       }
       renderProductosUI();
     })
     .catch(() => {
-      // Protección de contingencia: si la red falla, levanta productos predeterminados
-      renderProductosUI();
+      renderProductosUI(); // Carga de contingencia si no hay red
     });
 
   fetch(`${GAS_URL}?action=obtenerConductores`)
@@ -424,6 +444,7 @@ function obtenerConfiguracionGAS() {
 function renderProductosUI() {
   ['prodGrid', 'prodGridD'].forEach(gridId => {
     const grid = document.getElementById(gridId);
+    if (!grid) return;
     grid.innerHTML = "";
     productosDisponibles.forEach(prod => {
       const b = document.createElement('button');
@@ -442,8 +463,9 @@ function renderProductosUI() {
 
 function renderConductoresUI() {
   const list = document.getElementById('listaConductores');
+  if (!list) return;
   list.innerHTML = "";
-  if (conductoresDisponibles.length === 0) {
+  if (!conductoresDisponibles || conductoresDisponibles.length === 0) {
     list.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:1.1rem;color:var(--muted)">No hay conductores registrados.</div>';
     return;
   }
@@ -465,6 +487,7 @@ function renderFotosGrid() {
   const isD = puestoActual === 'despacho';
   const grid = document.getElementById(isD ? 'fotoGridD' : 'fotoGrid');
   const inputs = document.getElementById(isD ? 'hiddenInputsD' : 'hiddenInputs');
+  if (!grid || !inputs) return;
   grid.innerHTML = "";
   inputs.innerHTML = "";
 
@@ -568,8 +591,10 @@ async function guardarDatosFinal() {
   const numTT = !isD ? document.getElementById('numTT').value.trim() : '';
   
   const btn = document.getElementById(isD ? 'btnGuardarD' : 'btnGuardar');
-  btn.disabled = true;
-  btn.textContent = "⏱️ ENVIANDO REGISTRO...";
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "⏱️ ENVIANDO REGISTRO...";
+  }
 
   const now = new Date();
   const fechaHora = now.toLocaleDateString('es-PE', {day:'2-digit', month:'2-digit', year:'numeric'}) + ' ' + now.toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
@@ -617,8 +642,10 @@ async function guardarDatosFinal() {
     showToast('❌ Error de red/conexión', true);
   }
 
-  btn.disabled = false;
-  btn.textContent = "REVISAR Y GUARDAR";
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = "REVISAR Y GUARDAR";
+  }
 }
 
 function resetFormulario() {
@@ -630,37 +657,50 @@ function resetFormulario() {
   conductorSeleccionado = null;
 
   document.querySelectorAll('.bols-num').forEach(el => el.classList.remove('sel'));
-  document.getElementById('bolsDisplay').textContent = "—";
-  document.getElementById('bolsDisplayD').textContent = "—";
+  const disp = document.getElementById('bolsDisplay');
+  const dispD = document.getElementById('bolsDisplayD');
+  if (disp) disp.textContent = "—";
+  if (dispD) dispD.textContent = "—";
   
   renderProductosUI();
   renderFotosGrid();
   
-  document.getElementById('despachoCampos').style.display = 'none';
+  const dCampos = document.getElementById('despachoCampos');
+  if (dCampos) dCampos.style.display = 'none';
   document.querySelectorAll('.conductor-item').forEach(el => el.classList.remove('selected'));
 }
 
 function renderHistorialLocal() {
   const container = document.getElementById('listaHistorial');
-  if (localHistorial.length === 0) {
+  if (!container) return;
+  if (!localHistorial || localHistorial.length === 0) {
     container.innerHTML = '<div style="text-align:center;padding:3rem;font-size:1.3rem;color:var(--muted)">Sin registros locales hoy</div>';
     return;
   }
-  container.innerHTML = localHistorial.map(r => `
-    <div class="hist-item">
-      <div class="hist-row">
-        <span class="hist-tt">🚛 ${r.tt}</span>
-        <span class="hist-qty">${r.bols} 📦</span>
+  container.innerHTML = localHistorial.map(r => {
+    const puesto = (r.puesto || 'muelle').toUpperCase();
+    const tt = r.tt || '—';
+    const bols = r.bols || 0;
+    const fechaHora = r.fechaHora || '—';
+    const productos = r.productos || '—';
+    const viajeId = r.viajeId || '—';
+    return `
+      <div class="hist-item">
+        <div class="hist-row">
+          <span class="hist-tt">🚛 ${tt}</span>
+          <span class="hist-qty">${bols} 📦</span>
+        </div>
+        <div class="hist-meta">${fechaHora} · ${puesto}</div>
+        <div style="font-size:1.1rem;font-weight:bold;margin-top:0.3rem">🧴 ${productos}</div>
+        <div class="hist-meta" style="margin-top:0.2rem;font-size:0.9rem">ID: ${viajeId}</div>
       </div>
-      <div class="hist-meta">${r.fechaHora} · ${r.puesto.toUpperCase()}</div>
-      <div style="font-size:1.1rem;font-weight:bold;margin-top:0.3rem">🧴 ${r.productos}</div>
-      <div class="hist-meta" style="margin-top:0.2rem;font-size:0.9rem">ID: ${r.viajeId}</div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function showToast(msg, isError = false) {
   const toast = document.getElementById('toast');
+  if (!toast) return;
   toast.textContent = msg;
   toast.className = 'toast show' + (isError ? ' error' : '');
   setTimeout(() => { toast.className = 'toast'; }, 3000);
