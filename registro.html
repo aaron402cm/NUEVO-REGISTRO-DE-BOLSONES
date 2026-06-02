@@ -312,9 +312,21 @@ let productosDisponibles = ["Harina", "Azúcar", "Soya", "Trigo"];
 let conductoresDisponibles = [];
 let activeSubTab = 'muelle'; 
 
+// 1. AUTOLIMPIEZA PREVENTIVA DE MEMORIA CORRUPTA AL CARGAR
+try {
+  let rawHist = localStorage.getItem('iqbf_historial_agente');
+  if (rawHist) {
+    localStorage.removeItem('iqbf_historial_agente'); // Elimina residuos antiguos
+  }
+} catch (e) {}
+
 window.onload = () => {
-  if (localStorage.getItem(SESSION_KEY) === 'true') {
-    mostrarAplicativo();
+  try {
+    if (localStorage.getItem(SESSION_KEY) === 'true') {
+      mostrarAplicativo();
+    }
+  } catch (e) {
+    console.error("Error al arrancar la app:", e);
   }
 };
 
@@ -331,20 +343,31 @@ function doLogin() {
 }
 
 function mostrarAplicativo() {
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('app').style.display = 'flex';
-  initComponentes();
+  try {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    initComponentes();
+  } catch (e) {
+    console.error("Error al mostrar el aplicativo:", e);
+    // Asegurar renderizado mínimo de emergencia
+    document.getElementById('app').style.display = 'flex';
+    document.getElementById('screenSelector').style.display = 'block';
+  }
 }
 
 function initComponentes() {
-  crearSelectorNum('bPicker', false);
-  crearSelectorNum('bPickerD', true);
-  
-  // 1. CARGA INMEDIATA DESDE CACHÉ LOCAL
-  cargarDesdeCacheLocal(); 
-  
-  // 2. SINCRONIZACIÓN EN SEGUNDO PLANO
-  sincronizarConExcel(false); 
+  try {
+    crearSelectorNum('bPicker', false);
+    crearSelectorNum('bPickerD', true);
+  } catch(e) {}
+
+  try {
+    cargarDesdeCacheLocal(); 
+  } catch(e) {}
+
+  try {
+    sincronizarConExcel(false); 
+  } catch(e) {}
 }
 
 // CARGA DESDE MEMORIA LOCAL (FALLBACK SEÑAL DÉBIL)
@@ -372,10 +395,12 @@ function cargarDesdeCacheLocal() {
 
     if (cachedFilas) {
       const parsedF = JSON.parse(cachedFilas);
-      dbGlobal.muelle = parsedF.muelle || [];
-      dbGlobal.labarthe = parsedF.labarthe || [];
-      dbGlobal.despacho = parsedF.despacho || [];
-      actualizarKPIsYHistorial();
+      if (parsedF && typeof parsedF === 'object') {
+        dbGlobal.muelle = parsedF.muelle || [];
+        dbGlobal.labarthe = parsedF.labarthe || [];
+        dbGlobal.despacho = parsedF.despacho || [];
+        actualizarKPIsYHistorial();
+      }
     }
   } catch (e) {
     console.error("Error al leer caché local:", e);
@@ -449,7 +474,7 @@ async function sincronizarConExcel(forzado = false) {
     const [pData, cData, rData] = await Promise.all([pPromise, cPromise, rPromise]);
     let algunCambio = false;
 
-    // 1. Cargar Productos y Buque de forma segura sin detener ejecución por datos vacíos
+    // 1. Cargar Productos y Buque
     if (pData && pData.ok && Array.isArray(pData.productos)) {
       listadoProductos = pData.productos;
       productosDisponibles = pData.productos.map(p => {
@@ -465,7 +490,7 @@ async function sincronizarConExcel(forzado = false) {
       algunCambio = true;
     }
 
-    // 2. Cargar Conductores de forma segura
+    // 2. Cargar Conductores
     if (cData && cData.ok && Array.isArray(cData.conductores)) {
       conductoresDisponibles = cData.conductores;
       if (puestoActual === 'despacho') renderConductoresUI();
@@ -515,19 +540,27 @@ function renderEncabezadoBuqueMovil(bNombre, bMuelle) {
 }
 
 function actualizarKPIsYHistorial() {
-  const muelleTurno = dbGlobal.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
-  const labartheTurno = dbGlobal.labarthe.filter(f => perteneceAlTurnoActual(f.fechaHora));
-  const despachoTurno = dbGlobal.despacho.filter(f => perteneceAlTurnoActual(f.fechaHora));
+  try {
+    const muelleTurno = dbGlobal.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
+    const labartheTurno = dbGlobal.labarthe.filter(f => perteneceAlTurnoActual(f.fechaHora));
+    const despachoTurno = dbGlobal.despacho.filter(f => perteneceAlTurnoActual(f.fechaHora));
 
-  const sumM = muelleTurno.reduce((a, b) => a + (Number(b.bolsones) || 0), 0);
-  const sumL = labartheTurno.reduce((a, b) => a + (Number(b.bolsones) || 0), 0);
-  const sumD = despachoTurno.reduce((a, b) => a + (Number(b.bolsones) || 0), 0);
+    const sumM = muelleTurno.reduce((a, b) => a + (Number(b.bolsones) || 0), 0);
+    const sumL = labartheTurno.reduce((a, b) => a + (Number(b.bolsones) || 0), 0);
+    const sumD = despachoTurno.reduce((a, b) => a + (Number(b.bolsones) || 0), 0);
 
-  document.getElementById('kpiMuelle').textContent = sumM;
-  document.getElementById('kpiLabarthe').textContent = sumL;
-  document.getElementById('kpiDespacho').textContent = sumD;
+    const kM = document.getElementById('kpiMuelle');
+    const kL = document.getElementById('kpiLabarthe');
+    const kD = document.getElementById('kpiDespacho');
 
-  renderHistorialPuesto();
+    if (kM) kM.textContent = sumM;
+    if (kL) kL.textContent = sumL;
+    if (kD) kD.textContent = sumD;
+
+    renderHistorialPuesto();
+  } catch (e) {
+    console.error("Error al actualizar KPIs:", e);
+  }
 }
 
 function changeSubTab(tab) {
@@ -567,99 +600,177 @@ function renderHistorialPuesto() {
   `).join('');
 }
 
-// INGRESO Y OCULTACIÓN DE CABECERAS PARA FORMULARIO 100% LIMPIO
+// INGRESO Y OCULTACIÓN DE CABECERAS PARA FORMULARIO 100% LIMPIO (PROTEGIDO)
 function entrarPuesto(puesto) {
-  puestoActual = puesto;
-  resetFormulario();
-  document.getElementById('screenSelector').style.display = 'none';
-  document.getElementById('screenForm').style.display = 'block';
-  
-  // OCULTAR ABSOLUTAMENTE TODO EL ENTORNO PARA EVITAR INTERRUPCIONES
-  document.getElementById('buqueHeaderMovil').style.display = 'none';
-  document.getElementById('totalFlotante').style.display = 'none';
-  document.querySelector('.bottom-nav').style.display = 'none';
-  document.getElementById('btnSyncHeader').style.display = 'none';
+  try {
+    puestoActual = puesto;
+    resetFormulario();
+    document.getElementById('screenSelector').style.display = 'none';
+    document.getElementById('screenForm').style.display = 'block';
+    
+    // OCULTAR ABSOLUTAMENTE TODO EL ENTORNO
+    const bHeader = document.getElementById('buqueHeaderMovil');
+    const tFlotante = document.getElementById('totalFlotante');
+    const bNav = document.querySelector('.bottom-nav');
+    const btnSync = document.getElementById('btnSyncHeader');
 
-  const hTitle = document.getElementById('headerTitle');
-  const hPuesto = document.getElementById('headerPuesto');
-  const btnB = document.getElementById('btnBack');
+    if (bHeader) bHeader.style.display = 'none';
+    if (tFlotante) tFlotante.style.display = 'none';
+    if (bNav) bNav.style.display = 'none';
+    if (btnSync) btnSync.style.display = 'none';
 
-  hPuesto.style.visibility = 'visible';
-  btnB.classList.add('visible');
+    const hTitle = document.getElementById('headerTitle');
+    const hPuesto = document.getElementById('headerPuesto');
+    const btnB = document.getElementById('btnBack');
 
-  if (puesto === 'muelle') { hTitle.textContent = "🚢 MUELLE"; hPuesto.textContent = "MUELLE"; }
-  else if (puesto === 'labarthe') { hTitle.textContent = "🏭 LABARTHE"; hPuesto.textContent = "LABARTHE"; }
-  else { hTitle.textContent = "🚛 DESPACHO"; hPuesto.textContent = "DESPACHO"; }
+    if (hPuesto) {
+      hPuesto.style.visibility = 'visible';
+      hPuesto.style.display = 'block';
+    }
+    if (btnB) btnB.classList.add('visible');
 
-  document.getElementById('formDescarga').style.display = puesto !== 'despacho' ? 'block' : 'none';
-  document.getElementById('formDespacho').style.display = puesto === 'despacho' ? 'block' : 'none';
+    if (puesto === 'muelle') { 
+      if (hTitle) hTitle.textContent = "🚢 MUELLE"; 
+      if (hPuesto) hPuesto.textContent = "MUELLE"; 
+    } else if (puesto === 'labarthe') { 
+      if (hTitle) hTitle.textContent = "🏭 LABARTHE"; 
+      if (hPuesto) hPuesto.textContent = "LABARTHE"; 
+    } else { 
+      if (hTitle) hTitle.textContent = "🚛 DESPACHO"; 
+      if (hPuesto) hPuesto.textContent = "DESPACHO"; 
+    }
 
-  if (puesto === 'despacho') { renderConductoresUI(); }
-  renderFotosGrid();
+    const fDescarga = document.getElementById('formDescarga');
+    const fDespacho = document.getElementById('formDespacho');
+
+    if (fDescarga) fDescarga.style.display = puesto !== 'despacho' ? 'block' : 'none';
+    if (fDespacho) fDespacho.style.display = puesto === 'despacho' ? 'block' : 'none';
+
+    if (puesto === 'despacho') { renderConductoresUI(); }
+    renderFotosGrid();
+  } catch (e) {
+    console.error("Error al entrar al puesto:", e);
+  }
 }
 
 function volverSelector() {
-  puestoActual = null;
-  document.getElementById('screenSelector').style.display = 'block';
-  document.getElementById('screenForm').style.display = 'none';
-  document.getElementById('screenHistorial').style.display = 'none';
-  
-  // RESTAURAR ELEMENTOS DE CABECERA Y NAVEGACIÓN
-  document.getElementById('buqueHeaderMovil').style.display = 'block';
-  document.getElementById('totalFlotante').style.display = 'flex';
-  document.querySelector('.bottom-nav').style.display = 'flex';
-  document.getElementById('btnSyncHeader').style.display = 'block';
+  try {
+    puestoActual = null;
+    document.getElementById('screenSelector').style.display = 'block';
+    document.getElementById('screenForm').style.display = 'none';
+    document.getElementById('screenHistorial').style.display = 'none';
+    
+    // RESTAURAR ELEMENTOS DE CABECERA Y NAVEGACIÓN
+    const bHeader = document.getElementById('buqueHeaderMovil');
+    const tFlotante = document.getElementById('totalFlotante');
+    const bNav = document.querySelector('.bottom-nav');
+    const btnSync = document.getElementById('btnSyncHeader');
 
-  document.getElementById('headerTitle').textContent = "📦 IQBF Control";
-  document.getElementById('headerPuesto').style.visibility = 'hidden';
-  document.getElementById('btnBack').classList.remove('visible');
-  changeTab('form');
+    if (bHeader) bHeader.style.display = 'block';
+    if (tFlotante) tFlotante.style.display = 'flex';
+    if (bNav) bNav.style.display = 'flex';
+    if (btnSync) btnSync.style.display = 'block';
+
+    const hTitle = document.getElementById('headerTitle');
+    const hPuesto = document.getElementById('headerPuesto');
+    const btnB = document.getElementById('btnBack');
+
+    if (hTitle) hTitle.textContent = "📦 IQBF Control";
+    if (hPuesto) {
+      hPuesto.style.visibility = 'hidden';
+      hPuesto.style.display = 'none';
+    }
+    if (btnB) btnB.classList.remove('visible');
+    
+    // Sincronizar clases activas en la barra inferior
+    const bi = document.getElementById('bnavInicio');
+    const bh = document.getElementById('bnavHist');
+    if (bi) bi.classList.add('active');
+    if (bh) bh.classList.remove('active');
+  } catch (e) {
+    console.error("Error al volver al selector:", e);
+  }
 }
 
+// CORRECCIÓN HISTORIAL / INICIO: EL BOTÓN INICIO SIEMPRE LIMPIA Y VA AL SELECTOR DE PUESTOS (PROTEGIDO)
 function changeTab(tab) {
-  if (tab === 'form') {
-    document.getElementById('screenForm').style.display = puestoActual ? 'block' : 'none';
-    document.getElementById('screenSelector').style.display = !puestoActual ? 'block' : 'none';
-    document.getElementById('screenHistorial').style.display = 'none';
-    document.getElementById('bnavInicio').classList.add('active');
-    document.getElementById('bnavHist').classList.remove('active');
-    
-    if (puestoActual) {
-      document.getElementById('buqueHeaderMovil').style.display = 'none';
-      document.getElementById('totalFlotante').style.display = 'none';
-      document.querySelector('.bottom-nav').style.display = 'none';
-      document.getElementById('btnSyncHeader').style.display = 'none';
+  try {
+    if (tab === 'form') {
+      puestoActual = null;
+      resetFormulario();
+
+      document.getElementById('screenForm').style.display = 'none';
+      document.getElementById('screenSelector').style.display = 'block';
+      document.getElementById('screenHistorial').style.display = 'none';
+      
+      const bi = document.getElementById('bnavInicio');
+      const bh = document.getElementById('bnavHist');
+      if (bi) bi.classList.add('active');
+      if (bh) bh.classList.remove('active');
+      
+      // Mostrar todos los elementos de la cabecera e inicio
+      const bHeader = document.getElementById('buqueHeaderMovil');
+      const tFlotante = document.getElementById('totalFlotante');
+      const bNav = document.querySelector('.bottom-nav');
+      const btnSync = document.getElementById('btnSyncHeader');
+
+      if (bHeader) bHeader.style.display = 'block';
+      if (tFlotante) tFlotante.style.display = 'flex';
+      if (bNav) bNav.style.display = 'flex';
+      if (btnSync) btnSync.style.display = 'block';
+
+      const hTitle = document.getElementById('headerTitle');
+      const hPuesto = document.getElementById('headerPuesto');
+      const btnB = document.getElementById('btnBack');
+
+      if (hTitle) hTitle.textContent = "📦 IQBF Control";
+      if (hPuesto) {
+        hPuesto.style.visibility = 'hidden';
+        hPuesto.style.display = 'none';
+      }
+      if (btnB) btnB.classList.remove('visible');
     } else {
-      document.getElementById('buqueHeaderMovil').style.display = 'block';
-      document.getElementById('totalFlotante').style.display = 'flex';
-      document.querySelector('.bottom-nav').style.display = 'flex';
-      document.getElementById('btnSyncHeader').style.display = 'block';
+      // Mostrar el Historial de registros del turno
+      document.getElementById('screenForm').style.display = 'none';
+      document.getElementById('screenSelector').style.display = 'none';
+      document.getElementById('screenHistorial').style.display = 'block';
+      
+      const bi = document.getElementById('bnavInicio');
+      const bh = document.getElementById('bnavHist');
+      if (bi) bi.classList.remove('active');
+      if (bh) bh.classList.add('active');
+      
+      const bHeader = document.getElementById('buqueHeaderMovil');
+      const tFlotante = document.getElementById('totalFlotante');
+      const bNav = document.querySelector('.bottom-nav');
+      const btnSync = document.getElementById('btnSyncHeader');
+
+      if (bHeader) bHeader.style.display = 'block';
+      if (tFlotante) tFlotante.style.display = 'flex';
+      if (bNav) bNav.style.display = 'flex';
+      if (btnSync) btnSync.style.display = 'block';
+      
+      renderHistorialPuesto();
     }
-  } else {
-    document.getElementById('screenForm').style.display = 'none';
-    document.getElementById('screenSelector').style.display = 'none';
-    document.getElementById('screenHistorial').style.display = 'block';
-    document.getElementById('bnavInicio').classList.remove('active');
-    document.getElementById('bnavHist').classList.add('active');
-    
-    document.getElementById('buqueHeaderMovil').style.display = 'block';
-    document.getElementById('totalFlotante').style.display = 'flex';
-    document.querySelector('.bottom-nav').style.display = 'flex';
-    document.getElementById('btnSyncHeader').style.display = 'block';
-    renderHistorialPuesto();
+  } catch (e) {
+    console.error("Error al cambiar pestaña:", e);
   }
 }
 
 function crearSelectorNum(id, isD) {
-  const container = document.getElementById(id);
-  if (!container) return;
-  container.innerHTML = "";
-  for (let i = 1; i <= 30; i++) {
-    const btn = document.createElement('div');
-    btn.className = "bols-num";
-    btn.textContent = i;
-    btn.onclick = () => selectBolsones(i, id, isD);
-    container.appendChild(btn);
+  try {
+    const container = document.getElementById(id);
+    if (!container) return;
+    container.innerHTML = "";
+    for (let i = 1; i <= 30; i++) {
+      const btn = document.createElement('div');
+      btn.className = "bols-num";
+      btn.textContent = i;
+      btn.onclick = () => selectBolsones(i, id, isD);
+      container.appendChild(btn);
+    }
+  } catch (e) {
+    console.error("Error al construir picker de bolsones:", e);
   }
 }
 
@@ -673,108 +784,124 @@ function selectBolsones(n, id, isD) {
 }
 
 function renderProductosUI() {
-  ['prodGrid', 'prodGridD'].forEach(gridId => {
-    const grid = document.getElementById(gridId);
-    if (!grid) return;
-    grid.innerHTML = "";
-    productosDisponibles.forEach(prod => {
-      const b = document.createElement('button');
-      b.className = "prod-btn";
-      b.textContent = prod;
-      b.type = "button";
-      b.onclick = () => {
-        const i = productosSeleccionados.indexOf(prod);
-        if (i > -1) { productosSeleccionados.splice(i, 1); b.classList.remove('sel'); }
-        else { productosSeleccionados.push(prod); b.classList.add('sel'); }
-      };
-      grid.appendChild(b);
+  try {
+    ['prodGrid', 'prodGridD'].forEach(gridId => {
+      const grid = document.getElementById(gridId);
+      if (!grid) return;
+      grid.innerHTML = "";
+      productosDisponibles.forEach(prod => {
+        const b = document.createElement('button');
+        b.className = "prod-btn";
+        b.textContent = prod;
+        b.type = "button";
+        b.onclick = () => {
+          const i = productosSeleccionados.indexOf(prod);
+          if (i > -1) { productosSeleccionados.splice(i, 1); b.classList.remove('sel'); }
+          else { productosSeleccionados.push(prod); b.classList.add('sel'); }
+        };
+        grid.appendChild(b);
+      });
     });
-  });
+  } catch (e) {
+    console.error("Error al renderizar productos:", e);
+  }
 }
 
 function renderConductoresUI() {
-  const list = document.getElementById('listaConductores');
-  if (!list) return;
-  list.innerHTML = "";
-  if (!conductoresDisponibles || conductoresDisponibles.length === 0) {
-    list.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:1.1rem;color:var(--muted)">No hay conductores registrados.</div>';
-    return;
+  try {
+    const list = document.getElementById('listaConductores');
+    if (!list) return;
+    list.innerHTML = "";
+    if (!conductoresDisponibles || conductoresDisponibles.length === 0) {
+      list.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:1.1rem;color:var(--muted)">No hay conductores registrados.</div>';
+      return;
+    }
+    conductoresDisponibles.forEach((c, idx) => {
+      const item = document.createElement('div');
+      item.className = "conductor-item";
+      item.innerHTML = `<div class="conductor-name">👤 ${c.nombre}</div><div class="conductor-placa">Placa: ${c.placa}</div>`;
+      item.onclick = () => {
+        conductorSeleccionado = c;
+        document.querySelectorAll('.conductor-item').forEach(el => el.classList.remove('selected'));
+        item.classList.add('selected');
+        document.getElementById('despachoCampos').style.display = 'block';
+      };
+      list.appendChild(item);
+    });
+  } catch (e) {
+    console.error("Error al renderizar conductores:", e);
   }
-  conductoresDisponibles.forEach((c, idx) => {
-    const item = document.createElement('div');
-    item.className = "conductor-item";
-    item.innerHTML = `<div class="conductor-name">👤 ${c.nombre}</div><div class="conductor-placa">Placa: ${c.placa}</div>`;
-    item.onclick = () => {
-      conductorSeleccionado = c;
-      document.querySelectorAll('.conductor-item').forEach(el => el.classList.remove('selected'));
-      item.classList.add('selected');
-      document.getElementById('despachoCampos').style.display = 'block';
-    };
-    list.appendChild(item);
-  });
 }
 
 function renderFotosGrid() {
-  const isD = puestoActual === 'despacho';
-  const grid = document.getElementById(isD ? 'fotoGridD' : 'fotoGrid');
-  const inputs = document.getElementById(isD ? 'hiddenInputsD' : 'hiddenInputs');
-  if (!grid || !inputs) return;
-  grid.innerHTML = "";
-  inputs.innerHTML = "";
+  try {
+    const isD = puestoActual === 'despacho';
+    const grid = document.getElementById(isD ? 'fotoGridD' : 'fotoGrid');
+    const inputs = document.getElementById(isD ? 'hiddenInputsD' : 'hiddenInputs');
+    if (!grid || !inputs) return;
+    grid.innerHTML = "";
+    inputs.innerHTML = "";
 
-  fotosList.forEach((src, idx) => {
-    const slot = document.createElement('div');
-    slot.className = "foto-slot has-photo";
-    slot.innerHTML = `<img src="${src}"><span class="foto-label">Foto ${idx+1}</span><button class="btn-del-foto" onclick="eliminarFoto(${idx})">✕</button>`;
-    grid.appendChild(slot);
-  });
+    fotosList.forEach((src, idx) => {
+      const slot = document.createElement('div');
+      slot.className = "foto-slot has-photo";
+      slot.innerHTML = `<img src="${src}"><span class="foto-label">Foto ${idx+1}</span><button class="btn-del-foto" onclick="eliminarFoto(${idx})">✕</button>`;
+      grid.appendChild(slot);
+    });
 
-  const maxFotos = puestoActual === 'despacho' ? 6 : 2;
-  if (fotosList.length < maxFotos) {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.capture = 'environment';
-    input.id = `foto_input_${fotosList.length}`;
-    input.onchange = (e) => procesarFotoYComprimir(e);
-    inputs.appendChild(input);
+    const maxFotos = puestoActual === 'despacho' ? 6 : 2;
+    if (fotosList.length < maxFotos) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.capture = 'environment';
+      input.id = `foto_input_${fotosList.length}`;
+      input.onchange = (e) => procesarFotoYComprimir(e);
+      inputs.appendChild(input);
 
-    const slot = document.createElement('label');
-    slot.className = "foto-slot";
-    slot.setAttribute('for', input.id);
-    slot.innerHTML = `<span style="font-size:2.5rem;">📸</span><span class="foto-label">Tomar foto</span>`;
-    grid.appendChild(slot);
+      const slot = document.createElement('label');
+      slot.className = "foto-slot";
+      slot.setAttribute('for', input.id);
+      slot.innerHTML = `<span style="font-size:2.5rem;">📸</span><span class="foto-label">Tomar foto</span>`;
+      grid.appendChild(slot);
+    }
+  } catch (e) {
+    console.error("Error al renderizar fotos:", e);
   }
 }
 
 function procesarFotoYComprimir(event) {
-  const file = event.target.files[0];
-  if (!file) return;
+  try {
+    const file = event.target.files[0];
+    if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const img = new Image();
-    img.src = e.target.result;
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const MAX_SIZE = 700; 
-      let w = img.width;
-      let h = img.height;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.src = e.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 700; 
+        let w = img.width;
+        let h = img.height;
 
-      if (w > h && w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; }
-      else if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; }
+        if (w > h && w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; }
+        else if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; }
 
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, w, h);
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
 
-      const b64 = canvas.toDataURL('image/jpeg', 0.45);
-      fotosList.push(b64);
-      renderFotosGrid();
+        const b64 = canvas.toDataURL('image/jpeg', 0.45);
+        fotosList.push(b64);
+        renderFotosGrid();
+      };
     };
-  };
-  reader.readAsDataURL(file);
+    reader.readAsDataURL(file);
+  } catch (e) {
+    console.error("Error al procesar foto:", e);
+  }
 }
 
 function eliminarFoto(idx) {
@@ -866,6 +993,32 @@ async function guardarDatosFinal() {
   if (btn) {
     btn.disabled = false;
     btn.textContent = "REVISAR Y GUARDAR";
+  }
+}
+
+function resetFormulario() {
+  try {
+    const t = document.getElementById('numTT');
+    if (t) t.value = "";
+    bolsonesSeleccionados = 0;
+    productosSeleccionados = [];
+    fotosList = [];
+    conductorSeleccionado = null;
+
+    document.querySelectorAll('.bols-num').forEach(el => el.classList.remove('sel'));
+    const disp = document.getElementById('bolsDisplay');
+    const dispD = document.getElementById('bolsDisplayD');
+    if (disp) disp.textContent = "—";
+    if (dispD) dispD.textContent = "—";
+    
+    renderProductosUI();
+    renderFotosGrid();
+    
+    const dCampos = document.getElementById('despachoCampos');
+    if (dCampos) dCampos.style.display = 'none';
+    document.querySelectorAll('.conductor-item').forEach(el => el.classList.remove('selected'));
+  } catch (e) {
+    console.error("Error al limpiar el formulario:", e);
   }
 }
 </script>
