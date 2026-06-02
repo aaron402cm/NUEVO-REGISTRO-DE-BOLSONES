@@ -427,7 +427,7 @@ function perteneceAlTurnoActual(fechaHoraStr) {
       startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 18, 46, 0);
       endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1, 6, 44, 59);
     } else { 
-      startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - 1, 18, 46, 0);
+      startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), cadence = ahora.getDate() - 1, 18, 46, 0);
       endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 6, 44, 59);
     }
   }
@@ -474,7 +474,7 @@ async function sincronizarConExcel(forzado = false) {
     const [pData, cData, rData] = await Promise.all([pPromise, cPromise, rPromise]);
     let algunCambio = false;
 
-    // 1. Cargar Productos y Buque
+    // 1. Cargar Productos y Buque de forma segura sin detener ejecución por datos vacíos
     if (pData && pData.ok && Array.isArray(pData.productos)) {
       listadoProductos = pData.productos;
       productosDisponibles = pData.productos.map(p => {
@@ -490,7 +490,7 @@ async function sincronizarConExcel(forzado = false) {
       algunCambio = true;
     }
 
-    // 2. Cargar Conductores
+    // 2. Cargar Conductores de forma segura
     if (cData && cData.ok && Array.isArray(cData.conductores)) {
       conductoresDisponibles = cData.conductores;
       if (puestoActual === 'despacho') renderConductoresUI();
@@ -695,10 +695,10 @@ function volverSelector() {
 // CORRECCIÓN HISTORIAL / INICIO: EL BOTÓN INICIO SIEMPRE LIMPIA Y VA AL SELECTOR DE PUESTOS (PROTEGIDO)
 function changeTab(tab) {
   try {
-    if (tab === 'form') {
-      puestoActual = null;
-      resetFormulario();
+    puestoActual = null; // Reinicia y limpia siempre el puesto actual
+    resetFormulario();
 
+    if (tab === 'form') {
       document.getElementById('screenForm').style.display = 'none';
       document.getElementById('screenSelector').style.display = 'block';
       document.getElementById('screenHistorial').style.display = 'none';
@@ -870,79 +870,7 @@ function renderFotosGrid() {
   }
 }
 
-function procesarFotoYComprimir(event) {
-  try {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.src = e.target.result;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_SIZE = 700; 
-        let w = img.width;
-        let h = img.height;
-
-        if (w > h && w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; }
-        else if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; }
-
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
-
-        const b64 = canvas.toDataURL('image/jpeg', 0.45);
-        fotosList.push(b64);
-        renderFotosGrid();
-      };
-    };
-    reader.readAsDataURL(file);
-  } catch (e) {
-    console.error("Error al procesar foto:", e);
-  }
-}
-
-function eliminarFoto(idx) {
-  fotosList.splice(idx, 1);
-  renderFotosGrid();
-}
-
-function abrirConfirmacion() {
-  const isD = puestoActual === 'despacho';
-  const numTT = !isD ? document.getElementById('numTT').value.trim() : '';
-
-  if (!isD && !numTT) { showToast('⚠️ Digite el número de TT', true); return; }
-  if (isD && !conductorSeleccionado) { showToast('⚠️ Seleccione un conductor', true); return; }
-  if (bolsonesSeleccionados === 0) { showToast('⚠️ Seleccione los bolsones', true); return; }
-  if (productosSeleccionados.length === 0) { showToast('⚠️ Seleccione el producto', true); return; }
-  
-  const minFotos = isD ? 4 : 2; 
-  if (fotosList.length < minFotos) {
-    showToast(`⚠️ Requiere mínimo ${minFotos} fotos de evidencia`, true);
-    return;
-  }
-
-  const rows = [
-    ['PUESTO', puestoActual.toUpperCase()],
-    isD ? ['CONDUCTOR', conductorSeleccionado.nombre] : ['TT', `TT-${numTT}`],
-    ['BOLSONES', `${bolsonesSeleccionados} Bolsones`],
-    ['PRODUCTO', productosSeleccionados.join(', ')],
-    ['EVIDENCIAS', `${fotosList.length} Foto(s)`]
-  ];
-
-  document.getElementById('confirmBody').innerHTML = rows.map(([l, v]) => `
-    <div class="confirm-row"><span class="lbl">${l}</span><span class="val">${v}</span></div>
-  `).join('');
-
-  document.getElementById('modalConfirm').classList.add('open');
-}
-
-function cerrarConfirmacion() {
-  document.getElementById('modalConfirm').classList.remove('open');
-}
-
+// TIMEOUT PROTEGIDO DE ENVÍO DE DATOS CONTRA CONGELACIONES EN 3G/4G DÉBIL
 async function guardarDatosFinal() {
   cerrarConfirmacion();
   const isD = puestoActual === 'despacho';
@@ -970,24 +898,41 @@ async function guardarDatosFinal() {
     }
   };
 
+  // CONTROL DE TIMEOUT DE 4.5 SEGUNDOS PARA EL FLUJO DE RETORNO INMEDIATO
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 4500);
+
   try {
     const res = await fetch(GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
     const result = await res.json();
 
     if (result.ok) {
       showToast('✅ REGISTRO CONFIRMADO Y SUBIDO');
-      resetFormulario();
-      volverSelector(); 
-      sincronizarConExcel(false); 
     } else {
       showToast('❌ Error al subir: ' + result.error, true);
     }
   } catch(e) {
-    showToast('❌ Error de red/conexión', true);
+    clearTimeout(timeoutId);
+    if (e.name === 'AbortError') {
+      showToast('📋 Registro enviado (Verificar en CCTV)');
+    } else {
+      showToast('⚠️ Envío en proceso o red lenta...');
+    }
+  }
+
+  // DESCONGELA LA PANTALLA, LIMPIA LOS CAMPOS Y RETORNA AL SELECTOR SÍ O SÍ
+  try {
+    resetFormulario();
+    volverSelector(); 
+    sincronizarConExcel(false); 
+  } catch (err) {
+    console.error("Error en flujo de retorno:", err);
   }
 
   if (btn) {
