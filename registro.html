@@ -1,6 +1,276 @@
-<!-- Reemplace la sección <script> de su registro.html con esta versión de compatibilidad -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Registro IQBF — Celular</title>
+<style>
+:root {
+  --blue: #0c4a6e; --blue-light: #e0f2fe; --blue-dark: #0369a1;
+  --green: #14532d; --green-light: #dcfce7;
+  --amber: #78350f; --amber-light: #fef3c7;
+  --red: #7f1d1d; --red-light: #fee2e2;
+  --bg: #ffffff; --white: #ffffff; --border: #94a3b8;
+  --text: #0f172a; --muted: #475569;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 16px; }
+
+/* LOGIN PERSISTENTE */
+#loginScreen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; background: #0f172a; }
+.login-box { background: white; border-radius: 20px; padding: 2.5rem 1.5rem; width: 100%; max-width: 380px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 3px solid var(--blue); }
+.login-brand { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 1rem; }
+.login-brand h1 { font-size: 2.2rem; font-weight: 900; color: var(--blue); }
+.login-sub { font-size: 1.2rem; color: var(--muted); margin-bottom: 2rem; font-weight: bold; }
+.login-box input[type="password"] { width: 100%; padding: 1.2rem; font-size: 1.8rem; border: 3px solid var(--border); border-radius: 12px; margin-bottom: 1.5rem; text-align: center; outline: none; }
+.login-box input:focus { border-color: var(--blue); }
+.btn-login { width: 100%; padding: 1.2rem; font-size: 1.5rem; font-weight: bold; background: var(--blue); color: white; border: none; border-radius: 12px; cursor: pointer; }
+.login-error { color: var(--red); font-size: 1.1rem; margin-top: 1rem; font-weight: bold; min-height: 1.5rem; }
+
+/* APP */
+#app { display: none; min-height: 100vh; flex-direction: column; }
+.header { background: var(--blue); color: white; padding: 1.2rem; position: sticky; top: 0; z-index: 100; border-bottom: 4px solid var(--blue-dark); }
+.header-row { display: flex; justify-content: space-between; align-items: center; }
+.header-title { font-size: 1.6rem; font-weight: 800; }
+.header-puesto { background: rgba(255,255,255,0.25); padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 1.1rem; font-weight: bold; border: 1px solid white; }
+.btn-back { background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.6rem 1rem; border-radius: 8px; font-size: 1.2rem; font-weight: bold; cursor: pointer; display: none; }
+.btn-back.visible { display: block; }
+
+/* RESUMEN FLOTANTE */
+.total-flotante { background: #f8fafc; border-bottom: 3px solid var(--border); padding: 0.8rem 1.2rem; display: flex; justify-content: space-between; align-items: center; }
+.total-flotante .lbl { font-size: 1rem; font-weight: bold; color: var(--muted); text-transform: uppercase; }
+.total-flotante .num { font-size: 2rem; font-weight: 900; color: var(--blue); }
+
+/* SELECTOR DE PUESTO */
+#screenSelector { padding: 1.5rem; }
+.selector-title { font-size: 1.3rem; font-weight: bold; color: var(--text); text-align: center; margin-bottom: 1.5rem; text-transform: uppercase; }
+.puesto-card { display: flex; align-items: center; gap: 1rem; background: white; border: 4px solid var(--border); border-radius: 20px; padding: 1.5rem; margin-bottom: 1.2rem; cursor: pointer; }
+.puesto-card:active { background: #f1f5f9; transform: scale(0.98); }
+.puesto-icon { font-size: 3rem; }
+.puesto-info h2 { font-size: 1.8rem; font-weight: 800; color: var(--blue); }
+.puesto-info p { font-size: 1.1rem; color: var(--muted); font-weight: bold; }
+
+/* PANTALLA FORMULARIO */
+#screenForm { display: none; padding: 1rem; padding-bottom: 6rem; }
+.card { background: white; border-radius: 16px; padding: 1.2rem; margin-bottom: 1.2rem; border: 3px solid var(--border); }
+.card-title { font-size: 1.2rem; font-weight: 800; color: var(--text); margin-bottom: 1rem; text-transform: uppercase; display: flex; justify-content: space-between; }
+
+/* INPUTS */
+.tt-wrap { display: flex; align-items: center; border: 3px solid var(--border); border-radius: 12px; overflow: hidden; }
+.tt-prefix { background: #f1f5f9; color: var(--text); font-size: 1.8rem; font-weight: 800; padding: 0.8rem 1.2rem; border-right: 3px solid var(--border); }
+.tt-input { flex: 1; border: none; outline: none; font-size: 2.2rem; font-weight: 900; padding: 0.6rem; color: var(--text); text-align: center; }
+
+/* PICKER GIGANTE DE BOLSONES */
+.bols-display { text-align: center; font-size: 3.5rem; font-weight: 900; padding: 0.5rem 0; color: var(--blue); border-bottom: 2px dashed var(--border); margin-bottom: 1rem; }
+.bolsones-picker { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.6rem; }
+.bols-num { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; font-weight: 900; border: 3px solid var(--border); border-radius: 12px; background: white; color: var(--text); cursor: pointer; }
+.bols-num.sel { background: var(--blue); color: white; border-color: var(--blue); font-size: 2rem; transform: scale(1.05); }
+
+/* PRODUCTOS */
+.producto-grid { display: grid; grid-template-columns: 1fr; gap: 0.8rem; }
+.prod-btn { padding: 1.2rem; font-size: 1.4rem; font-weight: bold; border: 3px solid var(--border); border-radius: 12px; background: white; color: var(--text); text-align: left; }
+.prod-btn.sel { background: var(--blue-light); color: var(--blue); border-color: var(--blue); font-weight: 900; }
+
+/* CONDUCTOR */
+.conductor-list { display: flex; flex-direction: column; gap: 0.8rem; max-height: 250px; overflow-y: auto; }
+.conductor-item { padding: 1.2rem; border: 3px solid var(--border); border-radius: 12px; background: white; }
+.conductor-item.selected { border-color: var(--blue); background: var(--blue-light); }
+.conductor-name { font-size: 1.3rem; font-weight: 800; }
+.conductor-placa { font-size: 1.1rem; color: var(--muted); font-weight: bold; }
+
+/* FOTOS */
+.foto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+.foto-slot { aspect-ratio: 4/3; border: 3px dashed var(--border); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8fafc; cursor: pointer; overflow: hidden; position: relative; }
+.foto-slot.has-photo { border-style: solid; border-color: #16a34a; }
+.foto-slot img { width: 100%; height: 100%; object-fit: cover; position: absolute; }
+.foto-slot .foto-label { font-size: 1rem; font-weight: bold; color: var(--text); text-align: center; z-index: 1; padding: 0.2rem; background: rgba(255,255,255,0.85); border-radius: 4px; }
+.btn-del-foto { position: absolute; top: 6px; right: 6px; background: #dc2626; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 1.2rem; font-weight: bold; z-index: 10; display: flex; align-items: center; justify-content: center; }
+
+/* BOTÓN GUARDAR GIGANTE */
+.btn-guardar { width: 100%; padding: 1.5rem; font-size: 1.8rem; font-weight: 900; border: none; border-radius: 16px; cursor: pointer; margin-top: 1rem; color: white; background: #16a34a; border-bottom: 6px solid #15803d; }
+.btn-guardar:disabled { background: #94a3b8; border-color: #64748b; }
+
+/* HISTORIAL */
+#screenHistorial { display: none; padding: 1rem; padding-bottom: 6rem; }
+.hist-item { background: white; border-radius: 14px; padding: 1.2rem; margin-bottom: 1rem; border: 3px solid var(--border); }
+.hist-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
+.hist-tt { font-size: 1.4rem; font-weight: 800; }
+.hist-qty { font-size: 1.8rem; font-weight: 900; color: var(--blue); }
+.hist-meta { font-size: 1.1rem; color: var(--muted); font-weight: bold; }
+
+/* BOTTOM NAV */
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 3px solid var(--border); display: flex; z-index: 200; }
+.bnav-btn { flex: 1; padding: 1rem 0; display: flex; flex-direction: column; align-items: center; font-size: 1.1rem; font-weight: bold; color: var(--muted); background: none; border: none; }
+.bnav-btn.active { color: var(--blue); background: var(--blue-light); }
+.bnav-icon { font-size: 1.8rem; }
+
+/* MODAL CONFIRMACIÓN */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: flex-end; justify-content: center; z-index: 500; }
+.modal-overlay.open { display: flex; }
+.modal-box { background: white; border-radius: 24px 24px 0 0; padding: 1.5rem; width: 100%; max-width: 480px; }
+.modal-title { font-size: 1.6rem; font-weight: 900; margin-bottom: 1.2rem; text-align: center; }
+.confirm-row { display: flex; justify-content: space-between; padding: 0.8rem 0; border-bottom: 2px solid #e2e8f0; font-size: 1.2rem; }
+.confirm-row .lbl { color: var(--muted); font-weight: bold; }
+.confirm-row .val { font-weight: 900; text-align: right; }
+.confirm-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
+.btn-confirm { padding: 1.2rem; font-size: 1.3rem; font-weight: bold; border: none; border-radius: 12px; }
+.btn-cancel { background: #cbd5e1; color: var(--text); }
+.btn-ok { background: #16a34a; color: white; }
+
+.toast { position: fixed; bottom: 6rem; left: 50%; transform: translateX(-50%); background: #15803d; color: white; padding: 1rem 2rem; border-radius: 50px; font-size: 1.2rem; font-weight: bold; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+.toast.show { opacity: 1; }
+.toast.error { background: #b91c1c; }
+</style>
+</head>
+<body>
+
+<!-- PANTALLA LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-brand">
+      <h1>📦 IQBF Control</h1>
+    </div>
+    <div class="login-sub">Registro de Bolsones</div>
+    <input type="password" id="pwInput" placeholder="Contraseña" autocomplete="current-password"/>
+    <button class="btn-login" onclick="doLogin()">INGRESAR</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- APP PRINCIPAL -->
+<div id="app">
+  <div class="header">
+    <div class="header-row">
+      <button class="btn-back" id="btnBack" onclick="volverSelector()">← Puestos</button>
+      <div class="header-title" id="headerTitle">📦 IQBF Control</div>
+      <div class="header-puesto" id="headerPuesto" style="visibility:hidden">—</div>
+    </div>
+  </div>
+
+  <div class="total-flotante" id="totalFlotante">
+    <div>
+      <div class="lbl">Bolsones hoy</div>
+      <div class="num" id="totalBolsonesHoy">0</div>
+    </div>
+    <div style="text-align:right">
+      <div class="lbl">Mis Registros</div>
+      <div class="num" id="misRegistros" style="color:var(--muted)">0</div>
+    </div>
+  </div>
+
+  <!-- SELECTOR DE PUESTO -->
+  <div id="screenSelector">
+    <div class="selector-title">Selecciona tu Puesto de Trabajo</div>
+    <div class="puesto-card" onclick="entrarPuesto('muelle')">
+      <div class="puesto-icon">🚢</div>
+      <div class="puesto-info">
+        <h2>Muelle</h2>
+        <p>Registro inicial de descarga</p>
+      </div>
+    </div>
+    <div class="puesto-card" onclick="entrarPuesto('labarthe')">
+      <div class="puesto-icon">🏭</div>
+      <div class="puesto-info">
+        <h2>Labarthe</h2>
+        <p>Confirmación de llegada</p>
+      </div>
+    </div>
+    <div class="puesto-card" onclick="entrarPuesto('despacho')">
+      <div class="puesto-icon">🚛</div>
+      <div class="puesto-info">
+        <h2>Despacho</h2>
+        <p>Salida de producto</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORMULARIO DE REGISTRO -->
+  <div id="screenForm">
+    <!-- MUELLE / LABARTHE -->
+    <div id="formDescarga">
+      <div class="card">
+        <div class="card-title">🚛 N° Terminal Truck</div>
+        <div class="tt-wrap">
+          <div class="tt-prefix">TT-</div>
+          <input class="tt-input" id="numTT" type="tel" placeholder="045" maxlength="4"/>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📦 Cantidad de Bolsones <span style="color:var(--red)">(Máx 30)</span></div>
+        <div class="bols-display" id="bolsDisplay">—</div>
+        <div class="bolsones-picker" id="bPicker"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🧴 Tipo de Producto</div>
+        <div class="producto-grid" id="prodGrid"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📸 Fotos de Evidencia</div>
+        <div class="foto-grid" id="fotoGrid"></div>
+        <div id="hiddenInputs"></div>
+      </div>
+      <button class="btn-guardar" id="btnGuardar" onclick="abrirConfirmacion()">REVISAR Y GUARDAR</button>
+    </div>
+
+    <!-- DESPACHO -->
+    <div id="formDespacho" style="display:none">
+      <div class="card">
+        <div class="card-title">👤 Seleccionar Conductor</div>
+        <div class="conductor-list" id="listaConductores"></div>
+      </div>
+      <div id="despachoCampos" style="display:none">
+        <div class="card">
+          <div class="card-title">📦 Cantidad de Bolsones <span style="color:var(--red)">(Máx 30)</span></div>
+          <div class="bols-display" id="bolsDisplayD">—</div>
+          <div class="bolsones-picker" id="bPickerD"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">🧴 Tipo de Producto</div>
+          <div class="producto-grid" id="prodGridD"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">📸 Evidencias (Fotos)</div>
+          <div class="foto-grid" id="fotoGridD"></div>
+          <div id="hiddenInputsD"></div>
+        </div>
+        <button class="btn-guardar" id="btnGuardarD" onclick="abrirConfirmacion()">REVISAR Y GUARDAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA HISTORIAL (SOLO LECTURA) -->
+  <div id="screenHistorial">
+    <div class="selector-title">Tus Registros de Hoy</div>
+    <div id="listaHistorial"></div>
+  </div>
+
+  <!-- NAVEGACIÓN INFERIOR -->
+  <div class="bottom-nav">
+    <button class="bnav-btn active" id="bnavReg" onclick="changeTab('form')">
+      <span class="bnav-icon">✏️</span>Registrar
+    </button>
+    <button class="bnav-btn" id="bnavHist" onclick="changeTab('historial')">
+      <span class="bnav-icon">📋</span>Mis Registros
+    </button>
+  </div>
+</div>
+
+<!-- MODAL DE CONFIRMACIÓN -->
+<div class="modal-overlay" id="modalConfirm">
+  <div class="modal-box">
+    <div class="modal-title">¿Confirmar Registro?</div>
+    <div id="confirmBody"></div>
+    <div class="confirm-btns">
+      <button class="btn-confirm btn-cancel" onclick="cerrarConfirmacion()">Corregir</button>
+      <button class="btn-confirm btn-ok" onclick="guardarDatosFinal()">Sí, Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
 <script>
-// El resto del HTML y estilos se mantienen exactamente igual. Solo reemplace esta sección.
+// Recuerde cambiar esta URL si vuelve a publicar una versión distinta de su Google Apps Script
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxZ4qwyvvuWd_IfedsWR1R65niSwlYPKtgcDU_e5f0H4P1cCbOvIGDICksXe3tIdDrfrw/exec";
 const PASSWORD_CORRECTA = "Apm2026";
 const SESSION_KEY = "iqbf_agent_persistent_session";
@@ -11,7 +281,8 @@ let productosSeleccionados = [];
 let fotosList = [];
 let conductorSeleccionado = null;
 
-let productosDisponibles = [];
+// Valores de contingencia por si la red del celular es inestable al abrir la app
+let productosDisponibles = ["Harina", "Azúcar", "Soya", "Trigo"];
 let conductoresDisponibles = [];
 let localHistorial = JSON.parse(localStorage.getItem('iqbf_historial_agente') || '[]');
 
@@ -130,18 +401,24 @@ function obtenerConfiguracionGAS() {
   fetch(`${GAS_URL}?action=obtenerProductos`)
     .then(r => r.json())
     .then(data => {
-      if (data.ok) {
-        // Adaptación técnica segura: Mapea la lista de objetos a texto simple para el celular
+      if (data.ok && data.productos.length > 0) {
         productosDisponibles = data.productos.map(p => typeof p === 'object' ? p.producto : p);
       }
+      renderProductosUI();
+    })
+    .catch(() => {
+      // Protección de contingencia: si la red falla, levanta productos predeterminados
       renderProductosUI();
     });
 
   fetch(`${GAS_URL}?action=obtenerConductores`)
     .then(r => r.json())
     .then(data => {
-      if (data.ok) conductoresDisponibles = data.conductores;
-    });
+      if (data.ok) {
+        conductoresDisponibles = data.conductores;
+      }
+    })
+    .catch(() => {});
 }
 
 function renderProductosUI() {
@@ -166,6 +443,10 @@ function renderProductosUI() {
 function renderConductoresUI() {
   const list = document.getElementById('listaConductores');
   list.innerHTML = "";
+  if (conductoresDisponibles.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:1.1rem;color:var(--muted)">No hay conductores registrados.</div>';
+    return;
+  }
   conductoresDisponibles.forEach((c, idx) => {
     const item = document.createElement('div');
     item.className = "conductor-item";
@@ -385,3 +666,5 @@ function showToast(msg, isError = false) {
   setTimeout(() => { toast.className = 'toast'; }, 3000);
 }
 </script>
+</body>
+</html>
