@@ -54,7 +54,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 .puesto-info p { font-size: 1.1rem; color: var(--muted); font-weight: bold; }
 
 /* PANTALLA FORMULARIO */
-#screenForm { display: none; padding: 1rem; padding-bottom: 2rem; }
+#screenForm { display: none; padding: 1rem; padding-bottom: 6rem; }
 .card { background: white; border-radius: 16px; padding: 1.2rem; margin-bottom: 1.2rem; border: 3px solid var(--border); }
 .card-title { font-size: 1.2rem; font-weight: 800; color: var(--text); margin-bottom: 1rem; text-transform: uppercase; display: flex; justify-content: space-between; }
 
@@ -105,11 +105,11 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 .hist-qty { font-size: 1.8rem; font-weight: 900; color: var(--blue); }
 .hist-meta { font-size: 1.1rem; color: var(--muted); font-weight: bold; }
 
-/* BOTTOM NAV (REDUCIDA A LA MITAD DE SU TAMAÑO) */
-.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 3px solid var(--border); display: flex; z-index: 200; height: 52px; }
-.bnav-btn { flex: 1; padding: 0.4rem 0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: bold; color: var(--muted); background: none; border: none; cursor: pointer; }
+/* BOTTOM NAV */
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 3px solid var(--border); display: flex; z-index: 200; }
+.bnav-btn { flex: 1; padding: 1rem 0; display: flex; flex-direction: column; align-items: center; font-size: 1.1rem; font-weight: bold; color: var(--muted); background: none; border: none; }
 .bnav-btn.active { color: var(--blue); background: var(--blue-light); }
-.bnav-icon { font-size: 1.2rem; margin-bottom: 1px; }
+.bnav-icon { font-size: 1.8rem; }
 
 /* MODAL CONFIRMACIÓN */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: flex-end; justify-content: center; z-index: 500; }
@@ -151,7 +151,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
       <button class="btn-back" id="btnBack" onclick="volverSelector()">← Puestos</button>
       <div class="header-title" id="headerTitle">📦 IQBF Control</div>
       <!-- BOTÓN DE SINCRONIZACIÓN FORZOSA -->
-      <button id="btnSyncHeader" onclick="sincronizarConExcel(true)" style="background:var(--blue-light); color:var(--blue); border:none; font-weight:bold; padding:0.4rem 0.6rem; border-radius:8px; font-size:0.9rem; cursor:pointer;">🔄 Sincronizar</button>
+      <button id="btnSyncHeader" onclick="sincronizarConExcel()" style="background:var(--blue-light); color:var(--blue); border:none; font-weight:bold; padding:0.5rem 0.8rem; border-radius:8px; font-size:1rem; cursor:pointer;">🔄 Sincronizar</button>
       <div class="header-puesto" id="headerPuesto" style="display:none; visibility:hidden">—</div>
     </div>
   </div>
@@ -269,10 +269,10 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
     <div id="listaHistorial"></div>
   </div>
 
-  <!-- NAVEGACIÓN INFERIOR (TAMAÑO REDUCIDO CON TABS "INICIO" Y "REGISTROS") -->
+  <!-- NAVEGACIÓN INFERIOR -->
   <div class="bottom-nav">
-    <button class="bnav-btn active" id="bnavInicio" onclick="changeTab('form')">
-      <span class="bnav-icon">🏠</span>Inicio
+    <button class="bnav-btn active" id="bnavReg" onclick="changeTab('form')">
+      <span class="bnav-icon">✏️</span>Registrar
     </button>
     <button class="bnav-btn" id="bnavHist" onclick="changeTab('historial')">
       <span class="bnav-icon">📋</span>Registros
@@ -305,28 +305,16 @@ let productosSeleccionados = [];
 let fotosList = [];
 let conductorSeleccionado = null;
 
-// Base de datos globalizada en caché
+// Base de datos de red globalizada para celular (Turnos)
 let dbGlobal = { muelle: [], labarthe: [], despacho: [] };
 let listadoProductos = [];
 let productosDisponibles = ["Harina", "Azúcar", "Soya", "Trigo"];
 let conductoresDisponibles = [];
-let activeSubTab = 'muelle'; 
-
-// 1. AUTOLIMPIEZA PREVENTIVA DE MEMORIA CORRUPTA AL CARGAR
-try {
-  let rawHist = localStorage.getItem('iqbf_historial_agente');
-  if (rawHist) {
-    localStorage.removeItem('iqbf_historial_agente'); 
-  }
-} catch (e) {}
+let activeSubTab = 'muelle'; // Pestaña de historial activa
 
 window.onload = () => {
-  try {
-    if (localStorage.getItem(SESSION_KEY) === 'true') {
-      mostrarAplicativo();
-    }
-  } catch (e) {
-    console.error("Error al arrancar la app:", e);
+  if (localStorage.getItem(SESSION_KEY) === 'true') {
+    mostrarAplicativo();
   }
 };
 
@@ -343,67 +331,15 @@ function doLogin() {
 }
 
 function mostrarAplicativo() {
-  try {
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('app').style.display = 'flex';
-    initComponentes();
-  } catch (e) {
-    console.error("Error al mostrar el aplicativo:", e);
-    document.getElementById('app').style.display = 'flex';
-    document.getElementById('screenSelector').style.display = 'block';
-  }
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  initComponentes();
 }
 
 function initComponentes() {
-  try {
-    crearSelectorNum('bPicker', false);
-    crearSelectorNum('bPickerD', true);
-  } catch(e) {}
-
-  try {
-    cargarDesdeCacheLocal(); 
-  } catch(e) {}
-
-  try {
-    sincronizarConExcel(false); 
-  } catch(e) {}
-}
-
-// CARGA DESDE MEMORIA LOCAL (FALLBACK SEÑAL DÉBIL)
-function cargarDesdeCacheLocal() {
-  try {
-    const cachedProducts = localStorage.getItem('iqbf_cache_productos');
-    const cachedBuqueNom  = localStorage.getItem('iqbf_cache_buque_nom');
-    const cachedBuqueMue  = localStorage.getItem('iqbf_cache_buque_mue');
-    const cachedConds     = localStorage.getItem('iqbf_cache_conductores');
-    const cachedFilas     = localStorage.getItem('iqbf_cache_filas');
-
-    if (cachedProducts) {
-      const parsedP = JSON.parse(cachedProducts);
-      listadoProductos = parsedP;
-      productosDisponibles = parsedP.map(p => typeof p === 'object' ? p.producto : p);
-      renderProductosUI();
-    }
-    
-    renderEncabezadoBuqueMovil(cachedBuqueNom || "—", cachedBuqueMue || "—");
-
-    if (cachedConds) {
-      conductoresDisponibles = JSON.parse(cachedConds);
-      if (puestoActual === 'despacho') renderConductoresUI();
-    }
-
-    if (cachedFilas) {
-      const parsedF = JSON.parse(cachedFilas);
-      if (parsedF && typeof parsedF === 'object') {
-        dbGlobal.muelle = parsedF.muelle || [];
-        dbGlobal.labarthe = parsedF.labarthe || [];
-        dbGlobal.despacho = parsedF.despacho || [];
-        actualizarKPIsYHistorial();
-      }
-    }
-  } catch (e) {
-    console.error("Error al leer caché local:", e);
-  }
+  crearSelectorNum('bPicker', false);
+  crearSelectorNum('bPickerD', true);
+  sincronizarConExcel(); // Sincroniza al cargar
 }
 
 // CONTROL DE TURNOS (06:45 - 18:45)
@@ -426,7 +362,6 @@ function perteneceAlTurnoActual(fechaHoraStr) {
       startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 18, 46, 0);
       endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1, 6, 44, 59);
     } else { 
-      // CORRECCIÓN MATEMÁTICA: Remoción del error 'cadence' que detenía la ejecución en móviles
       startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - 1, 18, 46, 0);
       endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 6, 44, 59);
     }
@@ -439,83 +374,55 @@ function parsearFechaExcel(fStr) {
     const pts = fStr.split(' ');
     const fPts = pts[0].split('/');
     const hPts = pts[1].split(':');
-    
-    let hrs = parseInt(hPts[0]);
-    let mins = parseInt(hPts[1]);
-    let secs = parseInt(hPts[2] || 0);
-
-    if (fStr.toLowerCase().includes('p. m.') || fStr.toLowerCase().includes('pm')) {
-      if (hrs < 12) hrs += 12;
-    } else if (fStr.toLowerCase().includes('a. m.') || fStr.toLowerCase().includes('am')) {
-      if (hrs === 12) hrs = 0;
-    }
-
-    return new Date(fPts[2], fPts[1] - 1, fPts[0], hrs, mins, secs);
+    return new Date(fPts[2], fPts[1] - 1, fPts[0], hPts[0], hPts[1], hPts[2] || 0);
   } catch(e) {
     return null;
   }
 }
 
-// SINCRONIZACIÓN EN PARALELO ULTRA-RESILIENTE (OPTIMIZADA PARA SEÑAL DÉBIL)
-async function sincronizarConExcel(forzado = false) {
+// SINCRONIZACIÓN AUTOMÁTICA Y EXTRACCIÓN DE LA BD GLOBAL (GOOGLE SHEETS)
+async function sincronizarConExcel() {
   const btnSync = document.getElementById('btnSyncHeader');
   if (btnSync) {
     btnSync.disabled = true;
-    btnSync.textContent = "⏱️...";
+    btnSync.textContent = "⏱️ Sinc...";
   }
-  if (forzado) showToast("Sincronizando datos con el puerto...");
-
-  const pPromise = fetch(`${GAS_URL}?action=obtenerProductos`).then(r => r.json()).catch(() => null);
-  const cPromise = fetch(`${GAS_URL}?action=obtenerConductores`).then(r => r.json()).catch(() => null);
-  const rPromise = fetch(`${GAS_URL}?action=obtenerFilasExcel`).then(r => r.json()).catch(() => null);
+  showToast("Sincronizando datos con el puerto...");
 
   try {
-    const [pData, cData, rData] = await Promise.all([pPromise, cPromise, rPromise]);
-    let algunCambio = false;
-
-    // 1. Cargar Productos y Buque de forma segura sin detener ejecución por datos vacíos
-    if (pData && pData.ok && Array.isArray(pData.productos)) {
+    // 1. Obtener especificaciones del Buque y Catálogo
+    const pRes = await fetch(`${GAS_URL}?action=obtenerProductos`);
+    const pData = await pRes.json();
+    if (pData.ok) {
       listadoProductos = pData.productos;
-      productosDisponibles = pData.productos.map(p => {
-        if (p && typeof p === 'object' && p.producto) return p.producto;
-        return p;
-      });
+      productosDisponibles = pData.productos.map(p => typeof p === 'object' ? p.producto : p);
       renderEncabezadoBuqueMovil(pData.buqueNombre, pData.buqueMuelle);
       renderProductosUI();
-
-      localStorage.setItem('iqbf_cache_productos', JSON.stringify(pData.productos));
-      localStorage.setItem('iqbf_cache_buque_nom', pData.buqueNombre || "—");
-      localStorage.setItem('iqbf_cache_buque_mue', pData.buqueMuelle || "—");
-      algunCambio = true;
     }
 
-    // 2. Cargar Conductores de forma segura
-    if (cData && cData.ok && Array.isArray(cData.conductores)) {
+    // 2. Obtener Conductores
+    const cRes = await fetch(`${GAS_URL}?action=obtenerConductores`);
+    const cData = await cRes.json();
+    if (cData.ok) {
       conductoresDisponibles = cData.conductores;
       if (puestoActual === 'despacho') renderConductoresUI();
-      localStorage.setItem('iqbf_cache_conductores', JSON.stringify(cData.conductores));
-      algunCambio = true;
     }
 
-    // 3. Cargar Base de datos, KPIs e Historial
-    if (rData && rData.ok && Array.isArray(rData.filas)) {
+    // 3. Obtener filas totales para calcular KPIs y mostrar Historial global
+    const rRes = await fetch(`${GAS_URL}?action=obtenerFilasExcel`);
+    const rData = await rRes.json();
+    if (rData.ok) {
       dbGlobal.muelle = []; dbGlobal.labarthe = []; dbGlobal.despacho = [];
       rData.filas.forEach(f => {
-        if (f && f.puesto === 'muelle') dbGlobal.muelle.push(f);
-        else if (f && f.puesto === 'labarthe') dbGlobal.labarthe.push(f);
-        else if (f && f.puesto === 'despacho') dbGlobal.despacho.push(f);
+        if (f.puesto === 'muelle') dbGlobal.muelle.push(f);
+        else if (f.puesto === 'labarthe') dbGlobal.labarthe.push(f);
+        else if (f.puesto === 'despacho') dbGlobal.despacho.push(f);
       });
       actualizarKPIsYHistorial();
-
-      localStorage.setItem('iqbf_cache_filas', JSON.stringify(dbGlobal));
-      algunCambio = true;
     }
-
-    if (algunCambio && forzado) {
-      showToast("✅ Puerto conectado y actualizado");
-    }
+    showToast("✅ Puerto conectado y actualizado");
   } catch (e) {
-    if (forzado) showToast("⚠️ Error de conexión", true);
+    showToast("⚠️ Error de conexión", true);
   }
 
   if (btnSync) {
@@ -539,27 +446,20 @@ function renderEncabezadoBuqueMovil(bNombre, bMuelle) {
 }
 
 function actualizarKPIsYHistorial() {
-  try {
-    const muelleTurno = dbGlobal.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
-    const labartheTurno = dbGlobal.labarthe.filter(f => perteneceAlTurnoActual(f.fechaHora));
-    const despachoTurno = dbGlobal.despacho.filter(f => perteneceAlTurnoActual(f.fechaHora));
+  // Conteo de KPIs filtrado estrictamente por el Turno Activo
+  const muelleTurno = dbGlobal.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
+  const labartheTurno = dbGlobal.labarthe.filter(f => perteneceAlTurnoActual(f.fechaHora));
+  const despachoTurno = dbGlobal.despacho.filter(f => perteneceAlTurnoActual(f.fechaHora));
 
-    const sumM = muelleTurno.reduce((a, b) => a + (Number(b.bolsones) || 0), 0);
-    const sumL = labartheTurno.reduce((a, b) => a + (Number(b.bolsones) || 0), 0);
-    const sumD = despachoTurno.reduce((a, b) => a + (Number(b.bolsones) || 0), 0);
+  const sumM = muelleTurno.reduce((a, b) => a + (Number(b.bolsones) || 0), 0);
+  const sumL = labartheTurno.reduce((a, b) => a + (Number(b.bolsones) || 0), 0);
+  const sumD = despachoTurno.reduce((a, b) => a + (Number(b.bolsones) || 0), 0);
 
-    const kM = document.getElementById('kpiMuelle');
-    const kL = document.getElementById('kpiLabarthe');
-    const kD = document.getElementById('kpiDespacho');
+  document.getElementById('kpiMuelle').textContent = sumM;
+  document.getElementById('kpiLabarthe').textContent = sumL;
+  document.getElementById('kpiDespacho').textContent = sumD;
 
-    if (kM) kM.textContent = sumM;
-    if (kL) kL.textContent = sumL;
-    if (kD) kD.textContent = sumD;
-
-    renderHistorialPuesto();
-  } catch (e) {
-    console.error("Error al actualizar KPIs:", e);
-  }
+  renderHistorialPuesto();
 }
 
 function changeSubTab(tab) {
@@ -583,6 +483,7 @@ function renderHistorialPuesto() {
     return;
   }
 
+  // Ordenar más recientes primero
   filtrados.sort((a,b) => parsearFechaExcel(b.fechaHora) - parsearFechaExcel(a.fechaHora));
 
   container.innerHTML = filtrados.map(r => `
@@ -599,177 +500,69 @@ function renderHistorialPuesto() {
   `).join('');
 }
 
-// INGRESO Y OCULTACIÓN DE CABECERAS PARA FORMULARIO 100% LIMPIO (PROTEGIDO)
+// RESTO DE FUNCIONALIDADES OPERATIVAS DE REGISTRO
 function entrarPuesto(puesto) {
-  try {
-    puestoActual = puesto;
-    resetFormulario();
-    document.getElementById('screenSelector').style.display = 'none';
-    document.getElementById('screenForm').style.display = 'block';
-    
-    // OCULTAR ABSOLUTAMENTE TODO EL ENTORNO
-    const bHeader = document.getElementById('buqueHeaderMovil');
-    const tFlotante = document.getElementById('totalFlotante');
-    const bNav = document.querySelector('.bottom-nav');
-    const btnSync = document.getElementById('btnSyncHeader');
+  puestoActual = puesto;
+  resetFormulario();
+  document.getElementById('screenSelector').style.display = 'none';
+  document.getElementById('screenForm').style.display = 'block';
+  
+  const hTitle = document.getElementById('headerTitle');
+  const hPuesto = document.getElementById('headerPuesto');
+  const btnB = document.getElementById('btnBack');
 
-    if (bHeader) bHeader.style.display = 'none';
-    if (tFlotante) tFlotante.style.display = 'none';
-    if (bNav) bNav.style.display = 'none';
-    if (btnSync) btnSync.style.display = 'none';
+  hPuesto.style.visibility = 'visible';
+  btnB.classList.add('visible');
 
-    const hTitle = document.getElementById('headerTitle');
-    const hPuesto = document.getElementById('headerPuesto');
-    const btnB = document.getElementById('btnBack');
+  if (puesto === 'muelle') { hTitle.textContent = "🚢 MUELLE"; hPuesto.textContent = "MUELLE"; }
+  else if (puesto === 'labarthe') { hTitle.textContent = "🏭 LABARTHE"; hPuesto.textContent = "LABARTHE"; }
+  else { hTitle.textContent = "🚛 DESPACHO"; hPuesto.textContent = "DESPACHO"; }
 
-    if (hPuesto) {
-      hPuesto.style.visibility = 'visible';
-      hPuesto.style.display = 'block';
-    }
-    if (btnB) btnB.classList.add('visible');
+  document.getElementById('formDescarga').style.display = puesto !== 'despacho' ? 'block' : 'none';
+  document.getElementById('formDespacho').style.display = puesto === 'despacho' ? 'block' : 'none';
 
-    if (puesto === 'muelle') { 
-      if (hTitle) hTitle.textContent = "🚢 MUELLE"; 
-      if (hPuesto) hPuesto.textContent = "MUELLE"; 
-    } else if (puesto === 'labarthe') { 
-      if (hTitle) hTitle.textContent = "🏭 LABARTHE"; 
-      if (hPuesto) hPuesto.textContent = "LABARTHE"; 
-    } else { 
-      if (hTitle) hTitle.textContent = "🚛 DESPACHO"; 
-      if (hPuesto) hPuesto.textContent = "DESPACHO"; 
-    }
-
-    const fDescarga = document.getElementById('formDescarga');
-    const fDespacho = document.getElementById('formDespacho');
-
-    if (fDescarga) fDescarga.style.display = puesto !== 'despacho' ? 'block' : 'none';
-    if (fDespacho) fDespacho.style.display = puesto === 'despacho' ? 'block' : 'none';
-
-    if (puesto === 'despacho') { renderConductoresUI(); }
-    renderFotosGrid();
-  } catch (e) {
-    console.error("Error al entrar al puesto:", e);
-  }
+  if (puesto === 'despacho') { renderConductoresUI(); }
+  renderFotosGrid();
 }
 
 function volverSelector() {
-  try {
-    puestoActual = null;
-    document.getElementById('screenSelector').style.display = 'block';
-    document.getElementById('screenForm').style.display = 'none';
-    document.getElementById('screenHistorial').style.display = 'none';
-    
-    // RESTAURAR ELEMENTOS DE CABECERA Y NAVEGACIÓN
-    const bHeader = document.getElementById('buqueHeaderMovil');
-    const tFlotante = document.getElementById('totalFlotante');
-    const bNav = document.querySelector('.bottom-nav');
-    const btnSync = document.getElementById('btnSyncHeader');
-
-    if (bHeader) bHeader.style.display = 'block';
-    if (tFlotante) tFlotante.style.display = 'flex';
-    if (bNav) bNav.style.display = 'flex';
-    if (btnSync) btnSync.style.display = 'block';
-
-    const hTitle = document.getElementById('headerTitle');
-    const hPuesto = document.getElementById('headerPuesto');
-    const btnB = document.getElementById('btnBack');
-
-    if (hTitle) hTitle.textContent = "📦 IQBF Control";
-    if (hPuesto) {
-      hPuesto.style.visibility = 'hidden';
-      hPuesto.style.display = 'none';
-    }
-    if (btnB) btnB.classList.remove('visible');
-    
-    // Sincronizar clases activas en la barra inferior
-    const bi = document.getElementById('bnavInicio');
-    const bh = document.getElementById('bnavHist');
-    if (bi) bi.classList.add('active');
-    if (bh) bh.classList.remove('active');
-  } catch (e) {
-    console.error("Error al volver al selector:", e);
-  }
+  puestoActual = null;
+  document.getElementById('screenSelector').style.display = 'block';
+  document.getElementById('screenForm').style.display = 'none';
+  document.getElementById('screenHistorial').style.display = 'none';
+  document.getElementById('headerTitle').textContent = "📦 IQBF Control";
+  document.getElementById('headerPuesto').style.visibility = 'hidden';
+  document.getElementById('btnBack').classList.remove('visible');
+  changeTab('form');
 }
 
-// CORRECCIÓN DEFINITIVA: EL BOTÓN INICIO SIEMPRE LIMPIA Y VA AL SELECTOR DE PUESTOS (PROTEGIDO)
 function changeTab(tab) {
-  try {
-    puestoActual = null; // Reinicia y limpia siempre el puesto actual de forma obligatoria
-    resetFormulario();
-
-    if (tab === 'form') {
-      document.getElementById('screenForm').style.display = 'none';
-      document.getElementById('screenSelector').style.display = 'block';
-      document.getElementById('screenHistorial').style.display = 'none';
-      
-      const bi = document.getElementById('bnavInicio');
-      const bh = document.getElementById('bnavHist');
-      if (bi) bi.classList.add('active');
-      if (bh) bh.classList.remove('active');
-      
-      // Mostrar todos los elementos de la cabecera e inicio de forma segura
-      const bHeader = document.getElementById('buqueHeaderMovil');
-      const tFlotante = document.getElementById('totalFlotante');
-      const bNav = document.querySelector('.bottom-nav');
-      const btnSync = document.getElementById('btnSyncHeader');
-
-      if (bHeader) bHeader.style.display = 'block';
-      if (tFlotante) tFlotante.style.display = 'flex';
-      if (bNav) bNav.style.display = 'flex';
-      if (btnSync) btnSync.style.display = 'block';
-
-      const hTitle = document.getElementById('headerTitle');
-      const hPuesto = document.getElementById('headerPuesto');
-      const btnB = document.getElementById('btnBack');
-
-      if (hTitle) hTitle.textContent = "📦 IQBF Control";
-      if (hPuesto) {
-        hPuesto.style.visibility = 'hidden';
-        hPuesto.style.display = 'none';
-      }
-      if (btnB) btnB.classList.remove('visible');
-    } else {
-      // Mostrar el Historial de registros del turno
-      document.getElementById('screenForm').style.display = 'none';
-      document.getElementById('screenSelector').style.display = 'none';
-      document.getElementById('screenHistorial').style.display = 'block';
-      
-      const bi = document.getElementById('bnavInicio');
-      const bh = document.getElementById('bnavHist');
-      if (bi) bi.classList.remove('active');
-      if (bh) bh.classList.add('active');
-      
-      const bHeader = document.getElementById('buqueHeaderMovil');
-      const tFlotante = document.getElementById('totalFlotante');
-      const bNav = document.querySelector('.bottom-nav');
-      const btnSync = document.getElementById('btnSyncHeader');
-
-      if (bHeader) bHeader.style.display = 'block';
-      if (tFlotante) tFlotante.style.display = 'flex';
-      if (bNav) bNav.style.display = 'flex';
-      if (btnSync) btnSync.style.display = 'block';
-      
-      renderHistorialPuesto();
-    }
-  } catch (e) {
-    console.error("Error al cambiar pestaña:", e);
+  if (tab === 'form') {
+    document.getElementById('screenForm').style.display = puestoActual ? 'block' : 'none';
+    document.getElementById('screenSelector').style.display = !puestoActual ? 'block' : 'none';
+    document.getElementById('screenHistorial').style.display = 'none';
+    document.getElementById('bnavReg').classList.add('active');
+    document.getElementById('bnavHist').classList.remove('active');
+  } else {
+    document.getElementById('screenForm').style.display = 'none';
+    document.getElementById('screenSelector').style.display = 'none';
+    document.getElementById('screenHistorial').style.display = 'block';
+    document.getElementById('bnavReg').classList.remove('active');
+    document.getElementById('bnavHist').classList.add('active');
+    renderHistorialPuesto();
   }
 }
 
 function crearSelectorNum(id, isD) {
-  try {
-    const container = document.getElementById(id);
-    if (!container) return;
-    container.innerHTML = "";
-    for (let i = 1; i <= 30; i++) {
-      const btn = document.createElement('div');
-      btn.className = "bols-num";
-      btn.textContent = i;
-      btn.onclick = () => selectBolsones(i, id, isD);
-      container.appendChild(btn);
-    }
-  } catch (e) {
-    console.error("Error al construir picker de bolsones:", e);
+  const container = document.getElementById(id);
+  if (!container) return;
+  container.innerHTML = "";
+  for (let i = 1; i <= 30; i++) {
+    const btn = document.createElement('div');
+    btn.className = "bols-num";
+    btn.textContent = i;
+    btn.onclick = () => selectBolsones(i, id, isD);
+    container.appendChild(btn);
   }
 }
 
@@ -783,124 +576,108 @@ function selectBolsones(n, id, isD) {
 }
 
 function renderProductosUI() {
-  try {
-    ['prodGrid', 'prodGridD'].forEach(gridId => {
-      const grid = document.getElementById(gridId);
-      if (!grid) return;
-      grid.innerHTML = "";
-      productosDisponibles.forEach(prod => {
-        const b = document.createElement('button');
-        b.className = "prod-btn";
-        b.textContent = prod;
-        b.type = "button";
-        b.onclick = () => {
-          const i = productosSeleccionados.indexOf(prod);
-          if (i > -1) { productosSeleccionados.splice(i, 1); b.classList.remove('sel'); }
-          else { productosSeleccionados.push(prod); b.classList.add('sel'); }
-        };
-        grid.appendChild(b);
-      });
+  ['prodGrid', 'prodGridD'].forEach(gridId => {
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+    grid.innerHTML = "";
+    productosDisponibles.forEach(prod => {
+      const b = document.createElement('button');
+      b.className = "prod-btn";
+      b.textContent = prod;
+      b.type = "button";
+      b.onclick = () => {
+        const i = productosSeleccionados.indexOf(prod);
+        if (i > -1) { productosSeleccionados.splice(i, 1); b.classList.remove('sel'); }
+        else { productosSeleccionados.push(prod); b.classList.add('sel'); }
+      };
+      grid.appendChild(b);
     });
-  } catch (e) {
-    console.error("Error al renderizar productos:", e);
-  }
+  });
 }
 
 function renderConductoresUI() {
-  try {
-    const list = document.getElementById('listaConductores');
-    if (!list) return;
-    list.innerHTML = "";
-    if (!conductoresDisponibles || conductoresDisponibles.length === 0) {
-      list.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:1.1rem;color:var(--muted)">No hay conductores registrados.</div>';
-      return;
-    }
-    conductoresDisponibles.forEach((c, idx) => {
-      const item = document.createElement('div');
-      item.className = "conductor-item";
-      item.innerHTML = `<div class="conductor-name">👤 ${c.nombre}</div><div class="conductor-placa">Placa: ${c.placa}</div>`;
-      item.onclick = () => {
-        conductorSeleccionado = c;
-        document.querySelectorAll('.conductor-item').forEach(el => el.classList.remove('selected'));
-        item.classList.add('selected');
-        document.getElementById('despachoCampos').style.display = 'block';
-      };
-      list.appendChild(item);
-    });
-  } catch (e) {
-    console.error("Error al renderizar conductores:", e);
+  const list = document.getElementById('listaConductores');
+  if (!list) return;
+  list.innerHTML = "";
+  if (!conductoresDisponibles || conductoresDisponibles.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:1.5rem;font-size:1.1rem;color:var(--muted)">No hay conductores registrados.</div>';
+    return;
   }
+  conductoresDisponibles.forEach((c, idx) => {
+    const item = document.createElement('div');
+    item.className = "conductor-item";
+    item.innerHTML = `<div class="conductor-name">👤 ${c.nombre}</div><div class="conductor-placa">Placa: ${c.placa}</div>`;
+    item.onclick = () => {
+      conductorSeleccionado = c;
+      document.querySelectorAll('.conductor-item').forEach(el => el.classList.remove('selected'));
+      item.classList.add('selected');
+      document.getElementById('despachoCampos').style.display = 'block';
+    };
+    list.appendChild(item);
+  });
 }
 
 function renderFotosGrid() {
-  try {
-    const isD = puestoActual === 'despacho';
-    const grid = document.getElementById(isD ? 'fotoGridD' : 'fotoGrid');
-    const inputs = document.getElementById(isD ? 'hiddenInputsD' : 'hiddenInputs');
-    if (!grid || !inputs) return;
-    grid.innerHTML = "";
-    inputs.innerHTML = "";
+  const isD = puestoActual === 'despacho';
+  const grid = document.getElementById(isD ? 'fotoGridD' : 'fotoGrid');
+  const inputs = document.getElementById(isD ? 'hiddenInputsD' : 'hiddenInputs');
+  if (!grid || !inputs) return;
+  grid.innerHTML = "";
+  inputs.innerHTML = "";
 
-    fotosList.forEach((src, idx) => {
-      const slot = document.createElement('div');
-      slot.className = "foto-slot has-photo";
-      slot.innerHTML = `<img src="${src}"><span class="foto-label">Foto ${idx+1}</span><button class="btn-del-foto" onclick="eliminarFoto(${idx})">✕</button>`;
-      grid.appendChild(slot);
-    });
+  fotosList.forEach((src, idx) => {
+    const slot = document.createElement('div');
+    slot.className = "foto-slot has-photo";
+    slot.innerHTML = `<img src="${src}"><span class="foto-label">Foto ${idx+1}</span><button class="btn-del-foto" onclick="eliminarFoto(${idx})">✕</button>`;
+    grid.appendChild(slot);
+  });
 
-    const maxFotos = puestoActual === 'despacho' ? 6 : 2;
-    if (fotosList.length < maxFotos) {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/*';
-      input.capture = 'environment';
-      input.id = `foto_input_${fotosList.length}`;
-      input.onchange = (e) => procesarFotoYComprimir(e);
-      inputs.appendChild(input);
+  const maxFotos = puestoActual === 'despacho' ? 6 : 2;
+  if (fotosList.length < maxFotos) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment';
+    input.id = `foto_input_${fotosList.length}`;
+    input.onchange = (e) => procesarFotoYComprimir(e);
+    inputs.appendChild(input);
 
-      const slot = document.createElement('label');
-      slot.className = "foto-slot";
-      slot.setAttribute('for', input.id);
-      slot.innerHTML = `<span style="font-size:2.5rem;">📸</span><span class="foto-label">Tomar foto</span>`;
-      grid.appendChild(slot);
-    }
-  } catch (e) {
-    console.error("Error al renderizar fotos:", e);
+    const slot = document.createElement('label');
+    slot.className = "foto-slot";
+    slot.setAttribute('for', input.id);
+    slot.innerHTML = `<span style="font-size:2.5rem;">📸</span><span class="foto-label">Tomar foto</span>`;
+    grid.appendChild(slot);
   }
 }
 
 function procesarFotoYComprimir(event) {
-  try {
-    const file = event.target.files[0];
-    if (!file) return;
+  const file = event.target.files[0];
+  if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.src = e.target.result;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_SIZE = 700; 
-        let w = img.width;
-        let h = img.height;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.src = e.target.result;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX_SIZE = 800; 
+      let w = img.width;
+      let h = img.height;
 
-        if (w > h && w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; }
-        else if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; }
+      if (w > h && w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; }
+      else if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; }
 
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
 
-        const b64 = canvas.toDataURL('image/jpeg', 0.45);
-        fotosList.push(b64);
-        renderFotosGrid();
-      };
+      const b64 = canvas.toDataURL('image/jpeg', 0.5);
+      fotosList.push(b64);
+      renderFotosGrid();
     };
-    reader.readAsDataURL(file);
-  } catch (e) {
-    console.error("Error al procesar foto:", e);
-  }
+  };
+  reader.readAsDataURL(file);
 }
 
 function eliminarFoto(idx) {
@@ -942,7 +719,6 @@ function cerrarConfirmacion() {
   document.getElementById('modalConfirm').classList.remove('open');
 }
 
-// ENVÍO DE DATOS ESTÁNDAR Y RE-HABILITADO AUTOMÁTICO DE PANTALLA EN CUALQUIER ESCENARIO
 async function guardarDatosFinal() {
   cerrarConfirmacion();
   const isD = puestoActual === 'despacho';
@@ -978,21 +754,24 @@ async function guardarDatosFinal() {
     });
     const result = await res.json();
 
-    if (result && result.ok) {
+    if (result.ok) {
+      // VIBRACIÓN DACTIL DE ÉXITO (Doble corta)
+      try {
+        if (navigator.vibrate) {
+          navigator.vibrate([100, 50, 100]); 
+        }
+      } catch(e) {}
+
       showToast('✅ REGISTRO CONFIRMADO Y SUBIDO');
       resetFormulario();
-      volverSelector();
-      // Actualización en segundo plano sin interrumpir la fluidez del UI
-      setTimeout(() => sincronizarConExcel(false), 500);
+      await sincronizarConExcel(); // Fuerza actualización para sincronizar counters en vivo
     } else {
-      showToast('❌ Error al guardar en Excel: ' + (result ? result.error : 'error desconocido'), true);
+      showToast('❌ Error al subir: ' + result.error, true);
     }
   } catch(e) {
-    console.error("Error al enviar registro:", e);
-    showToast('❌ Error de red. Intente de nuevo.', true);
+    showToast('❌ Error de red/conexión', true);
   }
 
-  // DESCONGELA LA PANTALLA EN CUALQUIER ESCENARIO (SÍ O SÍ)
   if (btn) {
     btn.disabled = false;
     btn.textContent = "REVISAR Y GUARDAR";
@@ -1000,29 +779,33 @@ async function guardarDatosFinal() {
 }
 
 function resetFormulario() {
-  try {
-    const t = document.getElementById('numTT');
-    if (t) t.value = "";
-    bolsonesSeleccionados = 0;
-    productosSeleccionados = [];
-    fotosList = [];
-    conductorSeleccionado = null;
+  const t = document.getElementById('numTT');
+  if (t) t.value = "";
+  bolsonesSeleccionados = 0;
+  productosSeleccionados = [];
+  fotosList = [];
+  conductorSeleccionado = null;
 
-    document.querySelectorAll('.bols-num').forEach(el => el.classList.remove('sel'));
-    const disp = document.getElementById('bolsDisplay');
-    const dispD = document.getElementById('bolsDisplayD');
-    if (disp) disp.textContent = "—";
-    if (dispD) dispD.textContent = "—";
-    
-    renderProductosUI();
-    renderFotosGrid();
-    
-    const dCampos = document.getElementById('despachoCampos');
-    if (dCampos) dCampos.style.display = 'none';
-    document.querySelectorAll('.conductor-item').forEach(el => el.classList.remove('selected'));
-  } catch (e) {
-    console.error("Error al limpiar el formulario:", e);
-  }
+  document.querySelectorAll('.bols-num').forEach(el => el.classList.remove('sel'));
+  const disp = document.getElementById('bolsDisplay');
+  const dispD = document.getElementById('bolsDisplayD');
+  if (disp) disp.textContent = "—";
+  if (dispD) dispD.textContent = "—";
+  
+  renderProductosUI();
+  renderFotosGrid();
+  
+  const dCampos = document.getElementById('despachoCampos');
+  if (dCampos) dCampos.style.display = 'none';
+  document.querySelectorAll('.conductor-item').forEach(el => el.classList.remove('selected'));
+}
+
+function showToast(msg, isError = false) {
+  const toast = document.getElementById('toast');
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => { toast.className = 'toast'; }, 3000);
 }
 </script>
 </body>
