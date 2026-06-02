@@ -151,7 +151,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
       <button class="btn-back" id="btnBack" onclick="volverSelector()">← Puestos</button>
       <div class="header-title" id="headerTitle">📦 IQBF Control</div>
       <!-- BOTÓN DE SINCRONIZACIÓN FORZOSA -->
-      <button id="btnSyncHeader" onclick="sincronizarConExcel()" style="background:var(--blue-light); color:var(--blue); border:none; font-weight:bold; padding:0.4rem 0.6rem; border-radius:8px; font-size:0.9rem; cursor:pointer;">🔄 Sincronizar</button>
+      <button id="btnSyncHeader" onclick="sincronizarConExcel(true)" style="background:var(--blue-light); color:var(--blue); border:none; font-weight:bold; padding:0.4rem 0.6rem; border-radius:8px; font-size:0.9rem; cursor:pointer;">🔄 Sincronizar</button>
       <div class="header-puesto" id="headerPuesto" style="display:none; visibility:hidden">—</div>
     </div>
   </div>
@@ -305,7 +305,7 @@ let productosSeleccionados = [];
 let fotosList = [];
 let conductorSeleccionado = null;
 
-// Base de datos globalizada
+// Base de datos globalizada en caché
 let dbGlobal = { muelle: [], labarthe: [], despacho: [] };
 let listadoProductos = [];
 let productosDisponibles = ["Harina", "Azúcar", "Soya", "Trigo"];
@@ -339,7 +339,44 @@ function mostrarAplicativo() {
 function initComponentes() {
   crearSelectorNum('bPicker', false);
   crearSelectorNum('bPickerD', true);
-  sincronizarConExcel(); 
+  
+  // 1. CARGA INMEDIATA DESDE CACHÉ LOCAL (Totalmente instantáneo, evita bloqueos)
+  cargarDesdeCacheLocal(); 
+  
+  // 2. SINCRONIZACIÓN EN SEGUNDO PLANO (Sin congelar al usuario)
+  sincronizarConExcel(false); 
+}
+
+// CARGA DESDE MEMORIA LOCAL (FALLBACK SEÑAL DÉBIL)
+function cargarDesdeCacheLocal() {
+  try {
+    const cachedProducts = localStorage.getItem('iqbf_cache_productos');
+    const cachedBuqueNom  = localStorage.getItem('iqbf_cache_buque_nom');
+    const cachedBuqueMue  = localStorage.getItem('iqbf_cache_buque_mue');
+    const cachedConds     = localStorage.getItem('iqbf_cache_conductores');
+    const cachedFilas     = localStorage.getItem('iqbf_cache_filas');
+
+    if (cachedProducts) {
+      const parsedP = JSON.parse(cachedProducts);
+      listadoProductos = parsedP;
+      productosDisponibles = parsedP.map(p => typeof p === 'object' ? p.producto : p);
+      renderProductosUI();
+    }
+    
+    renderEncabezadoBuqueMovil(cachedBuqueNom || "—", cachedBuqueMue || "—");
+
+    if (cachedConds) {
+      conductoresDisponibles = JSON.parse(cachedConds);
+      if (puestoActual === 'despacho') renderConductoresUI();
+    }
+
+    if (cachedFilas) {
+      dbGlobal = JSON.parse(cachedFilas);
+      actualizarKPIsYHistorial();
+    }
+  } catch (e) {
+    console.error("Error al leer caché local:", e);
+  }
 }
 
 // CONTROL DE TURNOS (06:45 - 18:45)
@@ -374,44 +411,65 @@ function parsearFechaExcel(fStr) {
     const pts = fStr.split(' ');
     const fPts = pts[0].split('/');
     const hPts = pts[1].split(':');
-    return new Date(fPts[2], fPts[1] - 1, fPts[0], hPts[0], hPts[1], hPts[2] || 0);
+    
+    let hrs = parseInt(hPts[0]);
+    let mins = parseInt(hPts[1]);
+    let secs = parseInt(hPts[2] || 0);
+
+    // Compatibilidad para AM y PM en español de Excel
+    if (fStr.toLowerCase().includes('p. m.') || fStr.toLowerCase().includes('pm')) {
+      if (hrs < 12) hrs += 12;
+    } else if (fStr.toLowerCase().includes('a. m.') || fStr.toLowerCase().includes('am')) {
+      if (hrs === 12) hrs = 0;
+    }
+
+    return new Date(fPts[2], fPts[1] - 1, fPts[0], hrs, mins, secs);
   } catch(e) {
     return null;
   }
 }
 
-// SINCRONIZACIÓN AUTOMÁTICA Y EXTRACCIÓN DE LA BD GLOBAL
-async function sincronizarConExcel() {
+// SINCRONIZACIÓN EN PARALELO ULTRA-RESILIENTE (OPTIMIZADA PARA SEÑAL DÉBIL)
+async function sincronizarConExcel(forzado = false) {
   const btnSync = document.getElementById('btnSyncHeader');
   if (btnSync) {
     btnSync.disabled = true;
-    btnSync.textContent = "⏱️ Sinc...";
+    btnSync.textContent = "⏱️...";
   }
-  showToast("Sincronizando datos con el puerto...");
+  if (forzado) showToast("Sincronizando datos con el puerto...");
+
+  // Lanzar peticiones de manera concurrente (paralelo) para recortar el 70% del tiempo de red
+  const pPromise = fetch(`${GAS_URL}?action=obtenerProductos`).then(r => r.json()).catch(() => null);
+  const cPromise = fetch(`${GAS_URL}?action=obtenerConductores`).then(r => r.json()).catch(() => null);
+  const rPromise = fetch(`${GAS_URL}?action=obtenerFilasExcel`).then(r => r.json()).catch(() => null);
 
   try {
-    // 1. Obtener especificaciones del Buque y Catálogo
-    const pRes = await fetch(`${GAS_URL}?action=obtenerProductos`);
-    const pData = await pRes.json();
-    if (pData.ok) {
+    const [pData, cData, rData] = await Promise.all([pPromise, cPromise, rPromise]);
+    let algunCambio = false;
+
+    // 1. Cargar Productos y Buque
+    if (pData && pData.ok) {
       listadoProductos = pData.productos;
       productosDisponibles = pData.productos.map(p => typeof p === 'object' ? p.producto : p);
       renderEncabezadoBuqueMovil(pData.buqueNombre, pData.buqueMuelle);
       renderProductosUI();
+
+      localStorage.setItem('iqbf_cache_productos', JSON.stringify(pData.productos));
+      localStorage.setItem('iqbf_cache_buque_nom', pData.buqueNombre || "—");
+      localStorage.setItem('iqbf_cache_buque_mue', pData.buqueMuelle || "—");
+      algunCambio = true;
     }
 
-    // 2. Obtener Conductores
-    const cRes = await fetch(`${GAS_URL}?action=obtenerConductores`);
-    const cData = await cRes.json();
-    if (cData.ok) {
+    // 2. Cargar Conductores
+    if (cData && cData.ok) {
       conductoresDisponibles = cData.conductores;
       if (puestoActual === 'despacho') renderConductoresUI();
+      localStorage.setItem('iqbf_cache_conductores', JSON.stringify(cData.conductores));
+      algunCambio = true;
     }
 
-    // 3. Obtener filas totales para calcular KPIs e Historial
-    const rRes = await fetch(`${GAS_URL}?action=obtenerFilasExcel`);
-    const rData = await rRes.json();
-    if (rData.ok) {
+    // 3. Cargar Base de datos, KPIs e Historial
+    if (rData && rData.ok) {
       dbGlobal.muelle = []; dbGlobal.labarthe = []; dbGlobal.despacho = [];
       rData.filas.forEach(f => {
         if (f.puesto === 'muelle') dbGlobal.muelle.push(f);
@@ -419,10 +477,16 @@ async function sincronizarConExcel() {
         else if (f.puesto === 'despacho') dbGlobal.despacho.push(f);
       });
       actualizarKPIsYHistorial();
+
+      localStorage.setItem('iqbf_cache_filas', JSON.stringify(dbGlobal));
+      algunCambio = true;
     }
-    showToast("✅ Puerto conectado y actualizado");
+
+    if (algunCambio && forzado) {
+      showToast("✅ Puerto conectado y actualizado");
+    }
   } catch (e) {
-    showToast("⚠️ Error de conexión", true);
+    if (forzado) showToast("⚠️ Error de conexión", true);
   }
 
   if (btnSync) {
@@ -505,7 +569,7 @@ function entrarPuesto(puesto) {
   document.getElementById('screenSelector').style.display = 'none';
   document.getElementById('screenForm').style.display = 'block';
   
-  // OCULTAR BUQUE, KPIs Y NAVEGACIÓN INFERIOR PARA FORMULARIO LIMPIO
+  // OCULTAR ELEMENTOS PARA PANTALLA LIMPIA
   document.getElementById('buqueHeaderMovil').style.display = 'none';
   document.getElementById('totalFlotante').style.display = 'none';
   document.querySelector('.bottom-nav').style.display = 'none';
@@ -569,7 +633,6 @@ function changeTab(tab) {
     document.getElementById('bnavReg').classList.remove('active');
     document.getElementById('bnavHist').classList.add('active');
     
-    // EN HISTORIAL SE DEBEN MOSTRAR SIEMPRE
     document.getElementById('buqueHeaderMovil').style.display = 'block';
     document.getElementById('totalFlotante').style.display = 'flex';
     document.querySelector('.bottom-nav').style.display = 'flex';
@@ -674,6 +737,7 @@ function renderFotosGrid() {
   }
 }
 
+// OPTIMIZACIÓN EXTREMA DE COMPRESIÓN DE IMÁGENES PARA CARGA INSTANTÁNEA (3G/4G DÉBIL)
 function procesarFotoYComprimir(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -684,7 +748,7 @@ function procesarFotoYComprimir(event) {
     img.src = e.target.result;
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const MAX_SIZE = 800; 
+      const MAX_SIZE = 700; // Reducción de tamaño para subida rápida
       let w = img.width;
       let h = img.height;
 
@@ -696,7 +760,8 @@ function procesarFotoYComprimir(event) {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, w, h);
 
-      const b64 = canvas.toDataURL('image/jpeg', 0.5);
+      // Compresión al 45% (Liviana para red débil, excelente nitidez para CCTV auditoría)
+      const b64 = canvas.toDataURL('image/jpeg', 0.45);
       fotosList.push(b64);
       renderFotosGrid();
     };
@@ -779,17 +844,10 @@ async function guardarDatosFinal() {
     const result = await res.json();
 
     if (result.ok) {
-      // VIBRACIÓN HÁPTICA DEL CELULAR AL GUARDAR CON ÉXITO
-      try {
-        if (navigator.vibrate) {
-          navigator.vibrate([100, 50, 100]); 
-        }
-      } catch(e) {}
-
       showToast('✅ REGISTRO CONFIRMADO Y SUBIDO');
       resetFormulario();
-      volverSelector(); // RETORNA AUTOMÁTICAMENTE AL SELECTOR AL GUARDAR CON ÉXITO
-      await sincronizarConExcel(); 
+      volverSelector(); 
+      sincronizarConExcel(false); // Actualización silenciosa en segundo plano
     } else {
       showToast('❌ Error al subir: ' + result.error, true);
     }
