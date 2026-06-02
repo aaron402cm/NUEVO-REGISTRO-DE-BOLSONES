@@ -31,15 +31,18 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 #app { display: none; min-height: 100vh; flex-direction: column; }
 .header { background: var(--blue); color: white; padding: 1.2rem; position: sticky; top: 0; z-index: 100; border-bottom: 4px solid var(--blue-dark); }
 .header-row { display: flex; justify-content: space-between; align-items: center; }
-.header-title { font-size: 1.6rem; font-weight: 800; }
+.header-title { font-size: 1.5rem; font-weight: 800; }
 .header-puesto { background: rgba(255,255,255,0.25); padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 1.1rem; font-weight: bold; border: 1px solid white; }
-.btn-back { background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.6rem 1rem; border-radius: 8px; font-size: 1.2rem; font-weight: bold; cursor: pointer; display: none; }
+.btn-back { background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.6rem 1rem; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; display: none; }
 .btn-back.visible { display: block; }
 
-/* RESUMEN FLOTANTE */
+/* HEADER BUQUE DINÁMICO */
+#buqueHeaderMovil { background: var(--blue-light); border-left: 6px solid var(--blue-dark); padding: 1rem 1.2rem; font-size: 1.1rem; font-weight: 800; color: var(--blue); border-bottom: 2px solid var(--border); line-height: 1.3; }
+
+/* RESUMEN FLOTANTE CON REINTEGRO DE TURNOS */
 .total-flotante { background: #f8fafc; border-bottom: 3px solid var(--border); padding: 0.8rem 1.2rem; display: flex; justify-content: space-between; align-items: center; }
-.total-flotante .lbl { font-size: 1rem; font-weight: bold; color: var(--muted); text-transform: uppercase; }
-.total-flotante .num { font-size: 2rem; font-weight: 900; color: var(--blue); }
+.total-flotante .lbl { font-size: 0.85rem; font-weight: bold; color: var(--muted); text-transform: uppercase; margin-bottom: 2px; }
+.total-flotante .num { font-size: 1.6rem; font-weight: 900; color: var(--text); }
 
 /* SELECTOR DE PUESTO */
 #screenSelector { padding: 1.5rem; }
@@ -90,8 +93,12 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 .btn-guardar { width: 100%; padding: 1.5rem; font-size: 1.8rem; font-weight: 900; border: none; border-radius: 16px; cursor: pointer; margin-top: 1rem; color: white; background: #16a34a; border-bottom: 6px solid #15803d; }
 .btn-guardar:disabled { background: #94a3b8; border-color: #64748b; }
 
-/* HISTORIAL */
+/* HISTORIAL POR SECCIÓN */
 #screenHistorial { display: none; padding: 1rem; padding-bottom: 6rem; }
+.sub-tab-bar { display: flex; gap: 8px; margin-bottom: 1.2rem; }
+.sub-tab-btn { flex: 1; padding: 0.9rem 0; font-size: 1.1rem; font-weight: 800; border: 3px solid var(--border); border-radius: 12px; background: white; color: var(--text); cursor: pointer; text-align: center; }
+.sub-tab-btn.active { background: var(--blue); color: white; border-color: var(--blue); }
+
 .hist-item { background: white; border-radius: 14px; padding: 1.2rem; margin-bottom: 1rem; border: 3px solid var(--border); }
 .hist-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
 .hist-tt { font-size: 1.4rem; font-weight: 800; }
@@ -143,18 +150,28 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
     <div class="header-row">
       <button class="btn-back" id="btnBack" onclick="volverSelector()">← Puestos</button>
       <div class="header-title" id="headerTitle">📦 IQBF Control</div>
-      <div class="header-puesto" id="headerPuesto" style="visibility:hidden">—</div>
+      <!-- BOTÓN DE SINCRONIZACIÓN FORZOSA -->
+      <button id="btnSyncHeader" onclick="sincronizarConExcel()" style="background:var(--blue-light); color:var(--blue); border:none; font-weight:bold; padding:0.5rem 0.8rem; border-radius:8px; font-size:1rem; cursor:pointer;">🔄 Sincronizar</button>
+      <div class="header-puesto" id="headerPuesto" style="display:none; visibility:hidden">—</div>
     </div>
   </div>
 
+  <!-- CABECERA DEL BUQUE DINÁMICA -->
+  <div id="buqueHeaderMovil">🚢 Cargando Buque y Carga Inicial...</div>
+
+  <!-- KPIs DEL TURNO ACTIVO SINCRO EXCEL -->
   <div class="total-flotante" id="totalFlotante">
-    <div>
-      <div class="lbl">Bolsones hoy</div>
-      <div class="num" id="totalBolsonesHoy">0</div>
+    <div style="text-align:center; flex:1; border-right:2px solid var(--border);">
+      <div class="lbl" style="color:var(--blue);">Muelle (Turno)</div>
+      <div class="num" id="kpiMuelle" style="font-size:1.8rem; color:var(--blue);">0</div>
     </div>
-    <div style="text-align:right">
-      <div class="lbl">Mis Registros</div>
-      <div class="num" id="misRegistros" style="color:var(--muted)">0</div>
+    <div style="text-align:center; flex:1; border-right:2px solid var(--border);">
+      <div class="lbl" style="color:#7c3aed;">Labarthe (Turno)</div>
+      <div class="num" id="kpiLabarthe" style="font-size:1.8rem; color:#7c3aed;">0</div>
+    </div>
+    <div style="text-align:center; flex:1;">
+      <div class="lbl" style="color:#ea580c;">Despacho (Turno)</div>
+      <div class="num" id="kpiDespacho" style="font-size:1.8rem; color:#ea580c;">0</div>
     </div>
   </div>
 
@@ -238,9 +255,17 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
     </div>
   </div>
 
-  <!-- PANTALLA HISTORIAL (SOLO LECTURA) -->
+  <!-- PANTALLA HISTORIAL (SEGMENTADA POR SECCIÓN) -->
   <div id="screenHistorial">
-    <div class="selector-title">Tus Registros de Hoy</div>
+    <div class="selector-title" style="margin-bottom:1rem;">Registros de este Turno</div>
+    
+    <!-- Sub-pestañas por Puesto -->
+    <div class="sub-tab-bar">
+      <button class="sub-tab-btn active" id="subTabMuelle" onclick="changeSubTab('muelle')">🚢 Muelle</button>
+      <button class="sub-tab-btn" id="subTabLabarthe" onclick="changeSubTab('labarthe')">🏭 Labarthe</button>
+      <button class="sub-tab-btn" id="subTabDespacho" onclick="changeSubTab('despacho')">🚛 Despacho</button>
+    </div>
+
     <div id="listaHistorial"></div>
   </div>
 
@@ -250,7 +275,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
       <span class="bnav-icon">✏️</span>Registrar
     </button>
     <button class="bnav-btn" id="bnavHist" onclick="changeTab('historial')">
-      <span class="bnav-icon">📋</span>Mis Registros
+      <span class="bnav-icon">📋</span>Registros
     </button>
   </div>
 </div>
@@ -280,27 +305,12 @@ let productosSeleccionados = [];
 let fotosList = [];
 let conductorSeleccionado = null;
 
+// Base de datos de red globalizada para celular (Turnos)
+let dbGlobal = { muelle: [], labarthe: [], despacho: [] };
+let listadoProductos = [];
 let productosDisponibles = ["Harina", "Azúcar", "Soya", "Trigo"];
 let conductoresDisponibles = [];
-let localHistorial = [];
-
-// 1. AUTOLIMPIEZA PREVENTIVA DE MEMORIA CORRUPTA AL CARGAR
-try {
-  let rawHist = localStorage.getItem('iqbf_historial_agente');
-  if (rawHist) {
-    let parsed = JSON.parse(rawHist);
-    if (Array.isArray(parsed)) {
-      // Filtrar y sanar datos corruptos de versiones anteriores
-      localHistorial = parsed.filter(item => item && typeof item === 'object' && ('bols' in item || 'tt' in item));
-      localStorage.setItem('iqbf_historial_agente', JSON.stringify(localHistorial));
-    } else {
-      localStorage.removeItem('iqbf_historial_agente');
-    }
-  }
-} catch (e) {
-  localStorage.removeItem('iqbf_historial_agente');
-  localHistorial = [];
-}
+let activeSubTab = 'muelle'; // Pestaña de historial activa
 
 window.onload = () => {
   if (localStorage.getItem(SESSION_KEY) === 'true') {
@@ -329,21 +339,168 @@ function mostrarAplicativo() {
 function initComponentes() {
   crearSelectorNum('bPicker', false);
   crearSelectorNum('bPickerD', true);
-  obtenerConfiguracionGAS();
-  renderHistorialLocal();
-  actualizarContadores();
+  sincronizarConExcel(); // Sincroniza al cargar
 }
 
-function actualizarContadores() {
-  if (!Array.isArray(localHistorial)) localHistorial = [];
-  const sum = localHistorial.reduce((a, b) => a + (parseInt(b ? b.bols : 0) || 0), 0);
+// CONTROL DE TURNOS (06:45 - 18:45)
+function perteneceAlTurnoActual(fechaHoraStr) {
+  const recDate = parsearFechaExcel(fechaHoraStr);
+  if (!recDate) return false;
+
+  const ahora = new Date();
+  const totalMinsAhora = ahora.getHours() * 60 + ahora.getMinutes();
+  const startDiurno = 6 * 60 + 45; // 06:45
+  const endDiurno = 18 * 60 + 45;  // 18:45
+
+  let startShiftDate, endShiftDate;
+
+  if (totalMinsAhora >= startDiurno && totalMinsAhora <= endDiurno) {
+    startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 6, 45, 0);
+    endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 18, 45, 0);
+  } else {
+    if (totalMinsAhora >= endDiurno + 1) { 
+      startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 18, 46, 0);
+      endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1, 6, 44, 59);
+    } else { 
+      startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - 1, 18, 46, 0);
+      endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 6, 44, 59);
+    }
+  }
+  return recDate >= startShiftDate && recDate <= endShiftDate;
+}
+
+function parsearFechaExcel(fStr) {
+  try {
+    const pts = fStr.split(' ');
+    const fPts = pts[0].split('/');
+    const hPts = pts[1].split(':');
+    return new Date(fPts[2], fPts[1] - 1, fPts[0], hPts[0], hPts[1], hPts[2] || 0);
+  } catch(e) {
+    return null;
+  }
+}
+
+// SINCRONIZACIÓN AUTOMÁTICA Y EXTRACCIÓN DE LA BD GLOBAL (GOOGLE SHEETS)
+async function sincronizarConExcel() {
+  const btnSync = document.getElementById('btnSyncHeader');
+  if (btnSync) {
+    btnSync.disabled = true;
+    btnSync.textContent = "⏱️ Sinc...";
+  }
+  showToast("Sincronizando datos con el puerto...");
+
+  try {
+    // 1. Obtener especificaciones del Buque y Catálogo
+    const pRes = await fetch(`${GAS_URL}?action=obtenerProductos`);
+    const pData = await pRes.json();
+    if (pData.ok) {
+      listadoProductos = pData.productos;
+      productosDisponibles = pData.productos.map(p => typeof p === 'object' ? p.producto : p);
+      renderEncabezadoBuqueMovil(pData.buqueNombre, pData.buqueMuelle);
+      renderProductosUI();
+    }
+
+    // 2. Obtener Conductores
+    const cRes = await fetch(`${GAS_URL}?action=obtenerConductores`);
+    const cData = await cRes.json();
+    if (cData.ok) {
+      conductoresDisponibles = cData.conductores;
+      if (puestoActual === 'despacho') renderConductoresUI();
+    }
+
+    // 3. Obtener filas totales para calcular KPIs y mostrar Historial global
+    const rRes = await fetch(`${GAS_URL}?action=obtenerFilasExcel`);
+    const rData = await rRes.json();
+    if (rData.ok) {
+      dbGlobal.muelle = []; dbGlobal.labarthe = []; dbGlobal.despacho = [];
+      rData.filas.forEach(f => {
+        if (f.puesto === 'muelle') dbGlobal.muelle.push(f);
+        else if (f.puesto === 'labarthe') dbGlobal.labarthe.push(f);
+        else if (f.puesto === 'despacho') dbGlobal.despacho.push(f);
+      });
+      actualizarKPIsYHistorial();
+    }
+    showToast("✅ Puerto conectado y actualizado");
+  } catch (e) {
+    showToast("⚠️ Error de conexión", true);
+  }
+
+  if (btnSync) {
+    btnSync.disabled = false;
+    btnSync.textContent = "🔄 Sincronizar";
+  }
+}
+
+function renderEncabezadoBuqueMovil(bNombre, bMuelle) {
+  const container = document.getElementById('buqueHeaderMovil');
+  if (!container) return;
+  const nom = bNombre || "—";
+  const mue = bMuelle || "—";
   
-  const totEl = document.getElementById('totalBolsonesHoy');
-  const misEl = document.getElementById('misRegistros');
-  if (totEl) totEl.textContent = sum;
-  if (misEl) misEl.textContent = localHistorial.length;
+  if (!listadoProductos || listadoProductos.length === 0) {
+    container.innerHTML = `🚢 <strong>BUQUE:</strong> ${nom} en <strong>${mue}</strong>`;
+    return;
+  }
+  const strProd = listadoProductos.map(p => `<strong>${p.producto}:</strong> ${p.cantidadBuque}`).join(' | ');
+  container.innerHTML = `🚢 <strong>${nom}</strong> (${mue}) | ${strProd}`;
 }
 
+function actualizarKPIsYHistorial() {
+  // Conteo de KPIs filtrado estrictamente por el Turno Activo
+  const muelleTurno = dbGlobal.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
+  const labartheTurno = dbGlobal.labarthe.filter(f => perteneceAlTurnoActual(f.fechaHora));
+  const despachoTurno = dbGlobal.despacho.filter(f => perteneceAlTurnoActual(f.fechaHora));
+
+  const sumM = muelleTurno.reduce((a, b) => a + (Number(b.bolsones) || 0), 0);
+  const sumL = labartheTurno.reduce((a, b) => a + (Number(b.bolsones) || 0), 0);
+  const sumD = despachoTurno.reduce((a, b) => a + (Number(b.bolsones) || 0), 0);
+
+  document.getElementById('kpiMuelle').textContent = sumM;
+  document.getElementById('kpiLabarthe').textContent = sumL;
+  document.getElementById('kpiDespacho').textContent = sumD;
+
+  renderHistorialPuesto();
+}
+
+function changeSubTab(tab) {
+  activeSubTab = tab;
+  document.querySelectorAll('.sub-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.id === 'subTab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+  });
+  renderHistorialPuesto();
+}
+
+function renderHistorialPuesto() {
+  const container = document.getElementById('listaHistorial');
+  if (!container) return;
+  container.innerHTML = "";
+
+  const listado = dbGlobal[activeSubTab] || [];
+  const filtrados = listado.filter(f => perteneceAlTurnoActual(f.fechaHora));
+
+  if (filtrados.length === 0) {
+    container.innerHTML = `<div style="text-align:center;padding:3rem;font-size:1.1rem;color:var(--muted)">Sin movimientos registrados en este turno</div>`;
+    return;
+  }
+
+  // Ordenar más recientes primero
+  filtrados.sort((a,b) => parsearFechaExcel(b.fechaHora) - parsearFechaExcel(a.fechaHora));
+
+  container.innerHTML = filtrados.map(r => `
+    <div class="hist-item">
+      <div class="hist-row">
+        <span class="hist-tt">🚛 ${r.tt}</span>
+        <span class="hist-qty">${r.bolsones} 📦</span>
+      </div>
+      <div class="hist-meta">${r.fechaHora}</div>
+      <div style="font-size:1.1rem;font-weight:bold;margin-top:0.3rem">🧴 ${r.productos}</div>
+      ${r.conductor && r.conductor !== '—' ? `<div class="hist-meta" style="margin-top:0.2rem">👤 Conductor: ${r.conductor}</div>` : ''}
+      <div class="hist-meta" style="margin-top:0.2rem;font-size:0.9rem">ID: ${r.viajeId}</div>
+    </div>
+  `).join('');
+}
+
+// RESTO DE FUNCIONALIDADES OPERATIVAS DE REGISTRO
 function entrarPuesto(puesto) {
   puestoActual = puesto;
   resetFormulario();
@@ -392,7 +549,7 @@ function changeTab(tab) {
     document.getElementById('screenHistorial').style.display = 'block';
     document.getElementById('bnavReg').classList.remove('active');
     document.getElementById('bnavHist').classList.add('active');
-    renderHistorialLocal();
+    renderHistorialPuesto();
   }
 }
 
@@ -416,29 +573,6 @@ function selectBolsones(n, id, isD) {
   document.querySelectorAll(`#${id} .bols-num`).forEach(el => {
     el.classList.toggle('sel', parseInt(el.textContent) === n);
   });
-}
-
-function obtenerConfiguracionGAS() {
-  fetch(`${GAS_URL}?action=obtenerProductos`)
-    .then(r => r.json())
-    .then(data => {
-      if (data.ok && data.productos && data.productos.length > 0) {
-        productosDisponibles = data.productos.map(p => typeof p === 'object' ? p.producto : p);
-      }
-      renderProductosUI();
-    })
-    .catch(() => {
-      renderProductosUI(); // Carga de contingencia si no hay red
-    });
-
-  fetch(`${GAS_URL}?action=obtenerConductores`)
-    .then(r => r.json())
-    .then(data => {
-      if (data.ok) {
-        conductoresDisponibles = data.conductores;
-      }
-    })
-    .catch(() => {});
 }
 
 function renderProductosUI() {
@@ -621,20 +755,16 @@ async function guardarDatosFinal() {
     const result = await res.json();
 
     if (result.ok) {
-      const itemHist = {
-        viajeId: result.viajeId,
-        tt: payload.data.tt,
-        bols: bolsonesSeleccionados,
-        puesto: puestoActual,
-        fechaHora: fechaHora,
-        productos: payload.data.productos
-      };
-      localHistorial.unshift(itemHist);
-      localStorage.setItem('iqbf_historial_agente', JSON.stringify(localHistorial));
-      
-      showToast('✅ REGISTRO GUARDADO CON ÉXITO');
+      // VIBRACIÓN DACTIL DE ÉXITO (Doble corta)
+      try {
+        if (navigator.vibrate) {
+          navigator.vibrate([100, 50, 100]); 
+        }
+      } catch(e) {}
+
+      showToast('✅ REGISTRO CONFIRMADO Y SUBIDO');
       resetFormulario();
-      actualizarContadores();
+      await sincronizarConExcel(); // Fuerza actualización para sincronizar counters en vivo
     } else {
       showToast('❌ Error al subir: ' + result.error, true);
     }
@@ -668,34 +798,6 @@ function resetFormulario() {
   const dCampos = document.getElementById('despachoCampos');
   if (dCampos) dCampos.style.display = 'none';
   document.querySelectorAll('.conductor-item').forEach(el => el.classList.remove('selected'));
-}
-
-function renderHistorialLocal() {
-  const container = document.getElementById('listaHistorial');
-  if (!container) return;
-  if (!localHistorial || localHistorial.length === 0) {
-    container.innerHTML = '<div style="text-align:center;padding:3rem;font-size:1.3rem;color:var(--muted)">Sin registros locales hoy</div>';
-    return;
-  }
-  container.innerHTML = localHistorial.map(r => {
-    const puesto = (r.puesto || 'muelle').toUpperCase();
-    const tt = r.tt || '—';
-    const bols = r.bols || 0;
-    const fechaHora = r.fechaHora || '—';
-    const productos = r.productos || '—';
-    const viajeId = r.viajeId || '—';
-    return `
-      <div class="hist-item">
-        <div class="hist-row">
-          <span class="hist-tt">🚛 ${tt}</span>
-          <span class="hist-qty">${bols} 📦</span>
-        </div>
-        <div class="hist-meta">${fechaHora} · ${puesto}</div>
-        <div style="font-size:1.1rem;font-weight:bold;margin-top:0.3rem">🧴 ${productos}</div>
-        <div class="hist-meta" style="margin-top:0.2rem;font-size:0.9rem">ID: ${viajeId}</div>
-      </div>
-    `;
-  }).join('');
 }
 
 function showToast(msg, isError = false) {
