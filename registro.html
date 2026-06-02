@@ -269,10 +269,10 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
     <div id="listaHistorial"></div>
   </div>
 
-  <!-- NAVEGACIÓN INFERIOR (TAMAÑO REDUCIDO) -->
+  <!-- NAVEGACIÓN INFERIOR (TAMAÑO REDUCIDO CON TABS "INICIO" Y "REGISTROS") -->
   <div class="bottom-nav">
-    <button class="bnav-btn active" id="bnavReg" onclick="changeTab('form')">
-      <span class="bnav-icon">✏️</span>Registrar
+    <button class="bnav-btn active" id="bnavInicio" onclick="changeTab('form')">
+      <span class="bnav-icon">🏠</span>Inicio
     </button>
     <button class="bnav-btn" id="bnavHist" onclick="changeTab('historial')">
       <span class="bnav-icon">📋</span>Registros
@@ -340,10 +340,10 @@ function initComponentes() {
   crearSelectorNum('bPicker', false);
   crearSelectorNum('bPickerD', true);
   
-  // 1. CARGA INMEDIATA DESDE CACHÉ LOCAL (Totalmente instantáneo, evita bloqueos)
+  // 1. CARGA INMEDIATA DESDE CACHÉ LOCAL
   cargarDesdeCacheLocal(); 
   
-  // 2. SINCRONIZACIÓN EN SEGUNDO PLANO (Sin congelar al usuario)
+  // 2. SINCRONIZACIÓN EN SEGUNDO PLANO
   sincronizarConExcel(false); 
 }
 
@@ -371,7 +371,10 @@ function cargarDesdeCacheLocal() {
     }
 
     if (cachedFilas) {
-      dbGlobal = JSON.parse(cachedFilas);
+      const parsedF = JSON.parse(cachedFilas);
+      dbGlobal.muelle = parsedF.muelle || [];
+      dbGlobal.labarthe = parsedF.labarthe || [];
+      dbGlobal.despacho = parsedF.despacho || [];
       actualizarKPIsYHistorial();
     }
   } catch (e) {
@@ -438,7 +441,6 @@ async function sincronizarConExcel(forzado = false) {
   }
   if (forzado) showToast("Sincronizando datos con el puerto...");
 
-  // Lanzar peticiones de manera concurrente (paralelo) para recortar el 70% del tiempo de red
   const pPromise = fetch(`${GAS_URL}?action=obtenerProductos`).then(r => r.json()).catch(() => null);
   const cPromise = fetch(`${GAS_URL}?action=obtenerConductores`).then(r => r.json()).catch(() => null);
   const rPromise = fetch(`${GAS_URL}?action=obtenerFilasExcel`).then(r => r.json()).catch(() => null);
@@ -447,10 +449,13 @@ async function sincronizarConExcel(forzado = false) {
     const [pData, cData, rData] = await Promise.all([pPromise, cPromise, rPromise]);
     let algunCambio = false;
 
-    // 1. Cargar Productos y Buque
-    if (pData && pData.ok) {
+    // 1. Cargar Productos y Buque de forma segura sin detener ejecución por datos vacíos
+    if (pData && pData.ok && Array.isArray(pData.productos)) {
       listadoProductos = pData.productos;
-      productosDisponibles = pData.productos.map(p => typeof p === 'object' ? p.producto : p);
+      productosDisponibles = pData.productos.map(p => {
+        if (p && typeof p === 'object' && p.producto) return p.producto;
+        return p;
+      });
       renderEncabezadoBuqueMovil(pData.buqueNombre, pData.buqueMuelle);
       renderProductosUI();
 
@@ -460,8 +465,8 @@ async function sincronizarConExcel(forzado = false) {
       algunCambio = true;
     }
 
-    // 2. Cargar Conductores
-    if (cData && cData.ok) {
+    // 2. Cargar Conductores de forma segura
+    if (cData && cData.ok && Array.isArray(cData.conductores)) {
       conductoresDisponibles = cData.conductores;
       if (puestoActual === 'despacho') renderConductoresUI();
       localStorage.setItem('iqbf_cache_conductores', JSON.stringify(cData.conductores));
@@ -469,12 +474,12 @@ async function sincronizarConExcel(forzado = false) {
     }
 
     // 3. Cargar Base de datos, KPIs e Historial
-    if (rData && rData.ok) {
+    if (rData && rData.ok && Array.isArray(rData.filas)) {
       dbGlobal.muelle = []; dbGlobal.labarthe = []; dbGlobal.despacho = [];
       rData.filas.forEach(f => {
-        if (f.puesto === 'muelle') dbGlobal.muelle.push(f);
-        else if (f.puesto === 'labarthe') dbGlobal.labarthe.push(f);
-        else if (f.puesto === 'despacho') dbGlobal.despacho.push(f);
+        if (f && f.puesto === 'muelle') dbGlobal.muelle.push(f);
+        else if (f && f.puesto === 'labarthe') dbGlobal.labarthe.push(f);
+        else if (f && f.puesto === 'despacho') dbGlobal.despacho.push(f);
       });
       actualizarKPIsYHistorial();
 
@@ -562,17 +567,18 @@ function renderHistorialPuesto() {
   `).join('');
 }
 
-// INGRESO Y OCULTACIÓN DE CABECERAS PARA EVITAR DISTRACCIONES
+// INGRESO Y OCULTACIÓN DE CABECERAS PARA FORMULARIO 100% LIMPIO
 function entrarPuesto(puesto) {
   puestoActual = puesto;
   resetFormulario();
   document.getElementById('screenSelector').style.display = 'none';
   document.getElementById('screenForm').style.display = 'block';
   
-  // OCULTAR ELEMENTOS PARA PANTALLA LIMPIA
+  // OCULTAR ABSOLUTAMENTE TODO EL ENTORNO PARA EVITAR INTERRUPCIONES
   document.getElementById('buqueHeaderMovil').style.display = 'none';
   document.getElementById('totalFlotante').style.display = 'none';
   document.querySelector('.bottom-nav').style.display = 'none';
+  document.getElementById('btnSyncHeader').style.display = 'none';
 
   const hTitle = document.getElementById('headerTitle');
   const hPuesto = document.getElementById('headerPuesto');
@@ -602,6 +608,7 @@ function volverSelector() {
   document.getElementById('buqueHeaderMovil').style.display = 'block';
   document.getElementById('totalFlotante').style.display = 'flex';
   document.querySelector('.bottom-nav').style.display = 'flex';
+  document.getElementById('btnSyncHeader').style.display = 'block';
 
   document.getElementById('headerTitle').textContent = "📦 IQBF Control";
   document.getElementById('headerPuesto').style.visibility = 'hidden';
@@ -614,28 +621,31 @@ function changeTab(tab) {
     document.getElementById('screenForm').style.display = puestoActual ? 'block' : 'none';
     document.getElementById('screenSelector').style.display = !puestoActual ? 'block' : 'none';
     document.getElementById('screenHistorial').style.display = 'none';
-    document.getElementById('bnavReg').classList.add('active');
+    document.getElementById('bnavInicio').classList.add('active');
     document.getElementById('bnavHist').classList.remove('active');
     
     if (puestoActual) {
       document.getElementById('buqueHeaderMovil').style.display = 'none';
       document.getElementById('totalFlotante').style.display = 'none';
       document.querySelector('.bottom-nav').style.display = 'none';
+      document.getElementById('btnSyncHeader').style.display = 'none';
     } else {
       document.getElementById('buqueHeaderMovil').style.display = 'block';
       document.getElementById('totalFlotante').style.display = 'flex';
       document.querySelector('.bottom-nav').style.display = 'flex';
+      document.getElementById('btnSyncHeader').style.display = 'block';
     }
   } else {
     document.getElementById('screenForm').style.display = 'none';
     document.getElementById('screenSelector').style.display = 'none';
     document.getElementById('screenHistorial').style.display = 'block';
-    document.getElementById('bnavReg').classList.remove('active');
+    document.getElementById('bnavInicio').classList.remove('active');
     document.getElementById('bnavHist').classList.add('active');
     
     document.getElementById('buqueHeaderMovil').style.display = 'block';
     document.getElementById('totalFlotante').style.display = 'flex';
     document.querySelector('.bottom-nav').style.display = 'flex';
+    document.getElementById('btnSyncHeader').style.display = 'block';
     renderHistorialPuesto();
   }
 }
@@ -737,7 +747,6 @@ function renderFotosGrid() {
   }
 }
 
-// OPTIMIZACIÓN EXTREMA DE COMPRESIÓN DE IMÁGENES PARA CARGA INSTANTÁNEA (3G/4G DÉBIL)
 function procesarFotoYComprimir(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -748,7 +757,7 @@ function procesarFotoYComprimir(event) {
     img.src = e.target.result;
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const MAX_SIZE = 700; // Reducción de tamaño para subida rápida
+      const MAX_SIZE = 700; 
       let w = img.width;
       let h = img.height;
 
@@ -760,7 +769,6 @@ function procesarFotoYComprimir(event) {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, w, h);
 
-      // Compresión al 45% (Liviana para red débil, excelente nitidez para CCTV auditoría)
       const b64 = canvas.toDataURL('image/jpeg', 0.45);
       fotosList.push(b64);
       renderFotosGrid();
@@ -847,7 +855,7 @@ async function guardarDatosFinal() {
       showToast('✅ REGISTRO CONFIRMADO Y SUBIDO');
       resetFormulario();
       volverSelector(); 
-      sincronizarConExcel(false); // Actualización silenciosa en segundo plano
+      sincronizarConExcel(false); 
     } else {
       showToast('❌ Error al subir: ' + result.error, true);
     }
