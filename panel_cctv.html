@@ -48,20 +48,20 @@
         .topbar-right { display: flex; align-items: center; gap: 15px; }
         .scroll-area { padding: 25px; flex: 1; overflow-y: auto; }
 
-        /* ALERTA INTERMITENTE (PULSACIONES ROJAS / AMARILLAS) */
-        .alert-banner { display: none; border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; font-weight: bold; font-size: 15px; border-left: 6px solid; animation: alertPulse 1s infinite alternate; }
+        /* ALERTA INTERMITENTE SIRENA */
+        .alert-banner { display: none; border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; font-weight: bold; font-size: 15px; border-left: 6px solid; animation: alertPulse 0.8s infinite alternate; }
         .alert-banner.danger { background: var(--red-bg); border-color: var(--red); color: #7f1d1d; }
         .alert-banner.warning { background: var(--amber-bg); border-color: var(--amber); color: #78350f; }
-        @keyframes alertPulse { from { box-shadow: 0 0 4px rgba(239, 68, 68, 0.4); } to { box-shadow: 0 0 16px rgba(239, 68, 68, 0.8); } }
+        @keyframes alertPulse { from { opacity: 0.7; transform: scale(0.99); } to { opacity: 1; transform: scale(1); } }
 
         /* KPIs */
-        .kpi-container { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 25px; }
+        .kpi-container { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 20px; }
         .kpi-card { background: white; padding: 20px; border-radius: 12px; text-align: center; border: 2px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         .kpi-card .num { font-size: 2.5rem; font-weight: 900; color: var(--navy); margin-top: 5px; }
         .kpi-card.alert-active { border-color: var(--red); background: var(--red-bg); }
         .kpi-card.alert-active .num { color: var(--red); }
 
-        /* TABLAS */
+        /* TABLAS Y CARDS */
         .card { background: white; border-radius: 12px; border: 2px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 25px; }
         .card-head { background: #f8fafc; padding: 15px 20px; border-bottom: 2px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
         .card-head h3 { font-size: 16px; font-weight: 800; color: var(--navy); }
@@ -82,7 +82,7 @@
         .btn-sm { padding: 6px 12px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; background: #e2e8f0; }
         .btn-sm:hover { background: #cbd5e1; }
 
-        /* TABS INTERNOS */
+        /* TAB INTERNO */
         .tab-bar { display: flex; gap: 10px; margin-bottom: 20px; }
         .tab-btn { padding: 10px 20px; border-radius: 8px; border: 2px solid #cbd5e1; background: white; font-weight: bold; cursor: pointer; }
         .tab-btn.active { background: var(--blue); color: white; border-color: var(--blue); }
@@ -128,6 +128,7 @@
         <div class="nav-section">Operaciones</div>
         <div class="nav-item" id="nav-descarga" onclick="changePage('descarga')">📥 Descargas</div>
         <div class="nav-item" id="nav-despacho" onclick="changePage('despacho')">📤 Despacho</div>
+        <div class="nav-item" id="nav-buscador" onclick="changePage('buscador')">🔍 Buscador Rango</div>
         <div class="nav-section">Configuración</div>
         <div class="nav-item" id="nav-conductores" onclick="changePage('conductores')">👤 Conductores</div>
         <div class="nav-item" id="nav-productos" onclick="changePage('productos')">🧴 Productos</div>
@@ -136,33 +137,59 @@
 
     <main class="main-content">
         <div class="topbar">
-            <h1 id="pageTitle">Cuadro de Mando</h1>
+            <div>
+                <h1 id="pageTitle">Cuadro de Mando</h1>
+                <div id="headerInfoBuque" style="font-weight:bold; color:var(--blue); font-size:14px; margin-top:3px;">Cargando especificaciones del Buque...</div>
+            </div>
             <div class="topbar-right">
                 <span id="clock" style="font-weight: bold; color: var(--navy);">—</span>
-                <button class="btn-sm" style="background:var(--blue-btn); color:white; padding: 10px 15px;" onclick="sincronizarServidor()">🔄 Forzar Sincronización</button>
+                <button class="btn-sm" style="background:var(--blue-btn); color:white; padding: 10px 15px;" onclick="sincronizarServidor()">🔄 Sincronizar</button>
                 <button class="btn-sm" style="background:#ef4444; color:white;" onclick="doLogout()">🚪 Cerrar Sesión</button>
             </div>
         </div>
 
         <div class="scroll-area">
-            <!-- ALERTA DISCREPANCIA -->
+            <!-- ALERTA DISCREPANCIA SIRENA -->
             <div id="bannerAlertaDiff" class="alert-banner danger">
-                ⚠️ ALERTA DISCREPANCIA: Se ha detectado una diferencia de bolsones entre Muelle y Labarthe para una o más unidades de transporte.
+                ⚠️ SIRENA ACTIVA — DISCREPANCIA DETECTADA: Diferencia de bolsones entre Muelle y Labarthe.
             </div>
 
-            <!-- ALERTA RETRASO (10 MINUTOS TRÁNSITO) -->
+            <!-- ALERTA RETRASO SIRENA -->
             <div id="bannerAlertaTransito" class="alert-banner warning">
-                ⏰ ALERTA RETRASO: Hay unidades que han excedido el tiempo de tránsito estimado de 10 minutos de Muelle a Labarthe sin ser confirmadas.
+                ⏰ SIRENA ACTIVA — RETRASO EN TRÁNSITO: Unidades con más de 10 minutos sin ingresar a Labarthe.
             </div>
 
             <!-- MONITOREO PRINCIPAL (DASHBOARD) -->
             <div id="pageDash" class="page-container">
+                <div style="font-weight: bold; color: var(--muted); margin-bottom: 10px; font-size: 13px;" id="turnoActualLabel">TURNO ACTUAL: —</div>
                 <div class="kpi-container">
-                    <div class="kpi-card"><div class="lbl" style="color:var(--blue)">Descarga Muelle (Hoy)</div><div class="num" id="kpiMuelle">0</div></div>
-                    <div class="kpi-card"><div class="lbl" style="color:#7c3aed">Recibido Labarthe (Hoy)</div><div class="num" id="kpiLabarthe">0</div></div>
-                    <div class="kpi-card" id="kpiCardDiff"><div class="lbl">Diferencias de Carga</div><div class="num" id="kpiDiferencias">0</div></div>
-                    <div class="kpi-card" id="kpiCardTransito"><div class="lbl">TTs en Tránsito</div><div class="num" id="kpiTransito">0</div></div>
-                    <div class="kpi-card" style="background:#fef3c7;"><div class="lbl" style="color:var(--amber)">Despachado (Hoy)</div><div class="num" id="kpiDespacho">0</div></div>
+                    <div class="kpi-card"><div class="lbl" style="color:var(--blue)">Descarga Muelle (Turno)</div><div class="num" id="kpiMuelle">0</div></div>
+                    <div class="kpi-card"><div class="lbl" style="color:#7c3aed">Recibido Labarthe (Turno)</div><div class="num" id="kpiLabarthe">0</div></div>
+                    <div class="kpi-card" id="kpiCardDiff"><div class="lbl">Diferencias de Carga (Turno)</div><div class="num" id="kpiDiferencias">0</div></div>
+                    <div class="kpi-card" id="kpiCardTransito"><div class="lbl">TTs en Tránsito (Turno)</div><div class="num" id="kpiTransito">0</div></div>
+                    <div class="kpi-card" style="background:#fef3c7;"><div class="lbl" style="color:var(--amber)">Despachado (Turno)</div><div class="num" id="kpiDespacho">0</div></div>
+                </div>
+
+                <!-- SECCIÓN DE SALDOS POR PRODUCTO -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:25px;">
+                    <div class="card">
+                        <div class="card-head"><h3>📋 Control de Saldos de Descarga (Consolidado Histórico)</h3></div>
+                        <table style="width:100%">
+                            <thead>
+                                <tr><th>Producto</th><th>Total Buque</th><th>Descargado Total</th><th>Saldo Faltante</th></tr>
+                            </thead>
+                            <tbody id="tbSaldosDescarga"></tbody>
+                        </table>
+                    </div>
+                    <div class="card">
+                        <div class="card-head"><h3>📋 Control de Saldos de Despacho (Consolidado Histórico)</h3></div>
+                        <table style="width:100%">
+                            <thead>
+                                <tr><th>Producto</th><th>Total Buque</th><th>Despachado Total</th><th>Saldo Faltante</th></tr>
+                            </thead>
+                            <tbody id="tbSaldosDespacho"></tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <div class="card">
@@ -236,6 +263,42 @@
                 </div>
             </div>
 
+            <!-- BUSCADOR POR FECHA Y HORA -->
+            <div id="pageBuscador" class="page-container" style="display:none;">
+                <div class="card" style="max-width:800px; margin-bottom:20px;">
+                    <div class="card-head"><h3>🔍 Búsqueda de Registros por Rango</h3></div>
+                    <div style="padding:20px; display:flex; gap:15px; align-items:flex-end;">
+                        <div>
+                            <label style="font-weight:bold; display:block; margin-bottom:5px;">Desde (Fecha y Hora):</label>
+                            <input type="datetime-local" id="searchStart" style="padding:8px 12px; border:2px solid var(--border); border-radius:6px; font-size:14px;">
+                        </div>
+                        <div>
+                            <label style="font-weight:bold; display:block; margin-bottom:5px;">Hasta (Fecha y Hora):</label>
+                            <input type="datetime-local" id="searchEnd" style="padding:8px 12px; border:2px solid var(--border); border-radius:6px; font-size:14px;">
+                        </div>
+                        <button class="btn-sm" style="background:var(--blue-btn); color:white; padding:10px 20px;" onclick="ejecutarBusquedaRango()">Buscar</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-head"><h3>Resultados de Búsqueda</h3></div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Puesto</th>
+                                <th>ID Viaje</th>
+                                <th>TT / Placa</th>
+                                <th>Bolsones</th>
+                                <th>Productos</th>
+                                <th>Fecha/Hora</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbResultadosBusqueda">
+                            <tr><td colspan="6" style="text-align:center; padding:30px; color:var(--muted)">Seleccione un rango y presione Buscar</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- CONFIGURAR CONDUCTORES -->
             <div id="pageConductores" class="page-container" style="display:none;">
                 <div class="card" style="max-width: 600px;">
@@ -258,16 +321,30 @@
 
             <!-- CONFIGURAR PRODUCTOS -->
             <div id="pageProductos" class="page-container" style="display:none;">
-                <div class="card" style="max-width: 500px;">
-                    <div class="card-head"><h3>Tipos de Productos Admitidos</h3></div>
+                <div class="card" style="max-width: 600px;">
+                    <div class="card-head"><h3>Catálogo de Productos y Carga de Buque</h3></div>
                     <div style="padding:20px;">
-                        <p style="color:var(--muted); margin-bottom:15px;">Defina el catálogo de productos iqbf. Estos se sincronizan automáticamente con los teléfonos de los agentes.</p>
-                        <div class="tag-list" id="tagListProductos"></div>
-                        <div style="display:flex; gap:10px;">
-                            <input type="text" id="addProdInput" style="flex:1; padding: 10px; border:2px solid var(--border); border-radius:6px;" placeholder="Ej: Ácidos">
-                            <button class="btn-sm" style="background:var(--blue-btn); color:white;" onclick="agregarProductoMemoria()">Agregar</button>
+                        <p style="color:var(--muted); margin-bottom:15px;">Añada el catálogo de productos. El campo <strong>Cantidad de Buque</strong> será utilizado como la base para calcular los saldos en tiempo real de descarga y despacho.</p>
+                        
+                        <div style="font-weight:bold; display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:5px;">
+                            <div>Producto</div>
+                            <div>Cantidad Inicial Buque (Bolsones)</div>
                         </div>
-                        <button class="btn-sm" style="background:var(--green); color:white; width:100%; padding: 12px; margin-top:15px;" onclick="guardarProductosServidor()">💾 Guardar Catálogo en Excel</button>
+                        <div id="tagListProductos"></div>
+                        
+                        <hr style="margin: 15px 0; border: 0; border-top: 2px solid #cbd5e1;">
+                        <div style="display:flex; gap:10px; align-items:flex-end;">
+                            <div style="flex:1;">
+                                <label style="font-weight:bold; display:block; margin-bottom:4px; font-size:12px;">Nuevo Producto</label>
+                                <input type="text" id="addProdInput" style="width:100%; padding: 10px; border:2px solid var(--border); border-radius:6px;" placeholder="Ej: Trigo">
+                            </div>
+                            <div style="width:180px;">
+                                <label style="font-weight:bold; display:block; margin-bottom:4px; font-size:12px;">Cant. Buque (Bolsones)</label>
+                                <input type="number" id="addProdCant" style="width:100%; padding: 10px; border:2px solid var(--border); border-radius:6px;" placeholder="5000" min="0">
+                            </div>
+                            <button class="btn-sm" style="background:var(--blue-btn); color:white; height:40px; padding:0 20px;" onclick="agregarProductoMemoria()">Añadir</button>
+                        </div>
+                        <button class="btn-sm" style="background:var(--green); color:white; width:100%; padding: 12px; margin-top:15px; font-size:14px;" onclick="guardarProductosServidor()">💾 Guardar Catálogo en Excel</button>
                     </div>
                 </div>
             </div>
@@ -307,6 +384,11 @@
     let db = { muelle: [], labarthe: [], despacho: [] };
     let listadoProductos = [];
     let audioCtx = null;
+    let alarmInterval = null;
+
+    // Control de voz de registros
+    let knownTransactionIds = new Set();
+    let isFirstLoad = true;
 
     window.onload = () => {
         if (localStorage.getItem(SESSION_KEY) === 'true') {
@@ -340,7 +422,7 @@
         updateClock();
         setInterval(updateClock, 1000);
         sincronizarServidor();
-        setInterval(sincronizarServidor, 15000); // Sincroniza automáticamente en segundo plano cada 15 segs
+        setInterval(sincronizarServidor, 15000); 
     }
 
     function updateClock() {
@@ -348,7 +430,35 @@
         document.getElementById('clock').textContent = d.toLocaleDateString('es-PE') + ' ' + d.toLocaleTimeString('es-PE');
     }
 
-    // NAVEGACIÓN ENTRE SECCIONES
+    // CONTROL DE TURNOS MATEMÁTICAMENTE EXACTO (AGRUPACIÓN 06:45 - 18:45)
+    function perteneceAlTurnoActual(fechaHoraStr) {
+        const recDate = parsearFechaExcel(fechaHoraStr);
+        if (!recDate) return false;
+
+        const ahora = new Date();
+        const totalMinsAhora = ahora.getHours() * 60 + ahora.getMinutes();
+        const startDiurno = 6 * 60 + 45; // 06:45
+        const endDiurno = 18 * 60 + 45;  // 18:45
+
+        let startShiftDate, endShiftDate;
+
+        if (totalMinsAhora >= startDiurno && totalMinsAhora <= endDiurno) {
+            // Turno Diurno Actual (Hoy 06:45 a Hoy 18:45)
+            startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 6, 45, 0);
+            endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 18, 45, 0);
+        } else {
+            // Turno Nocturno Actual
+            if (totalMinsAhora >= endDiurno + 1) { // Después de las 18:45 de hoy
+                startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 18, 46, 0);
+                endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1, 6, 44, 59);
+            } else { // Antes de las 06:45 de hoy (empezó ayer por la noche)
+                startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - 1, 18, 46, 0);
+                endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 6, 44, 59);
+            }
+        }
+        return recDate >= startShiftDate && recDate <= endShiftDate;
+    }
+
     function changePage(pageId) {
         document.querySelectorAll('.page-container').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -356,7 +466,7 @@
         document.getElementById('page' + pageId.charAt(0).toUpperCase() + pageId.slice(1)).style.display = 'block';
         document.getElementById('nav-' + pageId).classList.add('active');
 
-        const headers = { dash: "Cuadro de Mando", descarga: "Descargas (Muelle vs Labarthe)", despacho: "Despacho de Bolsones", conductores: "Configuración Conductores", productos: "Catálogo Productos", gas: "Conexión Tecnológica" };
+        const headers = { dash: "Cuadro de Mando", descarga: "Descargas (Muelle vs Labarthe)", despacho: "Despacho de Bolsones", buscador: "Buscador por Rango", conductores: "Configuración Conductores", productos: "Catálogo Productos", gas: "Conexión Tecnológica" };
         document.getElementById('pageTitle').textContent = headers[pageId] || "Monitoreo";
 
         if (pageId === 'conductores') { syncConductoresUI(); }
@@ -370,12 +480,21 @@
         });
     }
 
-    // PETICIÓN Y SINCRONIZACIÓN DE BASE DE DATOS
+    // SINCRONIZACIÓN Y DESCARGA DE DATOS
     function sincronizarServidor() {
         if (!gasUrl) return;
         document.getElementById('syncStatus').textContent = "Sincronizando...";
 
-        fetch(`${gasUrl}?action=obtenerFilasExcel`)
+        // Cargar productos primero para tener las capacidades del buque
+        fetch(`${gasUrl}?action=obtenerProductos`)
+            .then(res => res.json())
+            .then(pData => {
+                if (pData.ok) {
+                    listadoProductos = pData.productos;
+                    renderEncabezadoBuque();
+                }
+                return fetch(`${gasUrl}?action=obtenerFilasExcel`);
+            })
             .then(res => res.json())
             .then(data => {
                 if (data.ok) {
@@ -385,22 +504,76 @@
                         else if (f.puesto === 'labarthe') db.labarthe.push(f);
                         else if (f.puesto === 'despacho') db.despacho.push(f);
                     });
+                    
+                    procesarVocesNuevas([...db.muelle, ...db.labarthe, ...db.despacho]);
                     procesarAnalisisYAlarmas();
                     renderTablasYDashboard();
                 }
                 document.getElementById('syncStatus').textContent = "Sincronizado: " + new Date().toLocaleTimeString('es-PE');
             })
-            .catch(e => {
+            .catch(() => {
                 document.getElementById('syncStatus').textContent = "⚠️ Error de Conexión";
             });
     }
 
-    // ALGORITMO DE COMPARACIÓN Y ALARMA DE TRÁNSITO DE 10 MINUTOS
+    function renderEncabezadoBuque() {
+        const hBuque = document.getElementById('headerInfoBuque');
+        if (!listadoProductos.length) {
+            hBuque.textContent = "Sin carga de buque registrada.";
+            return;
+        }
+        const str = listadoProductos.map(p => `${p.producto}: ${p.cantidadBuque} bolsones`).join(' | ');
+        hBuque.textContent = `🚢 BUQUE CARGA INICIAL — ${str}`;
+    }
+
+    // SINTETIZADOR DE VOZ NATIVO (GRATUITO Y EN ESPAÑOL)
+    function procesarVocesNuevas(filas) {
+        if (isFirstLoad) {
+            filas.forEach(f => {
+                if (f.viajeId) knownTransactionIds.add(f.viajeId);
+            });
+            isFirstLoad = false;
+            return;
+        }
+
+        filas.forEach(f => {
+            if (f.viajeId && !knownTransactionIds.has(f.viajeId)) {
+                knownTransactionIds.add(f.viajeId);
+                anunciarPorVoz(f.puesto);
+            }
+        });
+    }
+
+    function anunciarPorVoz(puesto) {
+        try {
+            let mensaje = "";
+            if (puesto === 'muelle') {
+                mensaje = "Registro en Muelle";
+            } else if (puesto === 'labarthe') {
+                mensaje = "Registro en Labarthe";
+            } else if (puesto === 'despacho') {
+                mensaje = "Se hizo un despacho";
+            }
+            if (mensaje) {
+                const utterance = new SpeechSynthesisUtterance(mensaje);
+                utterance.lang = 'es-PE'; 
+                utterance.rate = 1.1;
+                window.speechSynthesis.speak(utterance);
+            }
+        } catch(e) {
+            console.error("Voz no admitida por el navegador:", e);
+        }
+    }
+
+    // ANALIZADOR DE ALERTAS Y SIRENA ELECTRÓNICA DE ALTA INTENSIDAD
     function procesarAnalisisYAlarmas() {
         let hayDiscrepancia = false;
         let hayRetrasoTransito = false;
 
-        // 1. Comparación de cantidad de bolsones
+        const ahora = new Date();
+        const limiteTiempo = 10 * 60 * 1000; 
+
+        // 1. Comparar cantidades registradas entre Muelle y Labarthe
         db.muelle.forEach(m => {
             const l = db.labarthe.find(x => parsearTTID(x.tt) === parsearTTID(m.tt));
             if (l && parseInt(l.bolsones) !== parseInt(m.bolsones)) {
@@ -408,10 +581,7 @@
             }
         });
 
-        // 2. Control de tiempo de tránsito (Límite de 10 minutos)
-        const limiteTiempo = 10 * 60 * 1000; // 10 minutos
-        const ahora = new Date();
-
+        // 2. Alertar retraso de viaje (Límite 10 minutos)
         db.muelle.forEach(m => {
             const confirmado = db.labarthe.some(x => parsearTTID(x.tt) === parsearTTID(m.tt));
             if (!confirmado) {
@@ -422,12 +592,52 @@
             }
         });
 
-        // Mostrar banners de alerta y disparar alarma sonora si aplica
         document.getElementById('bannerAlertaDiff').style.display = hayDiscrepancia ? 'block' : 'none';
         document.getElementById('bannerAlertaTransito').style.display = hayRetrasoTransito ? 'block' : 'none';
 
         if (hayDiscrepancia || hayRetrasoTransito) {
-            dispararAlarmaCCTV();
+            activarSirenaDeEmergencia();
+        } else {
+            desactivarSirena();
+        }
+    }
+
+    function activarSirenaDeEmergencia() {
+        if (alarmInterval) return; // Ya está sonando
+
+        alarmInterval = setInterval(() => {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') return;
+
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                osc.type = 'sawtooth';
+                const now = audioCtx.currentTime;
+
+                // Generación de un ciclo oscilatorio ascendente y descendente (Barrido de sirena real)
+                osc.frequency.setValueAtTime(650, now);
+                osc.frequency.linearRampToValueAtTime(1150, now + 0.4);
+                osc.frequency.linearRampToValueAtTime(650, now + 0.8);
+
+                gainNode.gain.setValueAtTime(0, now);
+                gainNode.gain.linearRampToValueAtTime(0.3, now + 0.1);
+                gainNode.gain.linearRampToValueAtTime(0.3, now + 0.7);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.8);
+
+                osc.start(now);
+                osc.stop(now + 0.8);
+            } catch(e) {}
+        }, 900); 
+    }
+
+    function desactivarSirena() {
+        if (alarmInterval) {
+            clearInterval(alarmInterval);
+            alarmInterval = null;
         }
     }
 
@@ -436,7 +646,6 @@
     }
 
     function parsearFechaExcel(fStr) {
-        // Formato esperado: "dd/mm/yyyy hh:mm:ss" o similar
         try {
             const pts = fStr.split(' ');
             const fPts = pts[0].split('/');
@@ -447,46 +656,31 @@
         }
     }
 
-    // GENERADOR DE SONIDO ELECTRÓNICO CONTINUO (ALERTA ACTIVA)
-    function dispararAlarmaCCTV() {
-        try {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === 'suspended') return; // Esperar interacción del usuario si el navegador bloquea audio
-
-            const osc = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-
-            osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(440, audioCtx.currentTime); // Tono de alarma
-            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.3); // Emite un pitido continuo intermitente por cada ciclo
-        } catch(e) {
-            console.error("Audio block:", e);
-        }
-    }
-
-    // RENDERIZADO DE TABLAS
+    // RENDERIZADO TABLAS Y CONSOLIDACIÓN DE SALDOS POR PRODUCTO
     function renderTablasYDashboard() {
-        const totalMuelle = db.muelle.reduce((a, b) => a + b.bolsones, 0);
-        const totalLabarthe = db.labarthe.reduce((a, b) => a + b.bolsones, 0);
-        const totalDespacho = db.despacho.reduce((a, b) => a + b.bolsones, 0);
+        const ahora = new Date();
+        const mins = ahora.getHours() * 60 + ahora.getMinutes();
+        const strTurno = (mins >= 405 && mins <= 1125) ? "TURNO DIURNO (06:45 - 18:45)" : "TURNO NOCTURNO (18:46 - 06:44)";
+        document.getElementById('turnoActualLabel').textContent = "TURNO ACTIVO: " + strTurno;
+
+        // Filtrar datos estrictamente para el Turno Activo (KPIs diarios se reinician de cero)
+        const muelleTurno = db.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
+        const labartheTurno = db.labarthe.filter(f => perteneceAlTurnoActual(f.fechaHora));
+        const despachoTurno = db.despacho.filter(f => perteneceAlTurnoActual(f.fechaHora));
+
+        const totalMuelle = muelleTurno.reduce((a, b) => a + b.bolsones, 0);
+        const totalLabarthe = labartheTurno.reduce((a, b) => a + b.bolsones, 0);
+        const totalDespacho = despachoTurno.reduce((a, b) => a + b.bolsones, 0);
 
         document.getElementById('kpiMuelle').textContent = totalMuelle;
         document.getElementById('kpiLabarthe').textContent = totalLabarthe;
         document.getElementById('kpiDespacho').textContent = totalDespacho;
 
-        // Calcular discrepancias y tránsito
+        // Calcular discrepancias y tránsito del Turno Activo
         let difs = 0;
         let trans = 0;
-        const ahora = new Date();
-
-        db.muelle.forEach(m => {
-            const l = db.labarthe.find(x => parsearTTID(x.tt) === parsearTTID(m.tt));
+        muelleTurno.forEach(m => {
+            const l = labartheTurno.find(x => parsearTTID(x.tt) === parsearTTID(m.tt));
             if (l) {
                 if (parseInt(l.bolsones) !== parseInt(m.bolsones)) difs++;
             } else {
@@ -500,7 +694,10 @@
         document.getElementById('kpiCardDiff').className = 'kpi-card' + (difs > 0 ? ' alert-active' : '');
         document.getElementById('kpiCardTransito').className = 'kpi-card' + (trans > 0 ? ' alert-active' : '');
 
-        // RENDER DE DASHBOARD GENERAL
+        // RENDER DE SALDOS POR PRODUCTO (Históricos de todos los días)
+        renderControlDeSaldos();
+
+        // RENDER ULTIMOS MOVIMIENTOS EN CUADRO DE MANDO
         const totalRegistros = [...db.muelle, ...db.labarthe, ...db.despacho];
         totalRegistros.sort((a,b) => parsearFechaExcel(b.fechaHora) - parsearFechaExcel(a.fechaHora));
 
@@ -508,7 +705,7 @@
         if (totalRegistros.length === 0) {
             tbDash.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px;">No hay registros de hoy.</td></tr>`;
         } else {
-            tbDash.innerHTML = totalRegistros.slice(0, 30).map(r => {
+            tbDash.innerHTML = totalRegistros.slice(0, 20).map(r => {
                 let badgeCls = `badge-${r.puesto}`;
                 let estado = '<span class="badge badge-ok">CONFIRMADO</span>';
 
@@ -541,9 +738,62 @@
             }).join('');
         }
 
-        // RENDER PESTAÑAS INDIVIDUALES
         renderPestañaDescargas();
         renderPestañaDespachos();
+    }
+
+    function renderControlDeSaldos() {
+        const tbDescarga = document.getElementById('tbSaldosDescarga');
+        const tbDespacho = document.getElementById('tbSaldosDespacho');
+
+        if (listadoProductos.length === 0) {
+            const empty = `<tr><td colspan="4" style="text-align:center; padding:15px; color:var(--muted)">Sin productos configurados en el catálogo.</td></tr>`;
+            tbDescarga.innerHTML = empty;
+            tbDespacho.innerHTML = empty;
+            return;
+        }
+
+        // Saldos Descarga (Total Buque - Consolidado Total Labarthe Histórico)
+        tbDescarga.innerHTML = listadoProductos.map(p => {
+            const totalDescargadoLabarthe = db.labarthe.reduce((sum, r) => {
+                if (r.productos && r.productos.toLowerCase().includes(p.producto.toLowerCase())) {
+                    return sum + r.bolsones;
+                }
+                return sum;
+            }, 0);
+
+            const saldoDescarga = p.cantidadBuque - totalDescargadoLabarthe;
+
+            return `
+                <tr>
+                    <td style="font-weight:bold;">🧴 ${p.producto}</td>
+                    <td>${p.cantidadBuque}</td>
+                    <td style="color:var(--green); font-weight:bold;">${totalDescargadoLabarthe}</td>
+                    <td style="font-weight:bold; color:${saldoDescarga > 0 ? 'var(--blue)' : 'var(--green)'}">${saldoDescarga}</td>
+                </tr>
+            `;
+        }).join('');
+
+        // Saldos Despacho (Total Buque - Consolidado Total Despacho Histórico)
+        tbDespacho.innerHTML = listadoProductos.map(p => {
+            const totalDespachado = db.despacho.reduce((sum, r) => {
+                if (r.productos && r.productos.toLowerCase().includes(p.producto.toLowerCase())) {
+                    return sum + r.bolsones;
+                }
+                return sum;
+            }, 0);
+
+            const saldoDespacho = p.cantidadBuque - totalDespachado;
+
+            return `
+                <tr>
+                    <td style="font-weight:bold;">🧴 ${p.producto}</td>
+                    <td>${p.cantidadBuque}</td>
+                    <td style="color:var(--amber); font-weight:bold;">${totalDespachado}</td>
+                    <td style="font-weight:bold; color:${saldoDespacho > 0 ? 'var(--blue)' : 'var(--green)'}">${saldoDespacho}</td>
+                </tr>
+            `;
+        }).join('');
     }
 
     function renderPestañaDescargas() {
@@ -617,9 +867,51 @@
         `).join('');
     }
 
-    // VISUALIZACIÓN DE FOTOS DE DRIVE DESDE EL PANEL CCTV
+    // BUSCADOR AVANZADO POR RANGO DE FECHA Y HORA ESPECÍFICO
+    function ejecutarBusquedaRango() {
+        const startVal = document.getElementById('searchStart').value;
+        const endVal = document.getElementById('searchEnd').value;
+        const tbody = document.getElementById('tbResultadosBusqueda');
+
+        if (!startVal || !endVal) {
+            alert("Por favor, seleccione ambos rangos de Fecha y Hora.");
+            return;
+        }
+
+        const dateInicio = new Date(startVal);
+        const dateFin = new Date(endVal);
+
+        if (dateInicio > dateFin) {
+            alert("La fecha de inicio no puede ser mayor que la de fin.");
+            return;
+        }
+
+        const todosLosRegistros = [...db.muelle, ...db.labarthe, ...db.despacho];
+        const filtrados = todosLosRegistros.filter(r => {
+            const fReg = parsearFechaExcel(r.fechaHora);
+            return fReg && fReg >= dateInicio && fReg <= dateFin;
+        });
+
+        if (filtrados.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--muted)">No se encontraron registros en el rango seleccionado.</td></tr>`;
+            return;
+        }
+
+        filtrados.sort((a,b) => parsearFechaExcel(a.fechaHora) - parsearFechaExcel(b.fechaHora));
+
+        tbody.innerHTML = filtrados.map(r => `
+            <tr>
+                <td><span class="badge badge-${r.puesto}">${r.puesto.toUpperCase()}</span></td>
+                <td style="font-weight:bold;">${r.viajeId}</td>
+                <td style="font-weight:bold;">${r.tt}</td>
+                <td style="font-weight:bold; font-size:14px;">${r.bolsones}</td>
+                <td>${r.productos}</td>
+                <td>${r.fechaHora}</td>
+            </tr>
+        `).join('');
+    }
+
     function verEvidencias(viajeId, puesto) {
-        // Inicializar contexto de audio si no está activo para habilitar la sirena
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
 
@@ -650,7 +942,7 @@
         document.getElementById('modalOverlay').classList.remove('open');
     }
 
-    // CONDUCTORES
+    // GESTIÓN DE CONDUCTORES
     function syncConductoresUI() {
         const div = document.getElementById('divListaConductores');
         div.innerHTML = "Cargando catálogo...";
@@ -697,7 +989,7 @@
         });
     }
 
-    // PRODUCTOS
+    // GESTIÓN DE PRODUCTOS Y CARGA DE BUQUE
     function syncProductosUI() {
         fetch(`${gasUrl}?action=obtenerProductos`)
             .then(res => res.json())
@@ -712,18 +1004,26 @@
     function renderProductosTags() {
         const div = document.getElementById('tagListProductos');
         div.innerHTML = listadoProductos.map((p, idx) => `
-            <div class="tag">${p} <span class="tag-remove" onclick="eliminarProductoMemoria(${idx})">×</span></div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr auto; gap:10px; align-items:center; padding:8px 0; border-bottom:1px solid #f1f5f9;">
+                <div style="font-weight:bold;">🧴 ${p.producto}</div>
+                <div style="color:var(--blue); font-weight:bold;">${p.cantidadBuque} bolsones</div>
+                <button class="btn-sm" style="background:var(--red-bg); color:#7f1d1d;" onclick="eliminarProductoMemoria(${idx})">×</button>
+            </div>
         `).join('');
     }
 
     function agregarProductoMemoria() {
         const val = document.getElementById('addProdInput').value.trim();
+        const cant = parseInt(document.getElementById('addProdCant').value) || 0;
         if (!val) return;
-        if (!listadoProductos.includes(val)) {
-            listadoProductos.push(val);
+
+        const existe = listadoProductos.some(p => p.producto.toLowerCase() === val.toLowerCase());
+        if (!existe) {
+            listadoProductos.push({ producto: val, cantidadBuque: cant });
             renderProductosTags();
         }
         document.getElementById('addProdInput').value = "";
+        document.getElementById('addProdCant').value = "";
     }
 
     function eliminarProductoMemoria(idx) {
@@ -737,16 +1037,19 @@
             mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: "guardarProductos", data: { productos: listadoProductos } })
-        }).then(() => alert('✅ Productos configurados y actualizados con éxito.'));
+        }).then(() => {
+            alert('✅ Catálogo y carga de Buque actualizados de forma exitosa.');
+            sincronizarServidor();
+        });
     }
 
-    // URL DE GAS
+    // GUARDAR AJUSTES DE URL APPS SCRIPT
     function guardarURLGas() {
         const val = document.getElementById('gasUrlInput').value.trim();
         if (val) {
             gasUrl = val;
             localStorage.setItem("iqbf_gas_url", val);
-            alert("✅ Enlace guardado con éxito.");
+            alert("✅ URL enlazada con éxito.");
             sincronizarServidor();
         }
     }
