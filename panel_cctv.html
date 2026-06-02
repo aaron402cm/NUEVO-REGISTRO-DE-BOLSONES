@@ -82,7 +82,7 @@
         .btn-sm { padding: 6px 12px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; background: #e2e8f0; }
         .btn-sm:hover { background: #cbd5e1; }
 
-        /* TAB INTERNO */
+        /* TABS INTERNOS */
         .tab-bar { display: flex; gap: 10px; margin-bottom: 20px; }
         .tab-btn { padding: 10px 20px; border-radius: 8px; border: 2px solid #cbd5e1; background: white; font-weight: bold; cursor: pointer; }
         .tab-btn.active { background: var(--blue); color: white; border-color: var(--blue); }
@@ -136,15 +136,18 @@
     </aside>
 
     <main class="main-content">
-        <div class="topbar">
-            <div>
-                <h1 id="pageTitle">Cuadro de Mando</h1>
-                <div id="headerInfoBuque" style="font-weight:bold; color:var(--blue); font-size:14px; margin-top:3px;">Cargando especificaciones del Buque...</div>
+        <div class="topbar" style="height: auto; padding: 18px 25px; flex-direction: column; align-items: stretch; gap: 10px;">
+            <div style="display:flex; justify-content:space-between; align-items: center;">
+                <h1 id="pageTitle" style="font-size:24px; font-weight:900;">Cuadro de Mando</h1>
+                <div class="topbar-right">
+                    <span id="clock" style="font-weight: bold; color: var(--navy);">—</span>
+                    <button class="btn-sm" style="background:var(--blue-btn); color:white; padding: 10px 15px;" onclick="sincronizarServidor()">🔄 Sincronizar</button>
+                    <button class="btn-sm" style="background:#ef4444; color:white;" onclick="doLogout()">🚪 Cerrar Sesión</button>
+                </div>
             </div>
-            <div class="topbar-right">
-                <span id="clock" style="font-weight: bold; color: var(--navy);">—</span>
-                <button class="btn-sm" style="background:var(--blue-btn); color:white; padding: 10px 15px;" onclick="sincronizarServidor()">🔄 Sincronizar</button>
-                <button class="btn-sm" style="background:#ef4444; color:white;" onclick="doLogout()">🚪 Cerrar Sesión</button>
+            <!-- ENCABEZADO MEJORADO: DISEÑO DE TÍTULO PRINCIPAL DESTACADO -->
+            <div id="headerInfoBuque" style="font-weight: 800; font-size: 15px; color: #0c4a6e; background: #e0f2fe; border-left: 6px solid #0284c7; padding: 14px 18px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); width: 100%; line-height: 1.4;">
+                🚢 Cargando especificaciones del Buque y Carga Inicial...
             </div>
         </div>
 
@@ -263,7 +266,7 @@
                 </div>
             </div>
 
-            <!-- BUSCADOR POR FECHA Y HORA -->
+            <!-- BUSCADOR POR FECHA Y HORA CON CONSOLIDADO LATERAL -->
             <div id="pageBuscador" class="page-container" style="display:none;">
                 <div class="card" style="max-width:800px; margin-bottom:20px;">
                     <div class="card-head"><h3>🔍 Búsqueda de Registros por Rango</h3></div>
@@ -279,23 +282,44 @@
                         <button class="btn-sm" style="background:var(--blue-btn); color:white; padding:10px 20px;" onclick="ejecutarBusquedaRango()">Buscar</button>
                     </div>
                 </div>
-                <div class="card">
-                    <div class="card-head"><h3>Resultados de Búsqueda</h3></div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Puesto</th>
-                                <th>ID Viaje</th>
-                                <th>TT / Placa</th>
-                                <th>Bolsones</th>
-                                <th>Productos</th>
-                                <th>Fecha/Hora</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbResultadosBusqueda">
-                            <tr><td colspan="6" style="text-align:center; padding:30px; color:var(--muted)">Seleccione un rango y presione Buscar</td></tr>
-                        </tbody>
-                    </table>
+
+                <!-- DISEÑO MEJORADO DE DOS COLUMNAS (RESULTADOS Y CONSOLIDADO) -->
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: start;">
+                    <!-- Columna Izquierda: Listado de Resultados -->
+                    <div class="card" style="margin-bottom:0;">
+                        <div class="card-head"><h3>Resultados de Búsqueda</h3></div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Puesto</th>
+                                    <th>ID Viaje</th>
+                                    <th>TT / Placa</th>
+                                    <th>Bolsones</th>
+                                    <th>Productos</th>
+                                    <th>Fecha/Hora</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbResultadosBusqueda">
+                                <tr><td colspan="6" style="text-align:center; padding:30px; color:var(--muted)">Seleccione un rango y presione Buscar</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Columna Derecha: Consolidado de Cantidades (Suma de Bolsones) -->
+                    <div class="card" style="margin-bottom:0;">
+                        <div class="card-head"><h3>📊 Consolidado de Bolsones en el Rango</h3></div>
+                        <div style="padding: 20px;">
+                            <h4 style="font-size: 13px; font-weight: 800; color: var(--navy); margin-bottom: 10px; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">📥 DESCARGA (LLEGADO A LABARTHE)</h4>
+                            <div id="summaryDescargaContainer" style="margin-bottom: 25px;">
+                                <div style="color:var(--muted); font-size:12px;">Sin datos de búsqueda</div>
+                            </div>
+                            
+                            <h4 style="font-size: 13px; font-weight: 800; color: var(--navy); margin-bottom: 10px; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">📤 DESPACHOS</h4>
+                            <div id="summaryDespachoContainer">
+                                <div style="color:var(--muted); font-size:12px;">Sin datos de búsqueda</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -383,6 +407,8 @@
     let gasUrl = localStorage.getItem("iqbf_gas_url") || "https://script.google.com/macros/s/AKfycbxZ4qwyvvuWd_IfedsWR1R65niSwlYPKtgcDU_e5f0H4P1cCbOvIGDICksXe3tIdDrfrw/exec";
     let db = { muelle: [], labarthe: [], despacho: [] };
     let listadoProductos = [];
+    let buqueNombreActual = "—";
+    let buqueMuelleActual = "—";
     let audioCtx = null;
     let alarmInterval = null;
 
@@ -485,12 +511,14 @@
         if (!gasUrl) return;
         document.getElementById('syncStatus').textContent = "Sincronizando...";
 
-        // Cargar productos primero para tener las capacidades del buque
+        // Cargar productos primero para tener las especificaciones del buque y muelle
         fetch(`${gasUrl}?action=obtenerProductos`)
             .then(res => res.json())
             .then(pData => {
                 if (pData.ok) {
                     listadoProductos = pData.productos;
+                    buqueNombreActual = pData.buqueNombre || "—";
+                    buqueMuelleActual = pData.buqueMuelle || "—";
                     renderEncabezadoBuque();
                 }
                 return fetch(`${gasUrl}?action=obtenerFilasExcel`);
@@ -505,7 +533,7 @@
                         else if (f.puesto === 'despacho') db.despacho.push(f);
                     });
                     
-                    procesarVocesNuevas([...db.muelle, ...db.labarthe, ...db.despacho]);
+                    procesarVocesNue([...db.muelle, ...db.labarthe, ...db.despacho]);
                     procesarAnalisisYAlarmas();
                     renderTablasYDashboard();
                 }
@@ -516,18 +544,22 @@
             });
     }
 
+    // RENDERIZADO DEL ENCABEZADO CON FORMATO DESTACADO Y DINÁMICO
     function renderEncabezadoBuque() {
         const hBuque = document.getElementById('headerInfoBuque');
+        if (!hBuque) return;
+
         if (!listadoProductos.length) {
-            hBuque.textContent = "Sin carga de buque registrada.";
+            hBuque.innerHTML = `🚢 <strong>BUQUE:</strong> ${buqueNombreActual} en <strong>${buqueMuelleActual}</strong> | Sin productos registrados en el catálogo.`;
             return;
         }
-        const str = listadoProductos.map(p => `${p.producto}: ${p.cantidadBuque} bolsones`).join(' | ');
-        hBuque.textContent = `🚢 BUQUE CARGA INICIAL — ${str}`;
+
+        const strProd = listadoProductos.map(p => `<strong>${p.producto}:</strong> ${p.cantidadBuque} bolsones`).join(' | ');
+        hBuque.innerHTML = `🚢 <strong>BUQUE:</strong> ${buqueNombreActual} en <strong>${buqueMuelleActual}</strong> | ${strProd}`;
     }
 
     // SINTETIZADOR DE VOZ NATIVO (GRATUITO Y EN ESPAÑOL)
-    function procesarVocesNuevas(filas) {
+    function procesarVocesNue(filas) {
         if (isFirstLoad) {
             filas.forEach(f => {
                 if (f.viajeId) knownTransactionIds.add(f.viajeId);
@@ -663,7 +695,7 @@
         const strTurno = (mins >= 405 && mins <= 1125) ? "TURNO DIURNO (06:45 - 18:45)" : "TURNO NOCTURNO (18:46 - 06:44)";
         document.getElementById('turnoActualLabel').textContent = "TURNO ACTIVO: " + strTurno;
 
-        // Filtrar datos estrictamente para el Turno Activo (KPIs diarios se reinician de cero)
+        // Filtrar datos para el Turno Activo
         const muelleTurno = db.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
         const labartheTurno = db.labarthe.filter(f => perteneceAlTurnoActual(f.fechaHora));
         const despachoTurno = db.despacho.filter(f => perteneceAlTurnoActual(f.fechaHora));
@@ -694,7 +726,7 @@
         document.getElementById('kpiCardDiff').className = 'kpi-card' + (difs > 0 ? ' alert-active' : '');
         document.getElementById('kpiCardTransito').className = 'kpi-card' + (trans > 0 ? ' alert-active' : '');
 
-        // RENDER DE SALDOS POR PRODUCTO (Históricos de todos los días)
+        // RENDER DE SALDOS POR PRODUCTO
         renderControlDeSaldos();
 
         // RENDER ULTIMOS MOVIMIENTOS EN CUADRO DE MANDO
@@ -867,11 +899,13 @@
         `).join('');
     }
 
-    // BUSCADOR AVANZADO POR RANGO DE FECHA Y HORA ESPECÍFICO
+    // BUSCADOR AVANZADO POR RANGO DE FECHA Y HORA CON CONSOLIDADO DE SUMAS EN TIEMPO REAL
     function ejecutarBusquedaRango() {
         const startVal = document.getElementById('searchStart').value;
         const endVal = document.getElementById('searchEnd').value;
         const tbody = document.getElementById('tbResultadosBusqueda');
+        const summaryDesc = document.getElementById('summaryDescargaContainer');
+        const summaryDesp = document.getElementById('summaryDespachoContainer');
 
         if (!startVal || !endVal) {
             alert("Por favor, seleccione ambos rangos de Fecha y Hora.");
@@ -894,11 +928,14 @@
 
         if (filtrados.length === 0) {
             tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--muted)">No se encontraron registros en el rango seleccionado.</td></tr>`;
+            summaryDesc.innerHTML = `<div style="color:var(--muted); font-size:12px;">Sin resultados en este rango</div>`;
+            summaryDesp.innerHTML = `<div style="color:var(--muted); font-size:12px;">Sin resultados en este rango</div>`;
             return;
         }
 
         filtrados.sort((a,b) => parsearFechaExcel(a.fechaHora) - parsearFechaExcel(b.fechaHora));
 
+        // 1. Mostrar la tabla detallada de registros individuales
         tbody.innerHTML = filtrados.map(r => `
             <tr>
                 <td><span class="badge badge-${r.puesto}">${r.puesto.toUpperCase()}</span></td>
@@ -909,6 +946,77 @@
                 <td>${r.fechaHora}</td>
             </tr>
         `).join('');
+
+        // 2. Procesar Consolidado por Producto en el rango
+        let descargaPorProducto = {};
+        let despachoPorProducto = {};
+
+        // Inicializar los contadores por producto del catálogo activo
+        listadoProductos.forEach(p => {
+            descargaPorProducto[p.producto] = 0;
+            despachoPorProducto[p.producto] = 0;
+        });
+
+        // Sumar bolsones acumulados en el rango filtrado
+        filtrados.forEach(r => {
+            listadoProductos.forEach(p => {
+                if (r.productos && r.productos.toLowerCase().includes(p.producto.toLowerCase())) {
+                    if (r.puesto === 'labarthe') {
+                        descargaPorProducto[p.producto] += Number(r.bolsones) || 0;
+                    } else if (r.puesto === 'despacho') {
+                        despachoPorProducto[p.producto] += Number(r.bolsones) || 0;
+                    }
+                }
+            });
+        });
+
+        // Renderizar Consolidado de Descarga
+        let descHtml = "";
+        let totalDescGeneral = 0;
+        listadoProductos.forEach(p => {
+            const cant = descargaPorProducto[p.producto];
+            if (cant > 0) {
+                descHtml += `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:13px; border-bottom: 1px dashed #f1f5f9; padding-bottom: 4px;">
+                        <span>🧴 ${p.producto}:</span>
+                        <strong style="color:var(--green); font-size:14px;">${cant} bolsones</strong>
+                    </div>`;
+                totalDescGeneral += cant;
+            }
+        });
+        if (descHtml === "") {
+            summaryDesc.innerHTML = `<div style="color:var(--muted); font-size:12px;">0 bolsones descargados (Labarthe) en este rango</div>`;
+        } else {
+            summaryDesc.innerHTML = descHtml + `
+                <div style="border-top:2px solid var(--border); margin-top:10px; padding-top:8px; display:flex; justify-content:space-between; font-weight:800; font-size:13px;">
+                    <span>Total Descargado:</span>
+                    <span style="color:var(--green); font-size:14px;">${totalDescGeneral} bolsones</span>
+                </div>`;
+        }
+
+        // Renderizar Consolidado de Despacho
+        let despHtml = "";
+        let totalDespGeneral = 0;
+        listadoProductos.forEach(p => {
+            const cant = despachoPorProducto[p.producto];
+            if (cant > 0) {
+                despHtml += `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:13px; border-bottom: 1px dashed #f1f5f9; padding-bottom: 4px;">
+                        <span>🧴 ${p.producto}:</span>
+                        <strong style="color:var(--amber); font-size:14px;">${cant} bolsones</strong>
+                    </div>`;
+                totalDespGeneral += cant;
+            }
+        });
+        if (despHtml === "") {
+            summaryDesp.innerHTML = `<div style="color:var(--muted); font-size:12px;">0 bolsones despachados en este rango</div>`;
+        } else {
+            summaryDesp.innerHTML = despHtml + `
+                <div style="border-top:2px solid var(--border); margin-top:10px; padding-top:8px; display:flex; justify-content:space-between; font-weight:800; font-size:13px;">
+                    <span>Total Despachado:</span>
+                    <span style="color:var(--amber); font-size:14px;">${totalDespGeneral} bolsones</span>
+                </div>`;
+        }
     }
 
     function verEvidencias(viajeId, puesto) {
@@ -996,6 +1104,8 @@
             .then(data => {
                 if (data.ok) {
                     listadoProductos = data.productos;
+                    buqueNombreActual = data.buqueNombre || "—";
+                    buqueMuelleActual = data.buqueMuelle || "—";
                     renderProductosTags();
                 }
             });
