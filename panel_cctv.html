@@ -107,7 +107,7 @@
     <div class="login-card">
         <h2>Panel CCTV — Acceso</h2>
         <p style="color:var(--muted); margin-bottom: 20px;">Control de Descarga y Despacho</p>
-        <input type="password" id="pwInput" class="login-input" placeholder="••••••••" autocomplete="current-password">
+        <input type="password" id="pwInput" class="login-input" placeholder="••••••••" autocomplete="current-password" onkeypress="if(event.key === 'Enter') doLogin()">
         <button class="login-btn" onclick="doLogin()">Entrar al Panel</button>
         <div id="loginErr" style="color:var(--red); font-weight:bold; margin-top:10px;"></div>
     </div>
@@ -145,7 +145,6 @@
                     <button class="btn-sm" style="background:#ef4444; color:white;" onclick="doLogout()">🚪 Cerrar Sesión</button>
                 </div>
             </div>
-            <!-- ENCABEZADO MEJORADO: DISEÑO DE TÍTULO PRINCIPAL DESTACADO -->
             <div id="headerInfoBuque" style="font-weight: 800; font-size: 15px; color: #0c4a6e; background: #e0f2fe; border-left: 6px solid #0284c7; padding: 14px 18px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); width: 100%; line-height: 1.4;">
                 🚢 Cargando especificaciones del Buque y Carga Inicial...
             </div>
@@ -154,7 +153,7 @@
         <div class="scroll-area">
             <!-- ALERTA DISCREPANCIA SIRENA -->
             <div id="bannerAlertaDiff" class="alert-banner danger">
-                ⚠️ SIRENA ACTIVA — DISCREPANCIA DETECTADA: Diferencia de bolsones entre Muelle y Labarthe.
+                ⚠️ SIRENA ACTIVA — DISCREPANCIA DETECTADA: Diferencia de bolsones en viaje activo entre Muelle y Labarthe.
             </div>
 
             <!-- ALERTA RETRASO SIRENA -->
@@ -283,9 +282,7 @@
                     </div>
                 </div>
 
-                <!-- DISEÑO MEJORADO DE DOS COLUMNAS (RESULTADOS Y CONSOLIDADO) -->
                 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: start;">
-                    <!-- Columna Izquierda: Listado de Resultados -->
                     <div class="card" style="margin-bottom:0;">
                         <div class="card-head"><h3>Resultados de Búsqueda</h3></div>
                         <table>
@@ -305,7 +302,6 @@
                         </table>
                     </div>
 
-                    <!-- Columna Derecha: Consolidado de Cantidades (Suma de Bolsones) -->
                     <div class="card" style="margin-bottom:0;">
                         <div class="card-head"><h3>📊 Consolidado de Bolsones en el Rango</h3></div>
                         <div style="padding: 20px;">
@@ -401,7 +397,6 @@
 </div>
 
 <script>
-    const PASSWORD_CCTV = "Apm2026";
     const SESSION_KEY = "iqbf_cctv_persistent_session";
 
     let gasUrl = localStorage.getItem("iqbf_gas_url") || "https://script.google.com/macros/s/AKfycbxZ4qwyvvuWd_IfedsWR1R65niSwlYPKtgcDU_e5f0H4P1cCbOvIGDICksXe3tIdDrfrw/exec";
@@ -423,14 +418,32 @@
         document.getElementById('gasUrlInput').value = gasUrl;
     };
 
+    // INGRESO AL SISTEMA MEDIANTE PETICIÓN DE SEGURIDAD DIRECTA AL SERVIDOR
     function doLogin() {
         const input = document.getElementById('pwInput').value;
-        if (input === PASSWORD_CCTV) {
-            localStorage.setItem(SESSION_KEY, 'true');
-            mostrarDashboard();
-        } else {
-            document.getElementById('loginErr').textContent = "❌ Clave Incorrecta";
-        }
+        const err = document.getElementById('loginErr');
+        err.textContent = "⌛ Verificando...";
+
+        fetch(gasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+                action: 'verificarPassword',
+                data: { tipo: 'cctv', password: input }
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.ok && data.valid) {
+                localStorage.setItem(SESSION_KEY, 'true');
+                mostrarDashboard();
+            } else {
+                err.textContent = "❌ Clave Incorrecta";
+            }
+        })
+        .catch(() => {
+            err.textContent = "⚠️ Error de conexión";
+        });
     }
 
     function doLogout() {
@@ -469,15 +482,13 @@
         let startShiftDate, endShiftDate;
 
         if (totalMinsAhora >= startDiurno && totalMinsAhora <= endDiurno) {
-            // Turno Diurno Actual (Hoy 06:45 a Hoy 18:45)
             startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 6, 45, 0);
             endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 18, 45, 0);
         } else {
-            // Turno Nocturno Actual
-            if (totalMinsAhora >= endDiurno + 1) { // Después de las 18:45 de hoy
+            if (totalMinsAhora >= endDiurno + 1) { 
                 startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 18, 46, 0);
                 endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1, 6, 44, 59);
-            } else { // Antes de las 06:45 de hoy (empezó ayer por la noche)
+            } else { 
                 startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - 1, 18, 46, 0);
                 endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 6, 44, 59);
             }
@@ -511,7 +522,6 @@
         if (!gasUrl) return;
         document.getElementById('syncStatus').textContent = "Sincronizando...";
 
-        // Cargar productos primero para tener las especificaciones del buque y muelle
         fetch(`${gasUrl}?action=obtenerProductos`)
             .then(res => res.json())
             .then(pData => {
@@ -544,7 +554,6 @@
             });
     }
 
-    // RENDERIZADO DEL ENCABEZADO CON FORMATO DESTACADO Y DINÁMICO
     function renderEncabezadoBuque() {
         const hBuque = document.getElementById('headerInfoBuque');
         if (!hBuque) return;
@@ -558,7 +567,6 @@
         hBuque.innerHTML = `🚢 <strong>BUQUE:</strong> ${buqueNombreActual} en <strong>${buqueMuelleActual}</strong> | ${strProd}`;
     }
 
-    // SINTETIZADOR DE VOZ NATIVO (GRATUITO Y EN ESPAÑOL)
     function procesarVocesNue(filas) {
         if (isFirstLoad) {
             filas.forEach(f => {
@@ -592,12 +600,10 @@
                 utterance.rate = 1.1;
                 window.speechSynthesis.speak(utterance);
             }
-        } catch(e) {
-            console.error("Voz no admitida por el navegador:", e);
-        }
+        } catch(e) {}
     }
 
-    // ANALIZADOR DE ALERTAS Y SIRENA ELECTRÓNICA DE ALTA INTENSIDAD
+    // ANALIZADOR DE ALERTAS Y ALARMA OPTIMIZADO (Búsqueda por viajeId para evitar falsos positivos)
     function procesarAnalisisYAlarmas() {
         let hayDiscrepancia = false;
         let hayRetrasoTransito = false;
@@ -605,17 +611,17 @@
         const ahora = new Date();
         const limiteTiempo = 10 * 60 * 1000; 
 
-        // 1. Comparar cantidades registradas entre Muelle y Labarthe
+        // 1. Comparación cruzada robusta basada en viajeId único
         db.muelle.forEach(m => {
-            const l = db.labarthe.find(x => parsearTTID(x.tt) === parsearTTID(m.tt));
+            const l = db.labarthe.find(x => x.viajeId === m.viajeId);
             if (l && parseInt(l.bolsones) !== parseInt(m.bolsones)) {
                 hayDiscrepancia = true;
             }
         });
 
-        // 2. Alertar retraso de viaje (Límite 10 minutos)
+        // 2. Alertar retraso en tránsito por viajeId no arribado
         db.muelle.forEach(m => {
-            const confirmado = db.labarthe.some(x => parsearTTID(x.tt) === parsearTTID(m.tt));
+            const confirmado = db.labarthe.some(x => x.viajeId === m.viajeId);
             if (!confirmado) {
                 const fRegistro = parsearFechaExcel(m.fechaHora);
                 if (fRegistro && (ahora - fRegistro) > limiteTiempo) {
@@ -635,7 +641,7 @@
     }
 
     function activarSirenaDeEmergencia() {
-        if (alarmInterval) return; // Ya está sonando
+        if (alarmInterval) return;
 
         alarmInterval = setInterval(() => {
             try {
@@ -650,7 +656,6 @@
                 osc.type = 'sawtooth';
                 const now = audioCtx.currentTime;
 
-                // Generación de un ciclo oscilatorio ascendente y descendente (Barrido de sirena real)
                 osc.frequency.setValueAtTime(650, now);
                 osc.frequency.linearRampToValueAtTime(1150, now + 0.4);
                 osc.frequency.linearRampToValueAtTime(650, now + 0.8);
@@ -677,12 +682,39 @@
         return tt.toString().replace(/[^0-9]/g, '');
     }
 
+    // ANALIZADOR DE FECHAS DE EXCEL OPTIMIZADO PARA DETECTAR FORMATOS AM/PM Y 24 HORAS
     function parsearFechaExcel(fStr) {
+        if (!fStr) return null;
         try {
-            const pts = fStr.split(' ');
-            const fPts = pts[0].split('/');
-            const hPts = pts[1].split(':');
-            return new Date(fPts[2], fPts[1] - 1, fPts[0], hPts[0], hPts[1], hPts[2] || 0);
+            const parts = fStr.trim().split(/\s+/);
+            if (parts.length < 2) return null;
+            
+            const dateParts = parts[0].split('/');
+            const timeParts = parts[1].split(':');
+            
+            let hours = parseInt(timeParts[0], 10);
+            const minutes = parseInt(timeParts[1], 10);
+            const seconds = parseInt(timeParts[2], 10) || 0;
+            
+            const day = parseInt(dateParts[0], 10);
+            const month = parseInt(dateParts[1], 10) - 1;
+            const year = parseInt(dateParts[2], 10);
+            
+            let ampm = "";
+            if (parts.length > 2) {
+                ampm = parts.slice(2).join(" ").toLowerCase();
+            } else if (fStr.toLowerCase().includes("m.")) {
+                if (fStr.toLowerCase().includes("p.") || fStr.toLowerCase().includes("pm")) ampm = "pm";
+                if (fStr.toLowerCase().includes("a.") || fStr.toLowerCase().includes("am")) ampm = "am";
+            }
+            
+            if (ampm.includes("p") || ampm.includes("pm")) {
+                if (hours < 12) hours += 12;
+            } else if (ampm.includes("a") || ampm.includes("am")) {
+                if (hours === 12) hours = 0;
+            }
+            
+            return new Date(year, month, day, hours, minutes, seconds);
         } catch(e) {
             return null;
         }
@@ -695,7 +727,6 @@
         const strTurno = (mins >= 405 && mins <= 1125) ? "TURNO DIURNO (06:45 - 18:45)" : "TURNO NOCTURNO (18:46 - 06:44)";
         document.getElementById('turnoActualLabel').textContent = "TURNO ACTIVO: " + strTurno;
 
-        // Filtrar datos para el Turno Activo
         const muelleTurno = db.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
         const labartheTurno = db.labarthe.filter(f => perteneceAlTurnoActual(f.fechaHora));
         const despachoTurno = db.despacho.filter(f => perteneceAlTurnoActual(f.fechaHora));
@@ -708,11 +739,10 @@
         document.getElementById('kpiLabarthe').textContent = totalLabarthe;
         document.getElementById('kpiDespacho').textContent = totalDespacho;
 
-        // Calcular discrepancias y tránsito del Turno Activo
         let difs = 0;
         let trans = 0;
         muelleTurno.forEach(m => {
-            const l = labartheTurno.find(x => parsearTTID(x.tt) === parsearTTID(m.tt));
+            const l = labartheTurno.find(x => x.viajeId === m.viajeId);
             if (l) {
                 if (parseInt(l.bolsones) !== parseInt(m.bolsones)) difs++;
             } else {
@@ -726,10 +756,8 @@
         document.getElementById('kpiCardDiff').className = 'kpi-card' + (difs > 0 ? ' alert-active' : '');
         document.getElementById('kpiCardTransito').className = 'kpi-card' + (trans > 0 ? ' alert-active' : '');
 
-        // RENDER DE SALDOS POR PRODUCTO
         renderControlDeSaldos();
 
-        // RENDER ULTIMOS MOVIMIENTOS EN CUADRO DE MANDO
         const totalRegistros = [...db.muelle, ...db.labarthe, ...db.despacho];
         totalRegistros.sort((a,b) => parsearFechaExcel(b.fechaHora) - parsearFechaExcel(a.fechaHora));
 
@@ -742,14 +770,14 @@
                 let estado = '<span class="badge badge-ok">CONFIRMADO</span>';
 
                 if (r.puesto === 'muelle') {
-                    const l = db.labarthe.find(x => parsearTTID(x.tt) === parsearTTID(r.tt));
+                    const l = db.labarthe.find(x => x.viajeId === r.viajeId);
                     if (!l) {
                         const trTime = parsearFechaExcel(r.fechaHora);
                         const retrasado = trTime && (ahora - trTime) > 600000;
                         estado = `<span class="badge badge-transit">${retrasado ? '🚨 RETRASO TRANSITO' : 'EN TRÁNSITO'}</span>`;
                     }
                 } else if (r.puesto === 'labarthe') {
-                    const m = db.muelle.find(x => parsearTTID(x.tt) === parsearTTID(r.tt));
+                    const m = db.muelle.find(x => x.viajeId === r.viajeId);
                     if (m && parseInt(m.bolsones) !== parseInt(r.bolsones)) {
                         estado = '<span class="badge badge-alert">⚠️ DISCREPANCIA</span>';
                     }
@@ -785,7 +813,6 @@
             return;
         }
 
-        // Saldos Descarga (Total Buque - Consolidado Total Labarthe Histórico)
         tbDescarga.innerHTML = listadoProductos.map(p => {
             const totalDescargadoLabarthe = db.labarthe.reduce((sum, r) => {
                 if (r.productos && r.productos.toLowerCase().includes(p.producto.toLowerCase())) {
@@ -806,7 +833,6 @@
             `;
         }).join('');
 
-        // Saldos Despacho (Total Buque - Consolidado Total Despacho Histórico)
         tbDespacho.innerHTML = listadoProductos.map(p => {
             const totalDespachado = db.despacho.reduce((sum, r) => {
                 if (r.productos && r.productos.toLowerCase().includes(p.producto.toLowerCase())) {
@@ -851,9 +877,8 @@
             </tr>
         `).join('');
 
-        // Tabla comparativa cruzada
         document.getElementById('tbComparativo').innerHTML = db.muelle.map(m => {
-            const l = db.labarthe.find(x => parsearTTID(x.tt) === parsearTTID(m.tt));
+            const l = db.labarthe.find(x => x.viajeId === m.viajeId);
             const bolsonesL = l ? l.bolsones : '—';
             let diff = '—';
             let rowCls = '';
@@ -899,7 +924,6 @@
         `).join('');
     }
 
-    // BUSCADOR AVANZADO POR RANGO DE FECHA Y HORA CON CONSOLIDADO DE SUMAS EN TIEMPO REAL
     function ejecutarBusquedaRango() {
         const startVal = document.getElementById('searchStart').value;
         const endVal = document.getElementById('searchEnd').value;
@@ -935,7 +959,6 @@
 
         filtrados.sort((a,b) => parsearFechaExcel(a.fechaHora) - parsearFechaExcel(b.fechaHora));
 
-        // 1. Mostrar la tabla detallada de registros individuales
         tbody.innerHTML = filtrados.map(r => `
             <tr>
                 <td><span class="badge badge-${r.puesto}">${r.puesto.toUpperCase()}</span></td>
@@ -947,17 +970,14 @@
             </tr>
         `).join('');
 
-        // 2. Procesar Consolidado por Producto en el rango
         let descargaPorProducto = {};
         let despachoPorProducto = {};
 
-        // Inicializar los contadores por producto del catálogo activo
         listadoProductos.forEach(p => {
             descargaPorProducto[p.producto] = 0;
             despachoPorProducto[p.producto] = 0;
         });
 
-        // Sumar bolsones acumulados en el rango filtrado
         filtrados.forEach(r => {
             listadoProductos.forEach(p => {
                 if (r.productos && r.productos.toLowerCase().includes(p.producto.toLowerCase())) {
@@ -970,7 +990,6 @@
             });
         });
 
-        // Renderizar Consolidado de Descarga
         let descHtml = "";
         let totalDescGeneral = 0;
         listadoProductos.forEach(p => {
@@ -994,7 +1013,6 @@
                 </div>`;
         }
 
-        // Renderizar Consolidado de Despacho
         let despHtml = "";
         let totalDespGeneral = 0;
         listadoProductos.forEach(p => {
@@ -1019,6 +1037,7 @@
         }
     }
 
+    // VISUALIZADOR DE EVIDENCIAS ULTRA-RÁPIDO (Carga enlaces optimizados desde Google Drive sin usar Base64)
     function verEvidencias(viajeId, puesto) {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -1034,7 +1053,10 @@
                 if (data.ok && data.fotos.length > 0) {
                     content.innerHTML = `
                         <div class="grid-fotos">
-                            ${data.fotos.map(f => `<img src="${f.url}" onclick="window.open('${f.url}','_blank')">`).join('')}
+                            ${data.fotos.map(f => {
+                                const thumbUrl = `https://lh3.googleusercontent.com/d/${f.id}`;
+                                return `<img src="${thumbUrl}" onclick="window.open('https://drive.google.com/file/d/${f.id}/view?usp=drivesdk','_blank')">`;
+                            }).join('')}
                         </div>
                     `;
                 } else {
@@ -1050,7 +1072,6 @@
         document.getElementById('modalOverlay').classList.remove('open');
     }
 
-    // GESTIÓN DE CONDUCTORES
     function syncConductoresUI() {
         const div = document.getElementById('divListaConductores');
         div.innerHTML = "Cargando catálogo...";
@@ -1097,7 +1118,6 @@
         });
     }
 
-    // GESTIÓN DE PRODUCTOS Y CARGA DE BUQUE
     function syncProductosUI() {
         fetch(`${gasUrl}?action=obtenerProductos`)
             .then(res => res.json())
@@ -1153,7 +1173,6 @@
         });
     }
 
-    // GUARDAR AJUSTES DE URL APPS SCRIPT
     function guardarURLGas() {
         const val = document.getElementById('gasUrlInput').value.trim();
         if (val) {
