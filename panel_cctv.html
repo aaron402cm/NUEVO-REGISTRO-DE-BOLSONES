@@ -46,26 +46,6 @@
             to { transform: scale(1.03); box-shadow: 0 6px 18px rgba(180,83,9,0.5); }
         }
 
-        /* OVERLAY ADVERTENCIA MIGRACIÓN (MODAL DE SEGURIDAD GIGANTE) */
-        #modalMigracion {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.8);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 10010;
-        }
-        .modal-migrar-box {
-            background: white;
-            padding: 30px;
-            border-radius: 16px;
-            width: 90%;
-            max-width: 500px;
-            border: 4px solid var(--red);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
         /* LOGIN */
         #loginScreen { position: fixed; inset: 0; background: var(--navy); display: flex; align-items: center; justify-content: center; z-index: 9999; }
         .login-card { background: var(--white); padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 400px; text-align: center; }
@@ -148,9 +128,9 @@
 <!-- INDICADOR FLOTANTE DE REACIVACIÓN DE AUDIO -->
 <div id="audioUnlockBanner" onclick="desbloquearAudioPorClic(event)">🔊 CLIC AQUÍ para activar las Alertas Sonoras de Emergencia</div>
 
-<!-- ADVERTENCIA MODAL DE MIGRACIÓN Y CIERRE DE BUQUE -->
-<div id="modalMigracion">
-    <div class="modal-migrar-box">
+<!-- ADVERTENCIA MODAL DE MIGRACIÓN Y CIERRE DE BUQUE (MODAL DE SEGURIDAD REINTEGRADO) -->
+<div id="modalMigracion" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 10010;">
+    <div class="modal-migrar-box" style="background: white; padding: 30px; border-radius: 16px; width: 90%; max-width: 500px; border: 4px solid var(--red); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
         <h3 style="color: var(--red); font-size: 20px; font-weight: 900; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
             ⚠️ ADVERTENCIA CRÍTICA DE CIERRE
         </h3>
@@ -434,7 +414,7 @@
                             <button class="btn-sm" style="background:var(--blue-btn); color:white; height:40px; padding:0 20px;" onclick="agregarProductoMemoria()">Añadir</button>
                         </div>
                         <button class="btn-sm" style="background:var(--green); color:white; width:100%; padding: 12px; margin-top:15px; font-size:14px; margin-bottom: 10px;" onclick="guardarProductosServidor()">💾 Guardar Catálogo en Excel</button>
-                        
+
                         <!-- BOTÓN DE MIGRACIÓN Y CIERRE DE BUQUE ACTIVO -->
                         <hr style="margin: 20px 0; border: 0; border-top: 2px solid #cbd5e1;">
                         <h4 style="font-weight:bold; color:var(--red); margin-bottom:10px; font-size:14px; text-transform:uppercase;">⚠️ Cierre de Operaciones de Buque</h4>
@@ -1363,6 +1343,68 @@
             alert("✅ URL enlazada con éxito.");
             sincronizarServidor();
         }
+    }
+
+    // ============================================================
+    // MÓDULO VISUAL DE MIGRACIÓN Y ARCHIVADO DE BUQUE ACTUAL
+    // ============================================================
+    function confirmarYFinalizarBuque() {
+        if (!buqueNombreActual || buqueNombreActual === "—") {
+            alert("⚠️ No hay ningún buque activo configurado actualmente.");
+            return;
+        }
+        document.getElementById('modalBuqueNombre').textContent = buqueNombreActual;
+        document.getElementById('confirmMigrarInput').value = "";
+        document.getElementById('btnEjecutarMigracion').disabled = true;
+        document.getElementById('modalMigracion').style.display = "flex";
+    }
+
+    function cerrarModalMigracion() {
+        document.getElementById('modalMigracion').style.display = "none";
+    }
+
+    function validarTextoMigrar() {
+        const input = document.getElementById('confirmMigrarInput').value.trim().toUpperCase();
+        document.getElementById('btnEjecutarMigracion').disabled = (input !== "MIGRAR");
+    }
+
+    function ejecutarMigracionFinal() {
+        cerrarModalMigracion();
+        
+        const syncStatus = document.getElementById('syncStatus');
+        syncStatus.textContent = "⚙️ MIGRANDO DATOS E IMÁGENES A DRIVE (ESPERE)...";
+        syncStatus.style.color = "var(--red)";
+
+        const hoy = new Date();
+        const fechaStr = hoy.getDate() + "-" + (hoy.getMonth() + 1) + "-" + hoy.getFullYear();
+
+        fetch(gasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+                action: 'finalizarBuque',
+                data: {
+                    buqueNombre: buqueNombreActual,
+                    fecha: fechaStr
+                }
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.ok) {
+                alert(`✅ Buque finalizado con éxito.\n\n* Se creó el archivo de respaldo en Drive.\n* Todas las carpetas de fotos activas fueron archivadas.\n* Las hojas activas se vaciaron e iniciaron a cero.`);
+                sincronizarServidor();
+            } else {
+                alert("❌ Error en la migración: " + data.error);
+            }
+        })
+        .catch(() => {
+            alert("⚠️ Error de conexión con el puerto.");
+        })
+        .finally(() => {
+            syncStatus.textContent = "Sincronizado";
+            syncStatus.style.color = "";
+        });
     }
 </script>
 </body>
