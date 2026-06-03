@@ -23,6 +23,29 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
         body, html { width: 100%; height: 100%; background: var(--bg-gray); overflow: hidden; font-size: 14px; }
 
+        /* INDICADOR FLOTANTE DE AUDIO BLOQUEADO */
+        #audioUnlockBanner {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #ca8a04;
+            color: white;
+            padding: 14px 22px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 13px;
+            z-index: 10005;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: none;
+            cursor: pointer;
+            border: 2px solid #b45309;
+            animation: pulseWarning 1.5s infinite alternate;
+        }
+        @keyframes pulseWarning {
+            from { transform: scale(1); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+            to { transform: scale(1.03); box-shadow: 0 6px 18px rgba(180,83,9,0.5); }
+        }
+
         /* LOGIN */
         #loginScreen { position: fixed; inset: 0; background: var(--navy); display: flex; align-items: center; justify-content: center; z-index: 9999; }
         .login-card { background: var(--white); padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 400px; text-align: center; }
@@ -100,7 +123,10 @@
         .grid-fotos img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 2px solid #cbd5e1; cursor: pointer; }
     </style>
 </head>
-<body>
+<body onclick="desbloquearAudioPorClic()">
+
+<!-- INDICADOR FLOTANTE DE REACIVACIÓN DE AUDIO -->
+<div id="audioUnlockBanner" onclick="desbloquearAudioPorClic(event)">🔊 CLIC AQUÍ para activar las Alertas Sonoras de Emergencia</div>
 
 <!-- PANTALLA LOGIN -->
 <div id="loginScreen">
@@ -411,12 +437,64 @@
     let knownTransactionIds = new Set();
     let isFirstLoad = true;
 
+    // CREACIÓN DE UN WEB WORKER INLINE PARA EVITAR QUE EL NAVEGADOR DETENGA LA SINCRONIZACIÓN AL MINIMIZAR LA PESTAÑA
+    let workerCode = `
+        let intervalId = null;
+        self.onmessage = function(e) {
+            if (e.data === 'start') {
+                if (intervalId) clearInterval(intervalId);
+                intervalId = setInterval(() => {
+                    self.postMessage('tick');
+                }, 15000);
+            } else if (e.data === 'stop') {
+                if (intervalId) clearInterval(intervalId);
+            }
+        };
+    `;
+    let blob = new Blob([workerCode], {type: 'application/javascript'});
+    let backgroundWorker = new Worker(URL.createObjectURL(blob));
+
+    backgroundWorker.onmessage = function(e) {
+        if (e.data === 'tick') {
+            sincronizarServidor();
+        }
+    };
+
     window.onload = () => {
         if (localStorage.getItem(SESSION_KEY) === 'true') {
             mostrarDashboard();
         }
         document.getElementById('gasUrlInput').value = gasUrl;
     };
+
+    // FUNCIÓN DE DESBLOQUEO DE AUDIO (Por política de Autoplay de los navegadores)
+    function desbloquearAudioPorClic(event) {
+        if (event) event.stopPropagation();
+        
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume().then(() => {
+                const banner = document.getElementById('audioUnlockBanner');
+                if (banner) banner.style.display = "none";
+            });
+        } else {
+            const banner = document.getElementById('audioUnlockBanner');
+            if (banner) banner.style.display = "none";
+        }
+    }
+
+    function verificarEstadoDeAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            document.getElementById('audioUnlockBanner').style.display = "block";
+        } else {
+            document.getElementById('audioUnlockBanner').style.display = "none";
+        }
+    }
 
     // INGRESO AL SISTEMA MEDIANTE PETICIÓN DE SEGURIDAD DIRECTA AL SERVIDOR
     function doLogin() {
@@ -447,6 +525,7 @@
     }
 
     function doLogout() {
+        backgroundWorker.postMessage('stop');
         localStorage.removeItem(SESSION_KEY);
         location.reload();
     }
@@ -460,8 +539,11 @@
     function initCicloMonitoreo() {
         updateClock();
         setInterval(updateClock, 1000);
-        sincronizarServidor();
-        setInterval(sincronizarServidor, 15000); 
+        
+        sincronizarServidor(); // Primer fetch inmediato
+        backgroundWorker.postMessage('start'); // El Web Worker se encargará de los intervalos de 15s con precisión
+        
+        setTimeout(verificarEstadoDeAudio, 1000); // Verificar si el navegador bloqueó el audio
     }
 
     function updateClock() {
@@ -603,7 +685,14 @@
         } catch(e) {}
     }
 
-    // ANALIZADOR DE ALERTAS Y ALARMA OPTIMIZADO (Búsqueda por viajeId para evitar falsos positivos)
+    // EXTRAE LA CLAVE BASE DEL VIAJE (Ej: "02_TT16_18" se convierte en "02_TT16" para emparejamiento sin importar los bolsones)
+    function obtenerBaseViajeId(viajeId) {
+        if (!viajeId) return "";
+        const partes = viajeId.split('_');
+        return partes.slice(0, 2).join('_');
+    }
+
+    // ANALIZADOR DE ALERTAS Y ALARMA OPTIMIZADO (Utilizando la clave base de viaje para evitar falsos positivos de tránsito)
     function procesarAnalisisYAlarmas() {
         let hayDiscrepancia = false;
         let hayRetrasoTransito = false;
@@ -611,17 +700,17 @@
         const ahora = new Date();
         const limiteTiempo = 10 * 60 * 1000; 
 
-        // 1. Comparación cruzada robusta basada en viajeId único
+        // 1. Comparación cruzada robusta por clave base (N° de viaje + Placa)
         db.muelle.forEach(m => {
-            const l = db.labarthe.find(x => x.viajeId === m.viajeId);
+            const l = db.labarthe.find(x => obtenerBaseViajeId(x.viajeId) === obtenerBaseViajeId(m.viajeId));
             if (l && parseInt(l.bolsones) !== parseInt(m.bolsones)) {
                 hayDiscrepancia = true;
             }
         });
 
-        // 2. Alertar retraso en tránsito por viajeId no arribado
+        // 2. Alertar retraso en tránsito por clave base no arribada
         db.muelle.forEach(m => {
-            const confirmado = db.labarthe.some(x => x.viajeId === m.viajeId);
+            const confirmado = db.labarthe.some(x => obtenerBaseViajeId(x.viajeId) === obtenerBaseViajeId(m.viajeId));
             if (!confirmado) {
                 const fRegistro = parsearFechaExcel(m.fechaHora);
                 if (fRegistro && (ahora - fRegistro) > limiteTiempo) {
@@ -646,7 +735,10 @@
         alarmInterval = setInterval(() => {
             try {
                 if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioCtx.state === 'suspended') return;
+                if (audioCtx.state === 'suspended') {
+                    verificarEstadoDeAudio(); // Mostrar banner de desbloqueo si se bloqueó
+                    return;
+                }
 
                 const osc = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
@@ -742,7 +834,7 @@
         let difs = 0;
         let trans = 0;
         muelleTurno.forEach(m => {
-            const l = labartheTurno.find(x => x.viajeId === m.viajeId);
+            const l = db.labarthe.find(x => obtenerBaseViajeId(x.viajeId) === obtenerBaseViajeId(m.viajeId));
             if (l) {
                 if (parseInt(l.bolsones) !== parseInt(m.bolsones)) difs++;
             } else {
@@ -770,14 +862,16 @@
                 let estado = '<span class="badge badge-ok">CONFIRMADO</span>';
 
                 if (r.puesto === 'muelle') {
-                    const l = db.labarthe.find(x => x.viajeId === r.viajeId);
+                    const l = db.labarthe.find(x => obtenerBaseViajeId(x.viajeId) === obtenerBaseViajeId(r.viajeId));
                     if (!l) {
                         const trTime = parsearFechaExcel(r.fechaHora);
                         const retrasado = trTime && (ahora - trTime) > 600000;
                         estado = `<span class="badge badge-transit">${retrasado ? '🚨 RETRASO TRANSITO' : 'EN TRÁNSITO'}</span>`;
+                    } else if (parseInt(l.bolsones) !== parseInt(r.bolsones)) {
+                        estado = '<span class="badge badge-alert">⚠️ DISCREPANCIA</span>';
                     }
                 } else if (r.puesto === 'labarthe') {
-                    const m = db.muelle.find(x => x.viajeId === r.viajeId);
+                    const m = db.muelle.find(x => obtenerBaseViajeId(x.viajeId) === obtenerBaseViajeId(r.viajeId));
                     if (m && parseInt(m.bolsones) !== parseInt(r.bolsones)) {
                         estado = '<span class="badge badge-alert">⚠️ DISCREPANCIA</span>';
                     }
@@ -878,7 +972,7 @@
         `).join('');
 
         document.getElementById('tbComparativo').innerHTML = db.muelle.map(m => {
-            const l = db.labarthe.find(x => x.viajeId === m.viajeId);
+            const l = db.labarthe.find(x => obtenerBaseViajeId(x.viajeId) === obtenerBaseViajeId(m.viajeId));
             const bolsonesL = l ? l.bolsones : '—';
             let diff = '—';
             let rowCls = '';
