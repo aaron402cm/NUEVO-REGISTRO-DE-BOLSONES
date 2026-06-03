@@ -179,7 +179,7 @@
         <div class="scroll-area">
             <!-- ALERTA DISCREPANCIA SIRENA -->
             <div id="bannerAlertaDiff" class="alert-banner danger">
-                ⚠️ SIRENA ACTIVA — DISCREPANCIA DETECTADA: Diferencia de bolsones en viaje activo entre Muelle y Labarthe.
+                ⚠️ SIRENA ACTIVA — DISCREPANCIA DETECTADA: Diferencia de bolsones o de productos en viaje activo entre Muelle y Labarthe.
             </div>
 
             <!-- ALERTA RETRASO SIRENA -->
@@ -692,7 +692,7 @@
         return partes.slice(0, 2).join('_');
     }
 
-    // ANALIZADOR DE ALERTAS Y ALARMA OPTIMIZADO (Utilizando la clave base de viaje para evitar falsos positivos de tránsito)
+    // ANALIZADOR DE ALERTAS Y ALARMA OPTIMIZADO (Validación de doble vía: bolsones y productos coincidiendo)
     function procesarAnalisisYAlarmas() {
         let hayDiscrepancia = false;
         let hayRetrasoTransito = false;
@@ -700,15 +700,19 @@
         const ahora = new Date();
         const limiteTiempo = 10 * 60 * 1000; 
 
-        // 1. Comparación cruzada robusta por clave base (N° de viaje + Placa)
+        // 1. Comparación cruzada de doble vía: bolsones y productos
         db.muelle.forEach(m => {
             const l = db.labarthe.find(x => obtenerBaseViajeId(x.viajeId) === obtenerBaseViajeId(m.viajeId));
-            if (l && parseInt(l.bolsones) !== parseInt(m.bolsones)) {
-                hayDiscrepancia = true;
+            if (l) {
+                const difBolsones = parseInt(l.bolsones) !== parseInt(m.bolsones);
+                const difProductos = l.productos.trim().toLowerCase() !== m.productos.trim().toLowerCase();
+                if (difBolsones || difProductos) {
+                    hayDiscrepancia = true;
+                }
             }
         });
 
-        // 2. Alertar retraso en tránsito por clave base no arribada
+        // 2. Alertar retraso en tránsito por viaje base no arribado
         db.muelle.forEach(m => {
             const confirmado = db.labarthe.some(x => obtenerBaseViajeId(x.viajeId) === obtenerBaseViajeId(m.viajeId));
             if (!confirmado) {
@@ -763,6 +767,10 @@
         }, 900); 
     }
 
+    function deactivateSirena() {
+        desactivarSirena();
+    }
+
     function desactivarSirena() {
         if (alarmInterval) {
             clearInterval(alarmInterval);
@@ -812,7 +820,7 @@
         }
     }
 
-    // RENDERIZADO TABLAS Y CONSOLIDACIÓN DE SALDOS POR PRODUCTO
+    // RENDERIZADO TABLAS Y CONSOLIDACIÓN DE SALDOS POR PRODUCTO (Estatus de doble vía: bolsones y productos)
     function renderTablasYDashboard() {
         const ahora = new Date();
         const mins = ahora.getHours() * 60 + ahora.getMinutes();
@@ -834,9 +842,11 @@
         let difs = 0;
         let trans = 0;
         muelleTurno.forEach(m => {
-            const l = db.labarthe.find(x => obtenerBaseViajeId(x.viajeId) === obtenerBaseViajeId(m.viajeId));
+            const l = labartheTurno.find(x => obtenerBaseViajeId(x.viajeId) === obtenerBaseViajeId(m.viajeId));
             if (l) {
-                if (parseInt(l.bolsones) !== parseInt(m.bolsones)) difs++;
+                const difBolsones = parseInt(l.bolsones) !== parseInt(m.bolsones);
+                const difProductos = l.productos.trim().toLowerCase() !== m.productos.trim().toLowerCase();
+                if (difBolsones || difProductos) difs++;
             } else {
                 trans++;
             }
@@ -867,13 +877,25 @@
                         const trTime = parsearFechaExcel(r.fechaHora);
                         const retrasado = trTime && (ahora - trTime) > 600000;
                         estado = `<span class="badge badge-transit">${retrasado ? '🚨 RETRASO TRANSITO' : 'EN TRÁNSITO'}</span>`;
-                    } else if (parseInt(l.bolsones) !== parseInt(r.bolsones)) {
-                        estado = '<span class="badge badge-alert">⚠️ DISCREPANCIA</span>';
+                    } else {
+                        const difBolsones = parseInt(l.bolsones) !== parseInt(r.bolsones);
+                        const difProductos = l.productos.trim().toLowerCase() !== r.productos.trim().toLowerCase();
+                        if (difBolsones) {
+                            estado = '<span class="badge badge-alert">⚠️ DISC. CANTIDAD</span>';
+                        } else if (difProductos) {
+                            estado = '<span class="badge badge-alert" style="background:#ea580c;">⚠️ DISC. PRODUCTO</span>';
+                        }
                     }
                 } else if (r.puesto === 'labarthe') {
                     const m = db.muelle.find(x => obtenerBaseViajeId(x.viajeId) === obtenerBaseViajeId(r.viajeId));
-                    if (m && parseInt(m.bolsones) !== parseInt(r.bolsones)) {
-                        estado = '<span class="badge badge-alert">⚠️ DISCREPANCIA</span>';
+                    if (m) {
+                        const difBolsones = parseInt(m.bolsones) !== parseInt(r.bolsones);
+                        const difProductos = m.productos.trim().toLowerCase() !== r.productos.trim().toLowerCase();
+                        if (difBolsones) {
+                            estado = '<span class="badge badge-alert">⚠️ DISC. CANTIDAD</span>';
+                        } else if (difProductos) {
+                            estado = '<span class="badge badge-alert" style="background:#ea580c;">⚠️ DISC. PRODUCTO</span>';
+                        }
                     }
                 }
 
@@ -980,9 +1002,26 @@
 
             if (l) {
                 const resta = m.bolsones - l.bolsones;
-                diff = resta === 0 ? "✅ Sin Diferencias" : `❌ Falta: ${resta}`;
-                rowCls = resta !== 0 ? 'tr-danger' : 'tr-success';
-                est = resta === 0 ? '<span class="badge badge-ok">CORRECTO</span>' : '<span class="badge badge-alert">DISCREPANCIA</span>';
+                const difBolsones = resta !== 0;
+                const difProductos = m.productos.trim().toLowerCase() !== l.productos.trim().toLowerCase();
+
+                if (!difBolsones && !difProductos) {
+                    diff = "✅ Sin Diferencias";
+                    rowCls = 'tr-success';
+                    est = '<span class="badge badge-ok">CORRECTO</span>';
+                } else {
+                    rowCls = 'tr-danger';
+                    if (difBolsones && difProductos) {
+                        diff = `❌ Cant: ${resta} y Prod. Diferente`;
+                        est = '<span class="badge badge-alert">⚠️ DISC. DOBLE</span>';
+                    } else if (difBolsones) {
+                        diff = `❌ Falta: ${resta}`;
+                        est = '<span class="badge badge-alert">⚠️ DISC. CANTIDAD</span>';
+                    } else if (difProductos) {
+                        diff = `❌ Productos Diferentes`;
+                        est = '<span class="badge badge-alert" style="background:#ea580c;">⚠️ DISC. PRODUCTO</span>';
+                    }
+                }
             } else {
                 const trTime = parsearFechaExcel(m.fechaHora);
                 if (trTime && (new Date() - trTime) > 600000) {
@@ -994,8 +1033,8 @@
             return `
                 <tr class="${rowCls}">
                     <td style="font-weight:bold;">${m.tt}</td>
-                    <td>${m.bolsones}</td>
-                    <td>${bolsonesL}</td>
+                    <td>${m.bolsones} (${m.productos})</td>
+                    <td>${bolsonesL} (${l ? l.productos : '—'})</td>
                     <td style="font-weight:bold;">${diff}</td>
                     <td>${m.fechaHora}</td>
                     <td>${est}</td>
@@ -1279,3 +1318,4 @@
 </script>
 </body>
 </html>
+--- END OF FILE panel_cctv (1).html ---
