@@ -16,21 +16,17 @@
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 16px; }
 
-/* INDICADOR DE ESTADO FLOTANTE SUPERIOR IZQUIERDO */
+/* INDICADOR DE ESTADO ORDENADO DEBAJO DEL ENCABEZADO */
 #statusIndicator {
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  background: rgba(15, 23, 42, 0.95);
+  background: #0f172a;
   color: #38bdf8;
-  padding: 5px 12px;
-  border-radius: 6px;
-  font-size: 0.8rem;
+  text-align: center;
+  padding: 8px 12px;
+  font-size: 0.9rem;
   font-weight: bold;
-  z-index: 1001;
+  z-index: 1000;
   display: none;
-  border: 1px solid #0284c7;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+  border-bottom: 2px solid #0284c7;
 }
 
 /* LOGIN PERSISTENTE */
@@ -46,9 +42,9 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 
 /* APP */
 #app { display: none; min-height: 100vh; flex-direction: column; }
-.header { background: var(--blue); color: white; padding: 1.2rem; position: sticky; top: 0; z-index: 100; border-bottom: 4px solid var(--blue-dark); }
-.header-row { display: flex; justify-content: space-between; align-items: center; }
-.header-title { font-size: 1.5rem; font-weight: 800; padding-left: 5px; }
+.header { background: var(--blue); color: white; padding: 0.8rem 1rem; position: sticky; top: 0; z-index: 100; border-bottom: 4px solid var(--blue-dark); }
+.header-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+.header-title { font-size: 1.3rem; font-weight: 800; text-align: center; flex: 1; }
 .header-puesto { background: rgba(255,255,255,0.25); padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 1.1rem; font-weight: bold; border: 1px solid white; }
 .btn-back { background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.6rem 1rem; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; display: none; }
 .btn-back.visible { display: block; }
@@ -122,7 +118,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 .hist-qty { font-size: 1.8rem; font-weight: 900; color: var(--blue); }
 .hist-meta { font-size: 1.1rem; color: var(--muted); font-weight: bold; }
 
-/* BOTTOM NAV REDUCIDA A LA MITAD */
+/* BOTTOM NAV (Reducido a la mitad) */
 .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 3px solid var(--border); display: flex; z-index: 200; height: 50px; }
 .bnav-btn { flex: 1; padding: 0.3rem 0; display: flex; flex-direction: column; align-items: center; font-size: 0.8rem; font-weight: bold; color: var(--muted); background: none; border: none; justify-content: center; }
 .bnav-btn.active { color: var(--blue); background: var(--blue-light); }
@@ -148,32 +144,19 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 </head>
 <body>
 
-<!-- INDICADOR DE ESTADO FLOTANTE SUPERIOR IZQUIERDO -->
-<div id="statusIndicator">Conectando...</div>
-
-<!-- PANTALLA LOGIN -->
-<div id="loginScreen">
-  <div class="login-box">
-    <div class="login-brand">
-      <h1>📦 IQBF Control</h1>
-    </div>
-    <div class="login-sub">Registro de Bolsones</div>
-    <input type="password" id="pwInput" placeholder="Contraseña" autocomplete="current-password" onkeypress="if(event.key === 'Enter') doLogin()"/>
-    <button class="btn-login" onclick="doLogin()">INGRESAR</button>
-    <div class="login-error" id="loginError"></div>
-  </div>
-</div>
-
 <!-- APP PRINCIPAL -->
 <div id="app">
   <div class="header">
     <div class="header-row">
       <button class="btn-back" id="btnBack" onclick="volverSelector()">← Puestos</button>
-      <div class="header-title" id="headerTitle" style="margin-left: 200px;">📦 IQBF Control</div>
+      <div class="header-title" id="headerTitle">📦 IQBF Control</div>
       <button id="btnSyncHeader" onclick="sincronizarConExcel()" style="background:var(--blue-light); color:var(--blue); border:none; font-weight:bold; padding:0.5rem 0.8rem; border-radius:8px; font-size:1rem; cursor:pointer;">🔄 Sincronizar</button>
       <div class="header-puesto" id="headerPuesto" style="display:none; visibility:hidden">—</div>
     </div>
   </div>
+
+  <!-- INDICADOR DE ESTADO ORDENADO (Justo debajo del encabezado principal) -->
+  <div id="statusIndicator">Conectando...</div>
 
   <div id="buqueHeaderMovil">🚢 Cargando Buque y Carga Inicial...</div>
 
@@ -292,6 +275,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
   </div>
 </div>
 
+<!-- MODAL DE CONFIRMACIÓN -->
 <div class="modal-overlay" id="modalConfirm">
   <div class="modal-box">
     <div class="modal-title">¿Confirmar Registro?</div>
@@ -329,7 +313,7 @@ window.onload = () => {
   setInterval(verificarPendientesAlmacenados, 30000); 
 };
 
-// MOSTRAR INDICADOR DE ESTADO EN LA PARTE SUPERIOR IZQUIERDA
+// MOSTRAR INDICADOR DE ESTADO EN LA PARTE SUPERIOR (Justo debajo del encabezado)
 function updateStatusIndicator(msg, type = "normal") {
   const statusInd = document.getElementById('statusIndicator');
   if (!statusInd) return;
