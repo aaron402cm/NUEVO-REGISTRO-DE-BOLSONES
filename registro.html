@@ -117,7 +117,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 .login-brand { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 1rem; }
 .login-brand h1 { font-size: 2.2rem; font-weight: 900; color: var(--blue); }
 .login-sub { font-size: 1.2rem; color: var(--muted); margin-bottom: 2rem; font-weight: bold; }
-.login-box input[type="password"] { width: 100%; padding: 1.2rem; font-size: 1.8rem; border: 3px solid var(--border); border-radius: 12px; margin-bottom: 1.5rem; text-align: center; outline: none; }
+.login-box input[type="password"] { width: 100%; padding: 1.2rem; font-size: 1.8rem; border: 3px solid var(--border); border-radius: 12px; margin-bottom: 1.5rem; text-align: center; outline: none; margin-bottom: 15px; }
 .login-box input:focus { border-color: var(--blue); }
 .btn-login { width: 100%; padding: 1.2rem; font-size: 1.5rem; font-weight: bold; background: var(--blue); color: white; border: none; border-radius: 12px; cursor: pointer; }
 .login-error { color: var(--red); font-size: 1.1rem; margin-top: 1rem; font-weight: bold; min-height: 1.5rem; }
@@ -214,6 +214,19 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 </style>
 </head>
 <body>
+
+<!-- PANTALLA LOGIN (Reintegrada para evitar pantalla blanca) -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-brand">
+      <h1>📦 IQBF Control</h1>
+    </div>
+    <div class="login-sub">Registro de Bolsones</div>
+    <input type="password" id="pwInput" placeholder="Contraseña" autocomplete="current-password" onkeypress="if(event.key === 'Enter') doLogin()"/>
+    <button class="btn-login" onclick="doLogin()">INGRESAR</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
 
 <!-- APP PRINCIPAL -->
 <div id="app">
@@ -359,19 +372,6 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
   </div>
 </div>
 
-<!-- PANTALLA LOGIN (Reintegrada para evitar pantalla blanca) -->
-<div id="loginScreen">
-  <div class="login-box">
-    <div class="login-brand">
-      <h1>📦 IQBF Control</h1>
-    </div>
-    <div class="login-sub">Registro de Bolsones</div>
-    <input type="password" id="pwInput" placeholder="Contraseña" autocomplete="current-password" onkeypress="if(event.key === 'Enter') doLogin()"/>
-    <button class="btn-login" onclick="doLogin()">INGRESAR</button>
-    <div class="login-error" id="loginError"></div>
-  </div>
-</div>
-
 <div class="modal-overlay" id="modalConfirm">
   <div class="modal-box">
     <div class="modal-title">¿Confirmar Registro?</div>
@@ -435,7 +435,7 @@ function updateStatusIndicator(msg, type = "normal") {
   }
 }
 
-// VERIFICACIÓN DE CONTRASEÑA EN EL SERVIDOR
+// VERIFICACIÓN DE CONTRASEÑA EN EL SERVIDOR CON ALMACENAMIENTO DINÁMICO
 async function doLogin() {
   const input = document.getElementById('pwInput').value;
   const err = document.getElementById('loginError');
@@ -452,6 +452,10 @@ async function doLogin() {
     });
     const data = await res.json();
     if (data.ok && data.valid) {
+      // REGISTRAR PASSWORD DINÁMICO EN LA SESIÓN ACTIVA DEL CLIENTE
+      sessionStorage.setItem("iqbf_pass", input);
+      localStorage.setItem("iqbf_pass", input); // Persistencia de recarga del vigilante
+
       localStorage.setItem(SESSION_KEY, 'true');
       mostrarAplicativo();
     } else {
@@ -584,7 +588,7 @@ function perteneceAlTurnoActual(fechaHoraStr) {
   } else {
     if (totalMinsAhora >= endDiurno + 1) { 
       startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 18, 46, 0);
-      endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1, 6, 44, 59);
+      endShiftDate = new Date(ahora.getFullYear(), hours = ahora.getHours(), ahora.getDate() + 1, 6, 44, 59);
     } else { 
       startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - 1, 18, 46, 0);
       endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 6, 44, 59);
@@ -631,6 +635,7 @@ function parsearFechaExcel(fStr) {
   }
 }
 
+// SINCRONIZACIÓN FIRMADA DINÁMICAMENTE CON LA CONTRASEÑA EN SESIÓN
 async function sincronizarConExcel() {
   const btnSync = document.getElementById('btnSyncHeader');
   if (btnSync) {
@@ -639,8 +644,10 @@ async function sincronizarConExcel() {
   }
   updateStatusIndicator("⌛ Sincronizando con el puerto...");
 
+  const pass = sessionStorage.getItem("iqbf_pass") || localStorage.getItem("iqbf_pass") || "";
+
   try {
-    const pRes = await fetch(`${GAS_URL}?action=obtenerProductos`);
+    const pRes = await fetch(`${GAS_URL}?action=obtenerProductos&pass=${encodeURIComponent(pass)}`);
     const pData = await pRes.json();
     if (pData.ok) {
       listadoProductos = pData.productos;
@@ -649,14 +656,14 @@ async function sincronizarConExcel() {
       renderProductosUI();
     }
 
-    const cRes = await fetch(`${GAS_URL}?action=obtenerConductores`);
+    const cRes = await fetch(`${GAS_URL}?action=obtenerConductores&pass=${encodeURIComponent(pass)}`);
     const cData = await cRes.json();
     if (cData.ok) {
       conductoresDisponibles = cData.conductores;
       if (puestoActual === 'despacho') renderConductoresUI();
     }
 
-    const rRes = await fetch(`${GAS_URL}?action=obtenerFilasExcel`);
+    const rRes = await fetch(`${GAS_URL}?action=obtenerFilasExcel&pass=${encodeURIComponent(pass)}`);
     const rData = await rRes.json();
     if (rData.ok) {
       dbGlobal.muelle = []; dbGlobal.labarthe = []; dbGlobal.despacho = [];
@@ -806,15 +813,6 @@ function changeTab(tab) {
   }
 }
 
-function crearSelectorNum(id, isD) {
-  // Obsoleto: Reemplazado por Teclado Calculadora
-}
-
-function selectBolsones(n, id, isD) {
-  // Obsoleto: Reemplazado por Teclado Calculadora
-}
-
-// RESTO DE FUNCIONALIDADES OPERATIVAS DE REGISTRO
 function renderProductosUI() {
   ['prodGrid', 'prodGridD'].forEach(gridId => {
     const grid = document.getElementById(gridId);
@@ -826,9 +824,10 @@ function renderProductosUI() {
       b.textContent = prod;
       b.type = "button";
       b.onclick = () => {
-        const i = productosSeleccionados.indexOf(prod);
-        if (i > -1) { productosSeleccionados.splice(i, 1); b.classList.remove('sel'); }
-        else { productosSeleccionados.push(prod); b.classList.add('sel'); }
+        // OBLIGAR A SELECCIÓN ÚNICA (Recomendada para consistencia de saldos en CCTV)
+        productosSeleccionados = [prod];
+        document.querySelectorAll(`#${gridId} .prod-btn`).forEach(btn => btn.classList.remove('sel'));
+        b.classList.add('sel');
       };
       grid.appendChild(b);
     });
@@ -850,12 +849,9 @@ function renderConductoresUI() {
     return;
   }
   
-  // Extraer nombres dedupados de choferes
   const choferesUnicos = [...new Set(conductoresDisponibles.map(c => c.nombre.trim()))];
-  // Extraer placas dedupadas de placas
   const placasUnicas = [...new Set(conductoresDisponibles.map(c => c.placa.trim().toUpperCase()))];
   
-  // Renderizar Choferes (Columna Izquierda - Se pinta con color fuerte al seleccionarlo)
   choferesUnicos.forEach(nombre => {
     const item = document.createElement('div');
     item.className = "conductor-item";
@@ -880,7 +876,6 @@ function renderConductoresUI() {
     listChof.appendChild(item);
   });
   
-  // Renderizar Placas (Columna Derecha - Se pinta con color fuerte al seleccionarlo)
   placasUnicas.forEach(placa => {
     const item = document.createElement('div');
     item.className = "conductor-item";
@@ -1017,7 +1012,7 @@ function cerrarConfirmacion() {
   document.getElementById('modalConfirm').classList.remove('open');
 }
 
-// PROTOCOLO DE SUBIDA RESILIENTE DE DOS FASES CON RETORNO DE PANTALLA INMEDIATO
+// PROTOCOLO DE SUBIDA RESILIENTE EN 2 FASES CON FIRMA DE CONTRASEÑA EN SESIÓN DINÁMICA
 async function guardarDatosFinal() {
   cerrarConfirmacion();
   const isD = puestoActual === 'despacho';
@@ -1030,8 +1025,10 @@ async function guardarDatosFinal() {
 
   const now = new Date();
   const fechaHora = now.toLocaleDateString('es-PE', {day:'2-digit', month:'2-digit', year:'numeric'}) + ' ' + now.toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  const pass = sessionStorage.getItem("iqbf_pass") || localStorage.getItem("iqbf_pass") || "";
 
   const textPayload = {
+    pass: pass, // Validar con la contraseña en cada petición
     action: isD ? 'registroDespacho' : 'registroDescarga',
     data: {
       puesto: puestoActual,
@@ -1087,9 +1084,10 @@ async function guardarDatosFinal() {
   }
 }
 
-// ENVIAR FOTOS DE FORMA INDIVIDUAL EN SEGUNDO PLANO ACTUALIZANDO EL ENCABEZADO
+// ENVIAR FOTOS DE FORMA INDIVIDUAL EN SEGUNDO PLANO ACTUALIZANDO EL ENCABEZADO CON FIRMA DINÁMICA
 async function subirFotosEnSegundoPlano(viajeId, puesto, listaFotos) {
   updateStatusIndicator(`📸 Subiendo foto 1/${listaFotos.length}...`);
+  const pass = sessionStorage.getItem("iqbf_pass") || localStorage.getItem("iqbf_pass") || "";
 
   for (let i = 0; i < listaFotos.length; i++) {
     updateStatusIndicator(`📸 Subiendo foto ${i+1}/${listaFotos.length}...`);
@@ -1098,6 +1096,7 @@ async function subirFotosEnSegundoPlano(viajeId, puesto, listaFotos) {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
+          pass: pass,
           action: 'subirFotoIndividual',
           data: {
             viajeId: viajeId,
@@ -1123,16 +1122,21 @@ function guardarFotoParaReintentar(viajeId, puesto, fotoB64, index) {
   localStorage.setItem(failKey, JSON.stringify(failObj));
 }
 
-// PROCESADOR EN SEGUNDO PLANO DE ENVÍO AUTOMÁTICO DE REGISTROS PENDIENTES
+// PROCESADOR EN SEGUNDO PLANO DE ENVÍO AUTOMÁTICO DE REGISTROS PENDIENTES CON CONTRASEÑA EN SESIÓN
 async function verificarPendientesAlmacenados() {
+  const pass = sessionStorage.getItem("iqbf_pass") || localStorage.getItem("iqbf_pass") || "";
+  if (!pass) return;
+
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     
     // 1. Reintentar registros completos que fallaron desde la Fase 1
     if (key && key.startsWith("iqbf_pending_")) {
       try {
-        const backup = JSON.parse(localStorage.getItem(key));
+        let backup = JSON.parse(localStorage.getItem(key));
         if (backup && backup.payload) {
+          backup.payload.pass = pass; // Actualizar con el password de sesión dinámico activo
+          
           const res = await fetch(GAS_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -1146,6 +1150,7 @@ async function verificarPendientesAlmacenados() {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({
+                  pass: pass,
                   action: 'subirFotoIndividual',
                   data: {
                     viajeId: viajeId,
@@ -1173,6 +1178,7 @@ async function verificarPendientesAlmacenados() {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({
+              pass: pass,
               action: 'subirFotoIndividual',
               data: {
                 viajeId: failObj.viajeId,
@@ -1226,4 +1232,3 @@ function showToast(msg, isError = false) {
 </script>
 </body>
 </html>
---- END OF FILE registro (1).html ---
