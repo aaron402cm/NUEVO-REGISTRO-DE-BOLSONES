@@ -128,6 +128,29 @@
 <!-- INDICADOR FLOTANTE DE REACIVACIÓN DE AUDIO -->
 <div id="audioUnlockBanner" onclick="desbloquearAudioPorClic(event)">🔊 CLIC AQUÍ para activar las Alertas Sonoras de Emergencia</div>
 
+<!-- OVERLAY ADVERTENCIA MIGRACIÓN (MODAL DE SEGURIDAD) -->
+<div id="modalMigracion" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 10010;">
+    <div style="background: white; padding: 30px; border-radius: 16px; width: 90%; max-width: 500px; border: 4px solid var(--red); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <h3 style="color: var(--red); font-size: 20px; font-weight: 900; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+            ⚠️ ADVERTENCIA CRÍTICA DE CIERRE
+        </h3>
+        <p style="font-size: 13px; line-height: 1.5; color: var(--navy); margin-bottom: 15px;">
+            Está a punto de finalizar las operaciones del buque activo: <strong id="modalBuqueNombre">—</strong>.
+        </p>
+        <p style="font-size: 13px; line-height: 1.5; color: var(--muted); margin-bottom: 15px;">
+            Se creará un nuevo archivo Excel histórico con su fecha correspondiente en Drive, se trasladarán todas las imágenes del buque y la base de datos de trabajo activa se reiniciará a cero de forma completa. 
+        </p>
+        <p style="font-size: 13px; font-weight: bold; color: var(--red); margin-bottom: 15px;">
+            Escriba la palabra <strong style="text-decoration:underline;">MIGRAR</strong> a continuación para confirmar y desbloquear la acción:
+        </p>
+        <input type="text" id="confirmMigrarInput" placeholder="Escriba aquí..." style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; font-size: 16px; font-weight: bold; text-align: center; margin-bottom: 20px;" oninput="validarTextoMigrar()">
+        <div style="display: flex; gap: 12px;">
+            <button class="btn-sm" style="flex: 1; padding: 12px; background: #cbd5e1; color: var(--navy);" onclick="cerrarModalMigracion()">Corregir / Volver</button>
+            <button id="btnEjecutarMigracion" class="btn-sm" style="flex: 1; padding: 12px; background: var(--red); color: white;" onclick="ejecutarMigracionFinal()" disabled>Sí, Finalizar Buque</button>
+        </div>
+    </div>
+</div>
+
 <!-- PANTALLA LOGIN -->
 <div id="loginScreen">
     <div class="login-card">
@@ -391,6 +414,12 @@
                             <button class="btn-sm" style="background:var(--blue-btn); color:white; height:40px; padding:0 20px;" onclick="agregarProductoMemoria()">Añadir</button>
                         </div>
                         <button class="btn-sm" style="background:var(--green); color:white; width:100%; padding: 12px; margin-top:15px; font-size:14px;" onclick="guardarProductosServidor()">💾 Guardar Catálogo en Excel</button>
+                        
+                        <!-- BOTÓN DE MIGRACIÓN Y CIERRE DE BUQUE ACTIVO -->
+                        <hr style="margin: 20px 0; border: 0; border-top: 2px solid #cbd5e1;">
+                        <h4 style="font-weight:bold; color:var(--red); margin-bottom:10px; font-size:14px; text-transform:uppercase;">⚠️ Cierre de Operaciones de Buque</h4>
+                        <p style="color:var(--muted); margin-bottom:12px; font-size:12px;">Esta acción creará un archivo Excel histórico en su Drive, migrará todas las fotos de viajes de este buque y vaciará el panel activo para iniciar a cero.</p>
+                        <button class="btn-sm" style="background:var(--red); color:white; width:100%; padding: 12px; font-size:14px;" onclick="confirmarYFinalizarBuque()">🚢 Finalizar Buque Actual y Archivar</button>
                     </div>
                 </div>
             </div>
@@ -424,6 +453,7 @@
 
 <script>
     const SESSION_KEY = "iqbf_cctv_persistent_session";
+    const API_TOKEN = "ApmSecurePort2026"; // Token de Seguridad exclusivo en el cliente
 
     let gasUrl = localStorage.getItem("iqbf_gas_url") || "https://script.google.com/macros/s/AKfycbxZ4qwyvvuWd_IfedsWR1R65niSwlYPKtgcDU_e5f0H4P1cCbOvIGDICksXe3tIdDrfrw/exec";
     let db = { muelle: [], labarthe: [], despacho: [] };
@@ -506,6 +536,7 @@
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({
+                token: API_TOKEN,
                 action: 'verificarPassword',
                 data: { tipo: 'cctv', password: input }
             })
@@ -604,7 +635,7 @@
         if (!gasUrl) return;
         document.getElementById('syncStatus').textContent = "Sincronizando...";
 
-        fetch(`${gasUrl}?action=obtenerProductos`)
+        fetch(`${gasUrl}?action=obtenerProductos&token=${API_TOKEN}`)
             .then(res => res.json())
             .then(pData => {
                 if (pData.ok) {
@@ -613,7 +644,7 @@
                     buqueMuelleActual = pData.buqueMuelle || "—";
                     renderEncabezadoBuque();
                 }
-                return fetch(`${gasUrl}?action=obtenerFilasExcel`);
+                return fetch(`${gasUrl}?action=obtenerFilasExcel&token=${API_TOKEN}`);
             })
             .then(res => res.json())
             .then(data => {
@@ -692,7 +723,7 @@
         return partes.slice(0, 2).join('_');
     }
 
-    // ANALIZADOR DE ALERTAS Y ALARMA OPTIMIZADO (Validación de doble vía: bolsones y productos coincidiendo)
+    // ANALIZADOR DE ALERTAS Y ALARMA OPTIMIZADO CON MAPA DE HASH (Búsqueda veloz de tiempo constante O(1))
     function procesarAnalisisYAlarmas() {
         let hayDiscrepancia = false;
         let hayRetrasoTransito = false;
@@ -700,9 +731,16 @@
         const ahora = new Date();
         const limiteTiempo = 10 * 60 * 1000; 
 
+        // INDEXACIÓN POR MAPA DE HASH O(1) PARA LABARTHE
+        let labartheMap = new Map();
+        db.labarthe.forEach(l => {
+            labartheMap.set(obtenerBaseViajeId(l.viajeId), l);
+        });
+
         // 1. Comparación cruzada de doble vía: bolsones y productos
         db.muelle.forEach(m => {
-            const l = db.labarthe.find(x => obtenerBaseViajeId(x.viajeId) === obtenerBaseViajeId(m.viajeId));
+            const baseId = obtenerBaseViajeId(m.viajeId);
+            const l = labartheMap.get(baseId);
             if (l) {
                 const difBolsones = parseInt(l.bolsones) !== parseInt(m.bolsones);
                 const difProductos = l.productos.trim().toLowerCase() !== m.productos.trim().toLowerCase();
@@ -714,7 +752,8 @@
 
         // 2. Alertar retraso en tránsito por viaje base no arribado
         db.muelle.forEach(m => {
-            const confirmado = db.labarthe.some(x => obtenerBaseViajeId(x.viajeId) === obtenerBaseViajeId(m.viajeId));
+            const baseId = obtenerBaseViajeId(m.viajeId);
+            const confirmado = labartheMap.has(baseId);
             if (!confirmado) {
                 const fRegistro = parsearFechaExcel(m.fechaHora);
                 if (fRegistro && (ahora - fRegistro) > limiteTiempo) {
@@ -820,7 +859,7 @@
         }
     }
 
-    // RENDERIZADO TABLAS Y CONSOLIDACIÓN DE SALDOS POR PRODUCTO (Estatus de doble vía: bolsones y productos)
+    // RENDERIZADO TABLAS Y CONSOLIDACIÓN DE SALDOS POR PRODUCTO CON MAPAS DE HASH DE BÚSQUEDA VELOZ O(1)
     function renderTablasYDashboard() {
         const ahora = new Date();
         const mins = ahora.getHours() * 60 + ahora.getMinutes();
@@ -839,10 +878,17 @@
         document.getElementById('kpiLabarthe').textContent = totalLabarthe;
         document.getElementById('kpiDespacho').textContent = totalDespacho;
 
+        // INDEXACIÓN POR MAPA DE HASH EN EL FILTRO DEL TURNO
+        let labartheTurnoMap = new Map();
+        labartheTurno.forEach(l => {
+            labartheTurnoMap.set(obtenerBaseViajeId(l.viajeId), l);
+        });
+
         let difs = 0;
         let trans = 0;
         muelleTurno.forEach(m => {
-            const l = labartheTurno.find(x => obtenerBaseViajeId(x.viajeId) === obtenerBaseViajeId(m.viajeId));
+            const baseId = obtenerBaseViajeId(m.viajeId);
+            const l = labartheTurnoMap.get(baseId);
             if (l) {
                 const difBolsones = parseInt(l.bolsones) !== parseInt(m.bolsones);
                 const difProductos = l.productos.trim().toLowerCase() !== m.productos.trim().toLowerCase();
@@ -1180,7 +1226,7 @@
         content.innerHTML = `<div style="text-align:center; padding:30px;">⏳ Obteniendo fotos de Drive...</div>`;
         document.getElementById('modalOverlay').classList.add('open');
 
-        fetch(`${gasUrl}?action=obtenerFotos&puesto=${puesto}&viajeId=${viajeId}`)
+        fetch(`${gasUrl}?action=obtenerFotos&puesto=${puesto}&viajeId=${viajeId}&token=${API_TOKEN}`)
             .then(res => res.json())
             .then(data => {
                 if (data.ok && data.fotos.length > 0) {
@@ -1208,7 +1254,7 @@
     function syncConductoresUI() {
         const div = document.getElementById('divListaConductores');
         div.innerHTML = "Cargando catálogo...";
-        fetch(`${gasUrl}?action=obtenerConductores`)
+        fetch(`${gasUrl}?action=obtenerConductores&token=${API_TOKEN}`)
             .then(res => res.json())
             .then(data => {
                 if (data.ok) {
@@ -1229,9 +1275,8 @@
 
         fetch(gasUrl, {
             method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: "agregarConductor", data: { nombre, placa } })
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ token: API_TOKEN, action: "agregarConductor", data: { nombre, placa } })
         }).then(() => {
             document.getElementById('addCondNombre').value = "";
             document.getElementById('addCondPlaca').value = "";
@@ -1243,16 +1288,15 @@
         if (!confirm(`¿Eliminar conductor: ${nombre}?`)) return;
         fetch(gasUrl, {
             method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: "eliminarConductor", data: { nombre, placa } })
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ token: API_TOKEN, action: "eliminarConductor", data: { nombre, placa } })
         }).then(() => {
             setTimeout(syncConductoresUI, 1500);
         });
     }
 
     function syncProductosUI() {
-        fetch(`${gasUrl}?action=obtenerProductos`)
+        fetch(`${gasUrl}?action=obtenerProductos&token=${API_TOKEN}`)
             .then(res => res.json())
             .then(data => {
                 if (data.ok) {
@@ -1297,9 +1341,8 @@
     function guardarProductosServidor() {
         fetch(gasUrl, {
             method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: "guardarProductos", data: { productos: listadoProductos } })
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ token: API_TOKEN, action: "guardarProductos", data: { productos: listadoProductos } })
         }).then(() => {
             alert('✅ Catálogo y carga de Buque actualizados de forma exitosa.');
             sincronizarServidor();
@@ -1315,7 +1358,70 @@
             sincronizarServidor();
         }
     }
+
+    // ============================================================
+    // MÓDULO VISUAL DE MIGRACIÓN Y ARCHIVADO DE BUQUE ACTUAL
+    // ============================================================
+    function confirmarYFinalizarBuque() {
+        if (!buqueNombreActual || buqueNombreActual === "—") {
+            alert("⚠️ No hay ningún buque activo configurado actualmente.");
+            return;
+        }
+        document.getElementById('modalBuqueNombre').textContent = buqueNombreActual;
+        document.getElementById('confirmMigrarInput').value = "";
+        document.getElementById('btnEjecutarMigracion').disabled = true;
+        document.getElementById('modalMigracion').style.display = "flex";
+    }
+
+    function cerrarModalMigracion() {
+        document.getElementById('modalMigracion').style.display = "none";
+    }
+
+    function validarTextoMigrar() {
+        const input = document.getElementById('confirmMigrarInput').value.trim().toUpperCase();
+        document.getElementById('btnEjecutarMigracion').disabled = (input !== "MIGRAR");
+    }
+
+    function ejecutarMigracionFinal() {
+        cerrarModalMigracion();
+        
+        // Bloquear pantalla con un spinner o toast simulado en el estado de sincronización
+        const syncStatus = document.getElementById('syncStatus');
+        syncStatus.textContent = "⚙️ MIGRANDO DATOS E IMÁGENES A DRIVE (ESPERE)...";
+        syncStatus.style.color = "var(--red)";
+
+        const hoy = new Date();
+        const fechaStr = hoy.getDate() + "-" + (hoy.getMonth() + 1) + "-" + hoy.getFullYear();
+
+        fetch(gasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+                token: API_TOKEN,
+                action: 'finalizarBuque',
+                data: {
+                    buqueNombre: buqueNombreActual,
+                    fecha: fechaStr
+                }
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.ok) {
+                alert(`✅ Buque finalizado con éxito.\n\n* Se creó el archivo de respaldo en Drive.\n* Todas las carpetas de fotos activas fueron archivadas.\n* Las hojas activas se vaciaron e iniciaron a cero.`);
+                sincronizarServidor();
+            } else {
+                alert("❌ Error en la migración: " + data.error);
+            }
+        })
+        .catch(() => {
+            alert("⚠️ Error de conexión con el puerto.");
+        })
+        .finally(() => {
+            syncStatus.textContent = "Sincronizado";
+            syncStatus.style.color = "";
+        });
+    }
 </script>
 </body>
 </html>
---- END OF FILE panel_cctv (1).html ---
