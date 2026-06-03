@@ -144,6 +144,19 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 </head>
 <body>
 
+<!-- PANTALLA LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-brand">
+      <h1>📦 IQBF Control</h1>
+    </div>
+    <div class="login-sub">Registro de Bolsones</div>
+    <input type="password" id="pwInput" placeholder="Contraseña" autocomplete="current-password" onkeypress="if(event.key === 'Enter') doLogin()"/>
+    <button class="btn-login" onclick="doLogin()">INGRESAR</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
 <!-- APP PRINCIPAL -->
 <div id="app">
   <div class="header">
@@ -275,7 +288,6 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
   </div>
 </div>
 
-<!-- MODAL DE CONFIRMACIÓN -->
 <div class="modal-overlay" id="modalConfirm">
   <div class="modal-box">
     <div class="modal-title">¿Confirmar Registro?</div>
@@ -634,6 +646,7 @@ function selectBolsones(n, id, isD) {
   });
 }
 
+// RESTO DE FUNCIONALIDADES OPERATIVAS DE REGISTRO
 function renderProductosUI() {
   ['prodGrid', 'prodGridD'].forEach(gridId => {
     const grid = document.getElementById(gridId);
