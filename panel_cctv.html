@@ -46,6 +46,26 @@
             to { transform: scale(1.03); box-shadow: 0 6px 18px rgba(180,83,9,0.5); }
         }
 
+        /* OVERLAY ADVERTENCIA MIGRACIÓN (MODAL DE SEGURIDAD GIGANTE) */
+        #modalMigracion {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10010;
+        }
+        .modal-migrar-box {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            border: 4px solid var(--red);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
         /* LOGIN */
         #loginScreen { position: fixed; inset: 0; background: var(--navy); display: flex; align-items: center; justify-content: center; z-index: 9999; }
         .login-card { background: var(--white); padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 400px; text-align: center; }
@@ -127,6 +147,29 @@
 
 <!-- INDICADOR FLOTANTE DE REACIVACIÓN DE AUDIO -->
 <div id="audioUnlockBanner" onclick="desbloquearAudioPorClic(event)">🔊 CLIC AQUÍ para activar las Alertas Sonoras de Emergencia</div>
+
+<!-- ADVERTENCIA MODAL DE MIGRACIÓN Y CIERRE DE BUQUE -->
+<div id="modalMigracion">
+    <div class="modal-migrar-box">
+        <h3 style="color: var(--red); font-size: 20px; font-weight: 900; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+            ⚠️ ADVERTENCIA CRÍTICA DE CIERRE
+        </h3>
+        <p style="font-size: 13px; line-height: 1.5; color: var(--navy); margin-bottom: 15px;">
+            Está a punto de finalizar las operaciones del buque activo: <strong id="modalBuqueNombre">—</strong>.
+        </p>
+        <p style="font-size: 13px; line-height: 1.5; color: var(--muted); margin-bottom: 15px;">
+            Se creará un nuevo archivo Excel histórico con su fecha correspondiente en la carpeta de Drive seleccionada, se trasladarán todas las imágenes del buque y la base de datos de trabajo activa se reiniciará a cero de forma completa. 
+        </p>
+        <p style="font-size: 13px; font-weight: bold; color: var(--red); margin-bottom: 15px;">
+            Escriba la palabra <strong style="text-decoration:underline;">MIGRAR</strong> a continuación para confirmar y desbloquear la acción:
+        </p>
+        <input type="text" id="confirmMigrarInput" placeholder="Escriba aquí..." style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; font-size: 16px; font-weight: bold; text-align: center; margin-bottom: 20px;" oninput="validarTextoMigrar()">
+        <div style="display: flex; gap: 12px;">
+            <button class="btn-sm" style="flex: 1; padding: 12px; background: #cbd5e1; color: var(--navy);" onclick="cerrarModalMigracion()">Corregir / Volver</button>
+            <button id="btnEjecutarMigracion" class="btn-sm" style="flex: 1; padding: 12px; background: var(--red); color: white;" onclick="ejecutarMigracionFinal()" disabled>Sí, Finalizar Buque</button>
+        </div>
+    </div>
+</div>
 
 <!-- PANTALLA LOGIN -->
 <div id="loginScreen">
@@ -390,7 +433,13 @@
                             </div>
                             <button class="btn-sm" style="background:var(--blue-btn); color:white; height:40px; padding:0 20px;" onclick="agregarProductoMemoria()">Añadir</button>
                         </div>
-                        <button class="btn-sm" style="background:var(--green); color:white; width:100%; padding: 12px; margin-top:15px; font-size:14px;" onclick="guardarProductosServidor()">💾 Guardar Catálogo en Excel</button>
+                        <button class="btn-sm" style="background:var(--green); color:white; width:100%; padding: 12px; margin-top:15px; font-size:14px; margin-bottom: 10px;" onclick="guardarProductosServidor()">💾 Guardar Catálogo en Excel</button>
+                        
+                        <!-- BOTÓN DE MIGRACIÓN Y CIERRE DE BUQUE ACTIVO -->
+                        <hr style="margin: 20px 0; border: 0; border-top: 2px solid #cbd5e1;">
+                        <h4 style="font-weight:bold; color:var(--red); margin-bottom:10px; font-size:14px; text-transform:uppercase;">⚠️ Cierre de Operaciones de Buque</h4>
+                        <p style="color:var(--muted); margin-bottom:12px; font-size:12px;">Esta acción creará un archivo Excel histórico en su Drive, migrará todas las fotos de viajes de este buque y vaciará el panel activo para iniciar a cero.</p>
+                        <button class="btn-sm" style="background:var(--red); color:white; width:100%; padding: 12px; font-size:14px;" onclick="confirmarYFinalizarBuque()">🚢 Finalizar Buque Actual y Archivar</button>
                     </div>
                 </div>
             </div>
@@ -842,7 +891,7 @@
         let difs = 0;
         let trans = 0;
         muelleTurno.forEach(m => {
-            const l = labartheTurno.find(x => obtenerBaseViajeId(x.viajeId) === obtenerBaseViajeId(m.viajeId));
+            const l = db.labarthe.find(x => obtenerBaseViajeId(x.viajeId) === obtenerBaseViajeId(m.viajeId));
             if (l) {
                 const difBolsones = parseInt(l.bolsones) !== parseInt(m.bolsones);
                 const difProductos = l.productos.trim().toLowerCase() !== m.productos.trim().toLowerCase();
@@ -1097,7 +1146,7 @@
                 <td><span class="badge badge-${r.puesto}">${r.puesto.toUpperCase()}</span></td>
                 <td style="font-weight:bold;">${r.viajeId}</td>
                 <td style="font-weight:bold;">${r.tt}</td>
-                <td style="font-weight:bold; font-size:14px;">${r.bolsones}</td>
+                <td style="font-size:15px; font-weight:bold;">${r.bolsones}</td>
                 <td>${r.productos}</td>
                 <td>${r.fechaHora}</td>
             </tr>
@@ -1318,4 +1367,3 @@
 </script>
 </body>
 </html>
---- END OF FILE panel_cctv (1).html ---
