@@ -16,6 +16,23 @@
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 16px; }
 
+/* INDICADOR DE ESTADO FLOTANTE SUPERIOR IZQUIERDO */
+#statusIndicator {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  background: rgba(15, 23, 42, 0.95);
+  color: #38bdf8;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  z-index: 1001;
+  display: none;
+  border: 1px solid #0284c7;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+}
+
 /* LOGIN PERSISTENTE */
 #loginScreen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; background: #0f172a; }
 .login-box { background: white; border-radius: 20px; padding: 2.5rem 1.5rem; width: 100%; max-width: 380px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 3px solid var(--blue); }
@@ -31,7 +48,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 #app { display: none; min-height: 100vh; flex-direction: column; }
 .header { background: var(--blue); color: white; padding: 1.2rem; position: sticky; top: 0; z-index: 100; border-bottom: 4px solid var(--blue-dark); }
 .header-row { display: flex; justify-content: space-between; align-items: center; }
-.header-title { font-size: 1.5rem; font-weight: 800; }
+.header-title { font-size: 1.5rem; font-weight: 800; padding-left: 5px; }
 .header-puesto { background: rgba(255,255,255,0.25); padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 1.1rem; font-weight: bold; border: 1px solid white; }
 .btn-back { background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.6rem 1rem; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; display: none; }
 .btn-back.visible { display: block; }
@@ -105,11 +122,11 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 .hist-qty { font-size: 1.8rem; font-weight: 900; color: var(--blue); }
 .hist-meta { font-size: 1.1rem; color: var(--muted); font-weight: bold; }
 
-/* BOTTOM NAV */
-.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 3px solid var(--border); display: flex; z-index: 200; }
-.bnav-btn { flex: 1; padding: 1rem 0; display: flex; flex-direction: column; align-items: center; font-size: 1.1rem; font-weight: bold; color: var(--muted); background: none; border: none; }
+/* BOTTOM NAV REDUCIDA A LA MITAD */
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 3px solid var(--border); display: flex; z-index: 200; height: 50px; }
+.bnav-btn { flex: 1; padding: 0.3rem 0; display: flex; flex-direction: column; align-items: center; font-size: 0.8rem; font-weight: bold; color: var(--muted); background: none; border: none; justify-content: center; }
 .bnav-btn.active { color: var(--blue); background: var(--blue-light); }
-.bnav-icon { font-size: 1.8rem; }
+.bnav-icon { font-size: 1.2rem; margin-bottom: 2px; }
 
 /* MODAL CONFIRMACIÓN */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: flex-end; justify-content: center; z-index: 500; }
@@ -131,6 +148,9 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 </head>
 <body>
 
+<!-- INDICADOR DE ESTADO FLOTANTE SUPERIOR IZQUIERDO -->
+<div id="statusIndicator">Conectando...</div>
+
 <!-- PANTALLA LOGIN -->
 <div id="loginScreen">
   <div class="login-box">
@@ -149,7 +169,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
   <div class="header">
     <div class="header-row">
       <button class="btn-back" id="btnBack" onclick="volverSelector()">← Puestos</button>
-      <div class="header-title" id="headerTitle">📦 IQBF Control</div>
+      <div class="header-title" id="headerTitle" style="margin-left: 200px;">📦 IQBF Control</div>
       <button id="btnSyncHeader" onclick="sincronizarConExcel()" style="background:var(--blue-light); color:var(--blue); border:none; font-weight:bold; padding:0.5rem 0.8rem; border-radius:8px; font-size:1rem; cursor:pointer;">🔄 Sincronizar</button>
       <div class="header-puesto" id="headerPuesto" style="display:none; visibility:hidden">—</div>
     </div>
@@ -157,7 +177,6 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 
   <div id="buqueHeaderMovil">🚢 Cargando Buque y Carga Inicial...</div>
 
-  <!-- KPIs DEL TURNO ACTIVO -->
   <div class="total-flotante" id="totalFlotante">
     <div style="text-align:center; flex:1; border-right:2px solid var(--border);">
       <div class="lbl" style="color:var(--blue);">Muelle (Turno)</div>
@@ -254,17 +273,15 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
   <!-- PANTALLA HISTORIAL -->
   <div id="screenHistorial">
     <div class="selector-title" style="margin-bottom:1rem;">Registros de este Turno</div>
-    
     <div class="sub-tab-bar">
       <button class="sub-tab-btn active" id="subTabMuelle" onclick="changeSubTab('muelle')">🚢 Muelle</button>
       <button class="sub-tab-btn" id="subTabLabarthe" onclick="changeSubTab('labarthe')">🏭 Labarthe</button>
       <button class="sub-tab-btn" id="subTabDespacho" onclick="changeSubTab('despacho')">🚛 Despacho</button>
     </div>
-
     <div id="listaHistorial"></div>
   </div>
 
-  <!-- BOTTOM NAV -->
+  <!-- BOTTOM NAV (Reducido a la mitad) -->
   <div class="bottom-nav">
     <button class="bnav-btn active" id="bnavReg" onclick="changeTab('form')">
       <span class="bnav-icon">✏️</span>Registrar
@@ -275,7 +292,6 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
   </div>
 </div>
 
-<!-- MODAL DE CONFIRMACIÓN -->
 <div class="modal-overlay" id="modalConfirm">
   <div class="modal-box">
     <div class="modal-title">¿Confirmar Registro?</div>
@@ -312,6 +328,26 @@ window.onload = () => {
   verificarPendientesAlmacenados();
   setInterval(verificarPendientesAlmacenados, 30000); 
 };
+
+// MOSTRAR INDICADOR DE ESTADO EN LA PARTE SUPERIOR IZQUIERDA
+function updateStatusIndicator(msg, type = "normal") {
+  const statusInd = document.getElementById('statusIndicator');
+  if (!statusInd) return;
+  statusInd.style.display = "block";
+  statusInd.textContent = msg;
+  if (type === "success") {
+    statusInd.style.color = "#4ade80";
+    statusInd.style.borderColor = "#22c55e";
+    setTimeout(() => { statusInd.style.display = "none"; }, 3000);
+  } else if (type === "error") {
+    statusInd.style.color = "#ef4444";
+    statusInd.style.borderColor = "#ef4444";
+    setTimeout(() => { statusInd.style.display = "none"; }, 4000);
+  } else {
+    statusInd.style.color = "#38bdf8";
+    statusInd.style.borderColor = "#0284c7";
+  }
+}
 
 // VERIFICACIÓN DE CONTRASEÑA EN EL SERVIDOR
 async function doLogin() {
@@ -423,7 +459,7 @@ async function sincronizarConExcel() {
     btnSync.disabled = true;
     btnSync.textContent = "⏱️ Sinc...";
   }
-  showToast("Sincronizando datos con el puerto...");
+  updateStatusIndicator("⌛ Sincronizando con el puerto...");
 
   try {
     const pRes = await fetch(`${GAS_URL}?action=obtenerProductos`);
@@ -453,9 +489,9 @@ async function sincronizarConExcel() {
       });
       actualizarKPIsYHistorial();
     }
-    showToast("✅ Puerto conectado y actualizado");
+    updateStatusIndicator("● Puerto Conectado", "success");
   } catch (e) {
-    showToast("⚠️ Error de conexión", true);
+    updateStatusIndicator("⚠️ Error de conexión", "error");
   }
 
   if (btnSync) {
@@ -537,6 +573,10 @@ function entrarPuesto(puesto) {
   document.getElementById('screenSelector').style.display = 'none';
   document.getElementById('screenForm').style.display = 'block';
   
+  // OCULTAR TEMPORALMENTE BUQUE Y KPIs AL ENTRAR AL FORMULARIO
+  document.getElementById('buqueHeaderMovil').style.display = 'none';
+  document.getElementById('totalFlotante').style.display = 'none';
+
   const hTitle = document.getElementById('headerTitle');
   const hPuesto = document.getElementById('headerPuesto');
   const btnB = document.getElementById('btnBack');
@@ -560,6 +600,11 @@ function volverSelector() {
   document.getElementById('screenSelector').style.display = 'block';
   document.getElementById('screenForm').style.display = 'none';
   document.getElementById('screenHistorial').style.display = 'none';
+  
+  // MOSTRAR BUQUE Y KPIs AL VOLVER AL SELECTOR
+  document.getElementById('buqueHeaderMovil').style.display = 'block';
+  document.getElementById('totalFlotante').style.display = 'flex';
+
   document.getElementById('headerTitle').textContent = "📦 IQBF Control";
   document.getElementById('headerPuesto').style.visibility = 'hidden';
   document.getElementById('btnBack').classList.remove('visible');
@@ -647,7 +692,6 @@ function renderConductoresUI() {
   });
 }
 
-// GESTIÓN DE FOTOS AJUSTADO AL RANGO ESTRICTO [MÍNIMO 2, MÁXIMO 5]
 function renderFotosGrid() {
   const isD = puestoActual === 'despacho';
   const grid = document.getElementById(isD ? 'fotoGridD' : 'fotoGrid');
@@ -663,7 +707,7 @@ function renderFotosGrid() {
     grid.appendChild(slot);
   });
 
-  const maxFotos = 5; // Rango estricto: Máximo 5 imágenes
+  const maxFotos = 5; 
   if (fotosList.length < maxFotos) {
     const input = document.createElement('input');
     input.type = 'file';
@@ -716,7 +760,6 @@ function eliminarFoto(idx) {
   renderFotosGrid();
 }
 
-// VALIDACIÓN DE RANGO [MÍNIMO 2, MÁXIMO 5 IMÁGENES]
 function abrirConfirmacion() {
   const isD = puestoActual === 'despacho';
   const numTT = !isD ? document.getElementById('numTT').value.trim() : '';
@@ -726,7 +769,7 @@ function abrirConfirmacion() {
   if (bolsonesSeleccionados === 0) { showToast('⚠️ Seleccione los bolsones', true); return; }
   if (productosSeleccionados.length === 0) { showToast('⚠️ Seleccione el producto', true); return; }
   
-  const minFotos = 2; // Rango obligatorio: Mínimo 2 imágenes de evidencia
+  const minFotos = 2; 
   if (fotosList.length < minFotos) {
     showToast(`⚠️ Requiere mínimo ${minFotos} fotos de evidencia`, true);
     return;
@@ -751,7 +794,7 @@ function cerrarConfirmacion() {
   document.getElementById('modalConfirm').classList.remove('open');
 }
 
-// PROTOCOLO DE SUBIDA RESILIENTE EN 2 FASES CON COLA DE RESPALDO EN LOCALSTORAGE
+// PROTOCOLO DE SUBIDA RESILIENTE DE DOS FASES CON RETORNO DE PANTALLA INMEDIATO
 async function guardarDatosFinal() {
   cerrarConfirmacion();
   const isD = puestoActual === 'despacho';
@@ -778,14 +821,6 @@ async function guardarDatosFinal() {
     }
   };
 
-  // RESPALDO LOCAL DE SEGURIDAD POR SI LA SEÑAL SE CAES DURANTE EL PROCESO
-  const backupKey = "iqbf_pending_" + Date.now();
-  const backupObject = {
-    payload: textPayload,
-    fotos: [...fotosList]
-  };
-  localStorage.setItem(backupKey, JSON.stringify(backupObject));
-
   try {
     // FASE 1: Registro Textual Inmediato (Poco peso, ideal para red inestable)
     const res = await fetch(GAS_URL, {
@@ -798,43 +833,30 @@ async function guardarDatosFinal() {
     if (result.ok) {
       const viajeIdGenerado = result.viajeId;
       
-      // FASE 2: Subida individual y segmentada de fotos en segundo plano
-      for (let i = 0; i < fotosList.length; i++) {
-        if (btn) btn.textContent = `📸 ENVIANDO FOTO ${i+1}/${fotosList.length}...`;
-        
-        await fetch(GAS_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'subirFotoIndividual',
-            data: {
-              viajeId: viajeIdGenerado,
-              puesto: puestoActual,
-              fotoBase64: fotosList[i],
-              index: i
-            }
-          })
-        });
-      }
+      // AGILIDAD EXTREMA: Retornar inmediatamente a la pantalla de registros principal 
+      const fotosParaSubir = [...fotosList]; 
+      const puestoParaSubir = puestoActual;
+      
+      volverSelector(); // El usuario puede iniciar un nuevo registro ya mismo
+      showToast('✅ Registro Migrado a Excel. Subiendo evidencias...');
 
-      // Registro subido por completo con éxito; eliminar respaldo
-      localStorage.removeItem(backupKey);
+      // FASE 2: Subida de fotos en background sin bloquear la interfaz de usuario
+      subirFotosEnSegundoPlano(viajeIdGenerado, puestoParaSubir, fotosParaSubir);
 
-      try {
-        if (navigator.vibrate) {
-          navigator.vibrate([100, 50, 100]); 
-        }
-      } catch(e) {}
-
-      showToast('✅ REGISTRO CONFIRMADO Y SUBIDO');
-      resetFormulario();
-      await sincronizarConExcel(); 
     } else {
       showToast('❌ Error al subir: ' + result.error, true);
     }
   } catch(e) {
-    showToast('⚠️ Red débil. El registro se enviará automáticamente cuando recupere la señal.', true);
-    resetFormulario();
+    // ERROR EN FASE 1: Guardamos localmente en localStorage para reintento automático
+    const backupKey = "iqbf_pending_" + Date.now();
+    const backupObject = {
+      payload: textPayload,
+      fotos: [...fotosList]
+    };
+    localStorage.setItem(backupKey, JSON.stringify(backupObject));
+    
+    showToast('⚠️ Red débil. Guardado en dispositivo. Se enviará automáticamente.', true);
+    volverSelector();
   }
 
   if (btn) {
@@ -843,10 +865,48 @@ async function guardarDatosFinal() {
   }
 }
 
+// ENVIAR FOTOS DE FORMA INDIVIDUAL EN SEGUNDO PLANO ACTUALIZANDO EL ENCABEZADO
+async function subirFotosEnSegundoPlano(viajeId, puesto, listaFotos) {
+  updateStatusIndicator(`📸 Subiendo foto 1/${listaFotos.length}...`);
+
+  for (let i = 0; i < listaFotos.length; i++) {
+    updateStatusIndicator(`📸 Subiendo foto ${i+1}/${listaFotos.length}...`);
+    try {
+      await fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'subirFotoIndividual',
+          data: {
+            viajeId: viajeId,
+            puesto: puesto,
+            fotoBase64: listaFotos[i],
+            index: i
+          }
+        })
+      });
+    } catch (err) {
+      // Si la foto falla, la guardamos de respaldo específico en segundo plano
+      guardarFotoParaReintentar(viajeId, puesto, listaFotos[i], i);
+    }
+  }
+
+  updateStatusIndicator("✅ Fotos subidas con éxito", "success");
+  sincronizarConExcel();
+}
+
+function guardarFotoParaReintentar(viajeId, puesto, fotoB64, index) {
+  const failKey = "iqbf_fail_photo_" + Date.now();
+  const failObj = { viajeId, puesto, fotoB64, index };
+  localStorage.setItem(failKey, JSON.stringify(failObj));
+}
+
 // PROCESADOR EN SEGUNDO PLANO DE ENVÍO AUTOMÁTICO DE REGISTROS PENDIENTES
 async function verificarPendientesAlmacenados() {
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
+    
+    // 1. Reintentar registros completos que fallaron desde la Fase 1
     if (key && key.startsWith("iqbf_pending_")) {
       try {
         const backup = JSON.parse(localStorage.getItem(key));
@@ -877,6 +937,33 @@ async function verificarPendientesAlmacenados() {
             localStorage.removeItem(key);
             showToast('✅ Registro pendiente sincronizado automáticamente.');
             sincronizarConExcel();
+          }
+        }
+      } catch(e) {}
+    }
+
+    // 2. Reintentar fotos individuales que fallaron en la Fase 2
+    if (key && key.startsWith("iqbf_fail_photo_")) {
+      try {
+        const failObj = JSON.parse(localStorage.getItem(key));
+        if (failObj) {
+          const res = await fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              action: 'subirFotoIndividual',
+              data: {
+                viajeId: failObj.viajeId,
+                puesto: failObj.puesto,
+                fotoBase64: failObj.fotoB64,
+                index: failObj.index
+              }
+            })
+          });
+          const result = await res.json();
+          if (result.ok) {
+            localStorage.removeItem(key);
+            showToast('✅ Foto reintentada y subida con éxito.');
           }
         }
       } catch(e) {}
