@@ -117,7 +117,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 .login-brand { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 1rem; }
 .login-brand h1 { font-size: 2.2rem; font-weight: 900; color: var(--blue); }
 .login-sub { font-size: 1.2rem; color: var(--muted); margin-bottom: 2rem; font-weight: bold; }
-.login-box input[type="password"] { width: 100%; padding: 1.2rem; font-size: 1.8rem; border: 3px solid var(--border); border-radius: 12px; margin-bottom: 1.5rem; text-align: center; outline: none; }
+.login-box input[type="password"] { width: 100%; padding: 1.2rem; font-size: 1.8rem; border: 3px solid var(--border); border-radius: 12px; margin-bottom: 1.5rem; text-align: center; outline: none; margin-bottom: 15px; }
 .login-box input:focus { border-color: var(--blue); }
 .btn-login { width: 100%; padding: 1.2rem; font-size: 1.5rem; font-weight: bold; background: var(--blue); color: white; border: none; border-radius: 12px; cursor: pointer; }
 .login-error { color: var(--red); font-size: 1.1rem; margin-top: 1rem; font-weight: bold; min-height: 1.5rem; }
@@ -275,12 +275,22 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
   <!-- FORMULARIO DE REGISTRO -->
   <div id="screenForm">
     <div id="formDescarga">
-      <div class="card" style="border-color: #eab308; background: #fef9c3;">
-        <div class="card-title" style="color: #854d0e;">🚛 N° Terminal Truck</div>
-        <div class="digital-display" id="ttDisplay" style="color: #eab308; border-color: #854d0e;">
-          TT - <span class="empty-dash">_</span><span class="empty-dash">_</span><span class="empty-dash">_</span>
+      <div class="card" id="cardTTDescarga" style="border-color: #eab308; background: #fef9c3;">
+        <div class="card-title" id="titleTTDescarga" style="color: #854d0e;">🚛 N° Terminal Truck</div>
+        
+        <!-- Contenedor para Muelle: Teclado de Escritura -->
+        <div id="muelleTTArea">
+          <div class="digital-display" id="ttDisplay" style="color: #eab308; border-color: #854d0e;">
+            TT - <span class="empty-dash">_</span><span class="empty-dash">_</span><span class="empty-dash">_</span>
+          </div>
+          <div class="keypad-container" id="keypadTT"></div>
         </div>
-        <div class="keypad-container" id="keypadTT"></div>
+
+        <!-- Contenedor para Labarthe: Unidades en Tránsito (Doble Ciega) -->
+        <div id="labartheTTArea" style="display:none;">
+          <div style="font-weight:bold; color:var(--muted); font-size:12px; margin-bottom:10px; text-transform:uppercase;">Seleccione el Camión que Arriba:</div>
+          <div id="listaTransitoMovil" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; max-height:220px; overflow-y:auto;"></div>
+        </div>
       </div>
       <div class="card" style="border-color: var(--blue-dark); background: #f0f9ff;">
         <div class="card-title" style="color: var(--blue-dark);">📦 Cantidad de Bolsones <span style="color:var(--red)">(Rango: 1 - 30)</span></div>
@@ -397,6 +407,9 @@ let fotosList = [];
 // Estados del teclado tipo calculadora
 let valTT = "";
 let valBols = 0;
+
+// Heredar correlativos de viaje de forma unívoca de muelle a labarthe
+let viajeIdHeredado = "";
 
 let conductorSeleccionado = null;
 let placaSeleccionada = null;
@@ -745,12 +758,30 @@ function renderHistorialPuesto() {
   `).join('');
 }
 
+// EXTRAE EL IDENTIFICADOR BASE DE VIAJE
+function obtenerBaseViajeId(viajeId) {
+  if (!viajeId) return "";
+  const partes = viajeId.split('_');
+  return partes.slice(0, 2).join('_');
+}
+
+// ENTRAR AL PUESTO CON TRANSICIÓN DINÁMICA DE "UNIDADES EN TRÁNSITO" PARA LABARTHE
 function entrarPuesto(puesto) {
   puestoActual = puesto;
   resetFormulario();
   document.getElementById('screenSelector').style.display = 'none';
   document.getElementById('screenForm').style.display = 'block';
   
+  // CONFIGURACIÓN VISUAL DINÁMICA: MOSTRAR SECTORES DE ACUERDO AL ROL
+  if (puesto === 'labarthe') {
+    document.getElementById('muelleTTArea').style.display = 'none';
+    document.getElementById('labartheTTArea').style.display = 'block';
+    renderListaTransitoMovil();
+  } else {
+    document.getElementById('muelleTTArea').style.display = 'block';
+    document.getElementById('labartheTTArea').style.display = 'none';
+  }
+
   // OCULTAR TEMPORALMENTE BUQUE Y KPIs AL ENTRAR AL FORMULARIO
   document.getElementById('buqueHeaderMovil').style.display = 'none';
   document.getElementById('totalFlotante').style.display = 'none';
@@ -771,6 +802,61 @@ function entrarPuesto(puesto) {
 
   if (puesto === 'despacho') { renderConductoresUI(); }
   renderFotosGrid();
+}
+
+// CARGAR LISTA CIEGA DE UNIDADES EN TRÁNSITO PARA LABARTHE
+function renderListaTransitoMovil() {
+  const listDiv = document.getElementById('listaTransitoMovil');
+  if (!listDiv) return;
+  listDiv.innerHTML = "";
+
+  const muelleActivos = dbGlobal.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
+  const labartheActivos = dbGlobal.labarthe.filter(f => perteneceAlTurnoActual(f.fechaHora));
+
+  // Indexar arribos de Labarthe por base de viajeId para comprobación instantánea O(1)
+  const labartheBases = new Set(labartheActivos.map(l => obtenerBaseViajeId(l.viajeId)));
+
+  let transitoDetectado = false;
+
+  muelleActivos.forEach(m => {
+    const baseId = obtenerBaseViajeId(m.viajeId);
+    // Si el viaje base de Muelle no existe en Labarthe, está EN TRÁNSITO
+    if (!labartheBases.has(baseId)) {
+      transitoDetectado = true;
+      const cleanPlate = m.tt.replace("TT-", "");
+
+      const btn = document.createElement('div');
+      btn.className = "conductor-item";
+      btn.innerHTML = `<div style="font-size:1.3rem; font-weight:800; text-align:center;">🚛 ${m.tt}</div>`;
+      
+      if (viajeIdHeredado === m.viajeId) {
+        btn.classList.add('selected');
+        btn.style.borderColor = "#ea580c";
+        btn.style.backgroundColor = "#ffedd5";
+      }
+
+      btn.onclick = () => {
+        viajeIdHeredado = m.viajeId;
+        valTT = cleanPlate;
+        
+        document.querySelectorAll('#listaTransitoMovil .conductor-item').forEach(el => {
+          el.classList.remove('selected');
+          el.style.borderColor = "";
+          el.style.backgroundColor = "";
+        });
+        
+        btn.classList.add('selected');
+        btn.style.borderColor = "#ea580c";
+        btn.style.backgroundColor = "#ffedd5";
+      };
+
+      listDiv.appendChild(btn);
+    }
+  });
+
+  if (!transitoDetectado) {
+    listDiv.innerHTML = '<div style="grid-column: span 2; text-align:center; padding:1.5rem; color:var(--muted); font-weight:bold;">● No hay camiones en tránsito en este turno.</div>';
+  }
 }
 
 function volverSelector() {
@@ -806,15 +892,7 @@ function changeTab(tab) {
   }
 }
 
-function crearSelectorNum(id, isD) {
-  // Obsoleto: Reemplazado por Teclado Calculadora
-}
-
-function selectBolsones(n, id, isD) {
-  // Obsoleto: Reemplazado por Teclado Calculadora
-}
-
-// RESTO DE FUNCIONALIDADES OPERATIVAS DE REGISTRO
+// PRODUCTOS: LIMITAR A SELECCIÓN ÚNICA (Garantiza matemática exacta de saldos en CCTV)
 function renderProductosUI() {
   ['prodGrid', 'prodGridD'].forEach(gridId => {
     const grid = document.getElementById(gridId);
@@ -826,16 +904,16 @@ function renderProductosUI() {
       b.textContent = prod;
       b.type = "button";
       b.onclick = () => {
-        const i = productosSeleccionados.indexOf(prod);
-        if (i > -1) { productosSeleccionados.splice(i, 1); b.classList.remove('sel'); }
-        else { productosSeleccionados.push(prod); b.classList.add('sel'); }
+        productosSeleccionados = [prod]; // Forzar selección única
+        document.querySelectorAll(`#${gridId} .prod-btn`).forEach(btn => btn.classList.remove('sel'));
+        b.classList.add('sel');
       };
       grid.appendChild(b);
     });
   });
 }
 
-// GESTIÓN DE DOS COLUMNAS DE SELECCIÓN DE CONDUCTOR Y PLACA INDEPENDIENTES
+// DESPACHO: DOS COLUMNAS INDEPENDIENTES CON COLORES FUERTES DE SELECCIÓN DE ALTO CONTRASTE
 function renderConductoresUI() {
   const listChof = document.getElementById('listaChoferes');
   const listPlac = document.getElementById('listaPlacas');
@@ -850,19 +928,17 @@ function renderConductoresUI() {
     return;
   }
   
-  // Extraer nombres dedupados de choferes
   const choferesUnicos = [...new Set(conductoresDisponibles.map(c => c.nombre.trim()))];
-  // Extraer placas dedupadas de placas
   const placasUnicas = [...new Set(conductoresDisponibles.map(c => c.placa.trim().toUpperCase()))];
   
-  // Renderizar Choferes (Columna Izquierda - Se pinta con color fuerte al seleccionarlo)
+  // Renderizar Choferes (Columna Izquierda - Se pinta con color fuerte azul al seleccionarlo)
   choferesUnicos.forEach(nombre => {
     const item = document.createElement('div');
     item.className = "conductor-item";
     item.innerHTML = `<div class="conductor-name">👤 ${nombre}</div>`;
     if (conductorSeleccionado === nombre) {
       item.classList.add('selected');
-      item.style.borderColor = "var(--blue)";
+      item.style.borderColor = "var(--blue-dark)";
       item.style.backgroundColor = "var(--blue-light)";
     }
     item.onclick = () => {
@@ -873,22 +949,22 @@ function renderConductoresUI() {
         el.style.backgroundColor = "";
       });
       item.classList.add('selected');
-      item.style.borderColor = "var(--blue)";
+      item.style.borderColor = "var(--blue-dark)";
       item.style.backgroundColor = "var(--blue-light)";
       verificarDespachoFormVisibilidad();
     };
     listChof.appendChild(item);
   });
   
-  // Renderizar Placas (Columna Derecha - Se pinta con color fuerte al seleccionarlo)
+  // Renderizar Placas (Columna Derecha - Se pinta con color fuerte naranja al seleccionarlo)
   placasUnicas.forEach(placa => {
     const item = document.createElement('div');
     item.className = "conductor-item";
     item.innerHTML = `<div class="conductor-name">🚛 ${placa}</div>`;
     if (placaSeleccionada === placa) {
       item.classList.add('selected');
-      item.style.borderColor = "var(--blue)";
-      item.style.backgroundColor = "var(--blue-light)";
+      item.style.borderColor = "#ea580c";
+      item.style.backgroundColor = "#ffedd5";
     }
     item.onclick = () => {
       placaSeleccionada = placa;
@@ -898,8 +974,8 @@ function renderConductoresUI() {
         el.style.backgroundColor = "";
       });
       item.classList.add('selected');
-      item.style.borderColor = "var(--blue)";
-      item.style.backgroundColor = "var(--blue-light)";
+      item.style.borderColor = "#ea580c";
+      item.style.backgroundColor = "#ffedd5";
       verificarDespachoFormVisibilidad();
     };
     listPlac.appendChild(item);
@@ -986,7 +1062,7 @@ function eliminarFoto(idx) {
 function abrirConfirmacion() {
   const isD = puestoActual === 'despacho';
   
-  if (!isD && !valTT) { showToast('⚠️ Digite el número de TT', true); return; }
+  if (!isD && !valTT) { showToast('⚠️ Seleccione o digite el número de TT', true); return; }
   if (isD && (!conductorSeleccionado || !placaSeleccionada)) { showToast('⚠️ Seleccione Chofer y Placa', true); return; }
   if (bolsonesSeleccionados === 0) { showToast('⚠️ Seleccione los bolsones', true); return; }
   if (productosSeleccionados.length === 0) { showToast('⚠️ Seleccione el producto', true); return; }
@@ -1017,7 +1093,7 @@ function cerrarConfirmacion() {
   document.getElementById('modalConfirm').classList.remove('open');
 }
 
-// PROTOCOLO DE SUBIDA RESILIENTE DE DOS FASES CON RETORNO DE PANTALLA INMEDIATO
+// PROTOCOLO DE SUBIDA RESILIENTE DE DOS FASES CON RETORNO DE PANTALLA INMEDIATO Y HEREDADO DE ID
 async function guardarDatosFinal() {
   cerrarConfirmacion();
   const isD = puestoActual === 'despacho';
@@ -1039,7 +1115,8 @@ async function guardarDatosFinal() {
       bolsones: bolsonesSeleccionados,
       conductor: isD ? conductorSeleccionado : '—',
       productos: productosSeleccionados.join(', '),
-      fechaHora: fechaHora
+      fechaHora: fechaHora,
+      viajeId: puestoActual === 'labarthe' ? viajeIdHeredado : "" // Enviar el viajeId original de Muelle si es Labarthe
     }
   };
 
@@ -1201,6 +1278,7 @@ function resetFormulario() {
   fotosList = [];
   conductorSeleccionado = null;
   placaSeleccionada = null;
+  viajeIdHeredado = "";
 
   actualizarTTDisplay();
   actualizarBolsDisplay();
@@ -1226,4 +1304,3 @@ function showToast(msg, isError = false) {
 </script>
 </body>
 </html>
---- END OF FILE registro (1).html ---
