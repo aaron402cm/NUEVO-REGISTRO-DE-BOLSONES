@@ -46,7 +46,7 @@
             to { transform: scale(1.03); box-shadow: 0 6px 18px rgba(180,83,9,0.5); }
         }
 
-        /* OVERLAY ADVERTENCIA MIGRACIÓN (MODAL DE SEGURIDAD GIGANTE) */
+        /* OVERLAY ADVERTENCIA MIGRACIÓN */
         #modalMigracion {
             position: fixed;
             inset: 0;
@@ -66,7 +66,7 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        /* LOGIN */
+        /* login */
         #loginScreen { position: fixed; inset: 0; background: var(--navy); display: flex; align-items: center; justify-content: center; z-index: 9999; }
         .login-card { background: var(--white); padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 400px; text-align: center; }
         .login-card h2 { color: var(--navy); margin-bottom: 8px; font-size: 24px; font-weight: 800; }
@@ -149,8 +149,8 @@
 <div id="audioUnlockBanner" onclick="desbloquearAudioPorClic(event)">🔊 CLIC AQUÍ para activar las Alertas Sonoras de Emergencia</div>
 
 <!-- ADVERTENCIA MODAL DE MIGRACIÓN Y CIERRE DE BUQUE -->
-<div id="modalMigracion">
-    <div class="modal-migrar-box">
+<div id="modalMigracion" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 10010;">
+    <div class="modal-migrar-box" style="background: white; padding: 30px; border-radius: 16px; width: 90%; max-width: 500px; border: 4px solid var(--red); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
         <h3 style="color: var(--red); font-size: 20px; font-weight: 900; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
             ⚠️ ADVERTENCIA CRÍTICA DE CIERRE
         </h3>
@@ -220,27 +220,22 @@
         </div>
 
         <div class="scroll-area">
-            <!-- ALERTA DISCREPANCIA SIRENA (Disfraz de clave de silenciador DNI discreto) -->
-            <div id="bannerAlertaDiff" class="alert-banner danger">
-                <span>⚠️ SIRENA ACTIVA — DISCREPANCIA DETECTADA: Diferencia de bolsones o de productos en viaje activo entre Muelle y Labarthe.</span>
-                <div class="mute-area" style="margin-top: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                    <button class="btn-sm" style="background: #991b1b; color: white;" onclick="mostrarMutePrompt('diff')">🔕 Comunicar al Coordinador</button>
-                    <div id="mutePromptDiff" style="display: none; align-items: center; gap: 8px;">
-                        <input type="password" id="muteInputDiff" placeholder="Contraseña de autorización..." style="padding: 6px 12px; border: 1px solid #fca5a5; border-radius: 6px; font-size: 13px; color: #7f1d1d; outline: none;">
-                        <button class="btn-sm" style="background: white; color: #7f1d1d;" onclick="ejecutarSilenciador('diff')">Confirmar</button>
-                    </div>
+            
+            <!-- ALERTA DISCREPANCIA SIRENA (CON SILENCIADOR DISCRETO POR ENTRADA DE CLAVE DE DNI) -->
+            <div id="bannerAlertaDiff" class="alert-banner danger" style="display:none; justify-content:space-between; align-items:center;">
+                <div>⚠️ SIRENA ACTIVA — DISCREPANCIA DETECTADA: Diferencia de bolsones o de productos en viaje activo entre Muelle y Labarthe.</div>
+                <div class="mute-area" style="display:flex; gap:10px; align-items:center;">
+                    <input type="password" id="muteInputDiff" placeholder="Clave de autorización..." style="padding: 6px 10px; border: 1px solid var(--red); border-radius: 6px; font-size:12px; outline:none; display:none;" onkeypress="if(event.key === 'Enter') ejecutarSilenciado('Diff')">
+                    <button class="btn-sm" id="muteBtnDiff" style="background:#dc2626; color:white; padding: 6px 12px; font-size:12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;" onclick="mostrarInputMute('Diff')">🔕 Comunicar al Coordinador</button>
                 </div>
             </div>
 
-            <!-- ALERTA RETRASO SIRENA (Disfraz de clave de silenciador DNI discreto) -->
-            <div id="bannerAlertaTransito" class="alert-banner warning">
-                <span>⏰ SIRENA ACTIVA — RETRASO EN TRÁNSITO: Unidades con más de 10 minutos sin ingresar a Labarthe.</span>
-                <div class="mute-area" style="margin-top: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                    <button class="btn-sm" style="background: #92400e; color: white;" onclick="mostrarMutePrompt('transito')">🔕 Comunicar al Coordinador</button>
-                    <div id="mutePromptTransito" style="display: none; align-items: center; gap: 8px;">
-                        <input type="password" id="muteInputTransito" placeholder="Contraseña de autorización..." style="padding: 6px 12px; border: 1px solid #fcd34d; border-radius: 6px; font-size: 13px; color: #78350f; outline: none;">
-                        <button class="btn-sm" style="background: white; color: #78350f;" onclick="ejecutarSilenciador('transito')">Confirmar</button>
-                    </div>
+            <!-- ALERTA RETRASO SIRENA (CON SILENCIADOR DISCRETO POR ENTRADA DE CLAVE DE DNI) -->
+            <div id="bannerAlertaTransito" class="alert-banner warning" style="display:none; justify-content:space-between; align-items:center;">
+                <div>⏰ SIRENA ACTIVA — RETRASO EN TRÁNSITO: Unidades con más de 10 minutos sin ingresar a Labarthe.</div>
+                <div class="mute-area" style="display:flex; gap:10px; align-items:center;">
+                    <input type="password" id="muteInputTransito" placeholder="Clave de autorización..." style="padding: 6px 10px; border: 1px solid var(--amber); border-radius: 6px; font-size:12px; outline:none; display:none;" onkeypress="if(event.key === 'Enter') ejecutarSilenciado('Transito')">
+                    <button class="btn-sm" id="muteBtnTransito" style="background:#d97706; color:white; padding: 6px 12px; font-size:12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;" onclick="mostrarInputMute('Transito')">🔕 Comunicar al Coordinador</button>
                 </div>
             </div>
 
@@ -496,12 +491,12 @@
     let audioCtx = null;
     let alarmInterval = null;
 
-    // Control de silencio de sirena
-    let sirenaSilenciada = false;
-
     // Control de voz de registros
     let knownTransactionIds = new Set();
     let isFirstLoad = true;
+
+    // Control de Silenciador de Emergencia (Mute solo acústico)
+    let sirenaSilenciada = false;
 
     // CREACIÓN DE UN WEB WORKER INLINE PARA EVITAR QUE EL NAVEGADOR DETENGA LA SINCRONIZACIÓN AL MINIMIZAR LA PESTAÑA
     let workerCode = `
@@ -630,6 +625,7 @@
         let startShiftDate, endShiftDate;
 
         if (totalMinsAhora >= startDiurno && totalMinsAhora <= endDiurno) {
+            startShiftDate = new Date(ahora.getFullYear(), Security = ahora.getDate(), 6, 45, 0);
             startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 6, 45, 0);
             endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 18, 45, 0);
         } else {
@@ -791,27 +787,27 @@
             const confirmado = labartheMap.has(baseId);
             if (!confirmado) {
                 const fRegistro = parsearFechaExcel(m.fechaHora);
-                if (fRegistro) {
-                    const fReg = fRegistro;
-                    if (fReg && (ahora - fReg) > limiteTiempo) {
-                        hayRetrasoTransito = true;
-                    }
+                if (fRegistro && (ahora - fRegistro) > limiteTiempo) {
+                    hayRetrasoTransito = true;
                 }
             }
         });
 
-        // REINICIAR LA BANDERA DE SILENCIO SI EL PROBLEMA SE RESOLVIÓ
-        if (!hayDiscrepancia && !hayRetrasoTransito) {
-            sirenaSilenciada = false;
-        }
+        // MODIFICACIÓN VISUAL: Mostrar u ocultar banners de alarma con diseño flex para albergar botones
+        const bannerDiff = document.getElementById('bannerAlertaDiff');
+        const bannerTrans = document.getElementById('bannerAlertaTransito');
 
-        document.getElementById('bannerAlertaDiff').style.display = hayDiscrepancia ? 'block' : 'none';
-        document.getElementById('bannerAlertaTransito').style.display = hayRetrasoTransito ? 'block' : 'none';
+        bannerDiff.style.display = hayDiscrepancia ? 'flex' : 'none';
+        bannerTrans.style.display = hayRetrasoTransito ? 'flex' : 'none';
 
-        // SONAR SÓLO SI HAY ALERTAS ACTIVAS Y NO HAN SIDO SILENCIADAS POR UN DNI VÁLIDO
-        if ((hayDiscrepancia || hayRetrasoTransito) && !sirenaSilenciada) {
-            activarSirenaDeEmergencia();
+        if (hayDiscrepancia || hayRetrasoTransito) {
+            if (!sirenaSilenciada) {
+                activarSirenaDeEmergencia();
+            } else {
+                desactivarSirena();
+            }
         } else {
+            sirenaSilenciada = false; // Resetear bandera acústica si se solucionaron las discrepancias y retrasos
             desactivarSirena();
         }
     }
@@ -953,7 +949,7 @@
         const totalRegistros = [...db.muelle, ...db.labarthe, ...db.despacho];
         totalRegistros.sort((a,b) => parsearFechaExcel(b.fechaHora) - parsearFechaExcel(a.fechaHora));
 
-        // INDEXACIÓN DE MAPAS DE HASH DE BÚSQUEDA RÁPIDA GLOBAL PARA LA TABLA MOVIMIENTOS
+        // Indexar bases de Labarthe y Muelle para la tabla de Últimos Movimientos
         let globalLabartheMap = new Map();
         db.labarthe.forEach(l => globalLabartheMap.set(obtenerBaseViajeId(l.viajeId), l));
         
@@ -1092,7 +1088,7 @@
             </tr>
         `).join('');
 
-        // INDEXAR LABARTHE EN EL COMPARATIVO
+        // Indexar Labarthe para búsqueda rápida O(1) en la pestaña comparativa
         let labartheMap = new Map();
         db.labarthe.forEach(l => labartheMap.set(obtenerBaseViajeId(l.viajeId), l));
 
@@ -1326,6 +1322,50 @@
             });
     }
 
+    // ACCIONES DE SILENCIADO ACÚSTICO DE ALARMAS DISCRETAS (INGENIERÍA SOCIAL)
+    function mostrarInputMute(tipo) {
+        const input = document.getElementById(`muteInput${tipo}`);
+        if (input) {
+            input.style.display = "inline-block";
+            input.focus();
+        }
+    }
+
+    function ejecutarSilenciado(tipo) {
+        const input = document.getElementById(`muteInput${tipo}`);
+        if (!input) return;
+        const dniCoordinador = input.value.trim();
+        if (!dniCoordinador) return;
+
+        // Validar DNI de forma discreta con la columna C en Sheets
+        fetch(gasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+                action: 'verificarDniMute',
+                data: { dni: dniCoordinador }
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.ok && data.valid) {
+                sirenaSilenciada = true;
+                desactivarSirena();
+                // Ocultar los campos una vez desbloqueado con éxito
+                document.getElementById('muteInputDiff').style.display = "none";
+                document.getElementById('muteInputDiff').value = "";
+                document.getElementById('muteInputTransito').style.display = "none";
+                document.getElementById('muteInputTransito').value = "";
+                alert("🔕 Alerta acústica silenciada con éxito. El sobreaviso visual se mantendrá activo en el Panel.");
+            } else {
+                alert("❌ Clave de autorización inválida o no registrada.");
+            }
+        })
+        .catch(() => {
+            alert("⚠️ Error de comunicación con el puerto.");
+        });
+    }
+
     function registrarConductor() {
         const nombre = document.getElementById('addCondNombre').value.trim();
         const placa = document.getElementById('addCondPlaca').value.trim().toUpperCase();
@@ -1418,6 +1458,68 @@
             alert("✅ URL enlazada con éxito.");
             sincronizarServidor();
         }
+    }
+
+    // ============================================================
+    // MÓDULO VISUAL DE MIGRACIÓN Y ARCHIVADO DE BUQUE ACTUAL
+    // ============================================================
+    function confirmarYFinalizarBuque() {
+        if (!buqueNombreActual || buqueNombreActual === "—") {
+            alert("⚠️ No hay ningún buque activo configurado actualmente.");
+            return;
+        }
+        document.getElementById('modalBuqueNombre').textContent = buqueNombreActual;
+        document.getElementById('confirmMigrarInput').value = "";
+        document.getElementById('btnEjecutarMigracion').disabled = true;
+        document.getElementById('modalMigracion').style.display = "flex";
+    }
+
+    function cerrarModalMigracion() {
+        document.getElementById('modalMigracion').style.display = "none";
+    }
+
+    function validarTextoMigrar() {
+        const input = document.getElementById('confirmMigrarInput').value.trim().toUpperCase();
+        document.getElementById('btnEjecutarMigracion').disabled = (input !== "MIGRAR");
+    }
+
+    function ejecutarMigracionFinal() {
+        cerrarModalMigracion();
+        
+        const syncStatus = document.getElementById('syncStatus');
+        syncStatus.textContent = "⚙️ MIGRANDO DATOS E IMÁGENES A DRIVE (ESPERE)...";
+        syncStatus.style.color = "var(--red)";
+
+        const hoy = new Date();
+        const fechaStr = hoy.getDate() + "-" + (hoy.getMonth() + 1) + "-" + hoy.getFullYear();
+
+        fetch(gasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+                action: 'finalizarBuque',
+                data: {
+                    buqueNombre: buqueNombreActual,
+                    fecha: fechaStr
+                }
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.ok) {
+                alert(`✅ Buque finalizado con éxito.\n\n* Se creó el archivo de respaldo en Drive.\n* Todas las carpetas de fotos activas fueron archivadas.\n* Las hojas activas se vaciaron e iniciaron a cero.`);
+                sincronizarServidor();
+            } else {
+                alert("❌ Error en la migración: " + data.error);
+            }
+        })
+        .catch(() => {
+            alert("⚠️ Error de conexión con el puerto.");
+        })
+        .finally(() => {
+            syncStatus.textContent = "Sincronizado";
+            syncStatus.style.color = "";
+        });
     }
 </script>
 </body>
