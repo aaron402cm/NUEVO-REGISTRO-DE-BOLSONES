@@ -1,20 +1,3 @@
-
-Comprendo perfectamente lo frustrante que es ver las imágenes en blanco en el visor.
-Esto está ocurriendo por dos factores técnicos de Google Drive y del navegador que resolveremos en este momento:
-Imágenes de registros antiguos: Las fotos tomadas en los viajes registrados antes de que colocaras la versión 5.3 del Apps Script (como las del viaje 06_TT12_10 que se muestran en tu captura) se subieron con permisos privados. Google siempre las bloqueará en el visor porque no tienen el permiso para ser compartidas. Las pruebas de viajes nuevos que hagas a partir de ahora, al guardarse con el nuevo script v5.3 que les asigna visibilidad pública por enlace de forma automática, sí cargarán inmediatamente.
-Restricciones de Google para cookies de terceros: Google implementó recientemente políticas estrictas de privacidad en Chrome que bloquean las previsualizaciones que usan el enlace directo lh3.googleusercontent.com/d/ID si el usuario no tiene la sesión iniciada en ese navegador.
-La solución definitiva: Cambiaremos el enlace del visor en el HTML por el endpoint oficial de miniaturas estáticas altamente compatible de Google Drive: https://drive.google.com/thumbnail?id=FILE_ID&sz=w600. Este enlace descarga la imagen renderizada y comprimida directamente de los servidores de Google, evitando cualquier bloqueo de cookies de terceros, cargando de forma instantánea y compatible con cualquier navegador.
-Código Completo y Corregido para panel_cctv.html
-Este código unifica y completa todas las lógicas que acordamos: doble validación de cantidad y producto, velocidad por Mapa de Hash (
-O
-(
-1
-)
-O(1)
-), visor de imágenes robusto sin bloqueos por cookies de Chrome, y el silenciador discreto de sirena mediante contraseña oculta (••••••••) para el DNI del coordinador.
-Reemplaza por completo el archivo en tu servidor con este bloque de código:
-code
-Html
 <!DOCTYPE html>
 <html lang="es-PE">
 <head>
