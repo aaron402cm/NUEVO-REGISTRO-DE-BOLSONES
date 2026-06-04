@@ -1,14 +1,3 @@
-
-Aquí tienes tu archivo de la aplicación móvil registro.html completamente adaptado y completado con el flujo de "Doble Validación Ciega".
-Se han integrado las siguientes mejoras lógicas y visuales en la interfaz del móvil:
-Detección de Unidades en Tránsito para Labarthe: Cuando el operador entra al puesto de Labarthe, el teclado numérico de escritura del camión desaparece de forma automática. En su lugar, el sistema consulta en segundo plano la base de datos local y le despliega una lista visual limpia con botones de los camiones que vienen en camino (unidades en tránsito).
-Heredado Automático de Viaje: Al presionar sobre el camión que arriba (por ejemplo, TT-69), el sistema asocia de fondo el viajeId del muelle para enviarlo de vuelta al servidor al guardar, impidiendo cualquier desincronización por camiones saltados.
-Selector de Productos con Selección Única Estricta: Modificado para admitir un único producto a la vez, obligando a registrar cargas mixtas en envíos individuales y protegiendo la matemática de los saldos del panel.
-Estilo de Selección Naranja Industrial para Labarthe: Las unidades seleccionadas en la lista de tránsito se pintarán de color naranja portuario de alto contraste, manteniendo la diferenciación de procesos.
-Copia este bloque de código y reemplaza por completo el archivo registro.html de tu servidor móvil:
-Código para registro.html (Flujo de Unidades en Tránsito)
-code
-Html
 <!DOCTYPE html>
 <html lang="es">
 <head>
