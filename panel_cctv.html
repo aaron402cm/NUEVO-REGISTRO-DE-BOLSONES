@@ -1,20 +1,3 @@
-
-Aquí tienes tu archivo del panel_cctv.html completamente adaptado y completado.
-Se han incorporado las siguientes mejoras específicas:
-Doble Validación de Cantidad y Producto: La lógica de discrepancia ahora compara tanto los bolsones como los nombres de los productos normalizados. Si hay un error, mostrará las etiquetas rojas diferenciadoras ⚠️ DISC. CANTIDAD o ⚠️ DISC. PRODUCTO [1].
-Indexación por Mapa de Hash (
-O
-(
-1
-)
-O(1)
-): Se optimizó la velocidad de cruce de datos. El navegador ya no procesará bucles anidados lentos para emparejar Muelle con Labarthe; ahora utiliza mapas de hash para comparar miles de filas en microsegundos de forma instantánea.
-Analizador de Horas AM/PM Seguro: Se actualizó parsearFechaExcel para procesar correctamente las marcas de tiempo en formato de 12 horas con indicador "a. m." / "p. m.", previniendo que los registros de la tarde caigan fuera de la ventana del turno nocturno.
-Preservación de tus Conexiones Transaccionales: Se mantuvieron intactas tus lógicas de login y peticiones fetch originales (sin agregar sesiones dinámicas de contraseña) para garantizar que tu panel se comunique con la versión de Apps Script que tienes actualmente en producción.
-Copia este bloque de código y reemplaza por completo el archivo del panel de monitoreo en tu servidor:
-Código para panel_cctv.html (Completo y Optimizado)
-code
-Html
 <!DOCTYPE html>
 <html lang="es-PE">
 <head>
