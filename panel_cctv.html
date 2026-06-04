@@ -46,6 +46,26 @@
             to { transform: scale(1.03); box-shadow: 0 6px 18px rgba(180,83,9,0.5); }
         }
 
+        /* OVERLAY ADVERTENCIA MIGRACIÓN */
+        #modalMigracion {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10010;
+        }
+        .modal-migrar-box {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            border: 4px solid var(--red);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
         /* login */
         #loginScreen { position: fixed; inset: 0; background: var(--navy); display: flex; align-items: center; justify-content: center; z-index: 9999; }
         .login-card { background: var(--white); padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 400px; text-align: center; }
@@ -475,7 +495,7 @@
     let knownTransactionIds = new Set();
     let isFirstLoad = true;
 
-    // Control de Silenciador de Emergencia (Mute solo acústico)
+    // Control de Silenciador de Emergencia (Mute acústico discreto)
     let sirenaSilenciada = false;
 
     // CREACIÓN DE UN WEB WORKER INLINE PARA EVITAR QUE EL NAVEGADOR DETENGA LA SINCRONIZACIÓN AL MINIMIZAR LA PESTAÑA
@@ -640,7 +660,7 @@
         });
     }
 
-    // SINCRONIZACIÓN Y DESCARGA DE DATOS
+    // SINCRONIZACIÓN Y DESCARGA DE DATOS (Optimizada con Mapa de Hash O(1))
     function sincronizarServidor() {
         if (!gasUrl) return;
         document.getElementById('syncStatus').textContent = "Sincronizando...";
@@ -944,7 +964,8 @@
                 let estado = '<span class="badge badge-ok">CONFIRMADO</span>';
 
                 if (r.puesto === 'muelle') {
-                    const l = globalLabartheMap.get(obtenerBaseViajeId(r.viajeId));
+                    const baseId = obtenerBaseViajeId(r.viajeId);
+                    const l = globalLabartheMap.get(baseId);
                     if (!l) {
                         const trTime = parsearFechaExcel(r.fechaHora);
                         const retrasado = trTime && (ahora - trTime) > 600000;
@@ -959,7 +980,8 @@
                         }
                     }
                 } else if (r.puesto === 'labarthe') {
-                    const m = globalMuelleMap.get(obtenerBaseViajeId(r.viajeId));
+                    const baseId = obtenerBaseViajeId(r.viajeId);
+                    const m = globalMuelleMap.get(baseId);
                     if (m) {
                         const difBolsones = parseInt(m.bolsones) !== parseInt(r.bolsones);
                         const difProductos = m.productos.trim().toLowerCase() !== r.productos.trim().toLowerCase();
