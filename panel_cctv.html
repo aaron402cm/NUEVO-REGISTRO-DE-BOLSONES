@@ -46,7 +46,27 @@
             to { transform: scale(1.03); box-shadow: 0 6px 18px rgba(180,83,9,0.5); }
         }
 
-        /* login */
+        /* OVERLAY ADVERTENCIA MIGRACIÓN (MODAL DE SEGURIDAD GIGANTE) */
+        #modalMigracion {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10010;
+        }
+        .modal-migrar-box {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            border: 4px solid var(--red);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* LOGIN */
         #loginScreen { position: fixed; inset: 0; background: var(--navy); display: flex; align-items: center; justify-content: center; z-index: 9999; }
         .login-card { background: var(--white); padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 400px; text-align: center; }
         .login-card h2 { color: var(--navy); margin-bottom: 8px; font-size: 24px; font-weight: 800; }
@@ -129,8 +149,8 @@
 <div id="audioUnlockBanner" onclick="desbloquearAudioPorClic(event)">🔊 CLIC AQUÍ para activar las Alertas Sonoras de Emergencia</div>
 
 <!-- ADVERTENCIA MODAL DE MIGRACIÓN Y CIERRE DE BUQUE -->
-<div id="modalMigracion" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 10010;">
-    <div class="modal-migrar-box" style="background: white; padding: 30px; border-radius: 16px; width: 90%; max-width: 500px; border: 4px solid var(--red); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+<div id="modalMigracion">
+    <div class="modal-migrar-box">
         <h3 style="color: var(--red); font-size: 20px; font-weight: 900; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
             ⚠️ ADVERTENCIA CRÍTICA DE CIERRE
         </h3>
@@ -200,14 +220,28 @@
         </div>
 
         <div class="scroll-area">
-            <!-- ALERTA DISCREPANCIA SIRENA -->
+            <!-- ALERTA DISCREPANCIA SIRENA (Disfraz de clave de silenciador DNI discreto) -->
             <div id="bannerAlertaDiff" class="alert-banner danger">
-                ⚠️ SIRENA ACTIVA — DISCREPANCIA DETECTADA: Diferencia de bolsones o de productos en viaje activo entre Muelle y Labarthe.
+                <span>⚠️ SIRENA ACTIVA — DISCREPANCIA DETECTADA: Diferencia de bolsones o de productos en viaje activo entre Muelle y Labarthe.</span>
+                <div class="mute-area" style="margin-top: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn-sm" style="background: #991b1b; color: white;" onclick="mostrarMutePrompt('diff')">🔕 Comunicar al Coordinador</button>
+                    <div id="mutePromptDiff" style="display: none; align-items: center; gap: 8px;">
+                        <input type="password" id="muteInputDiff" placeholder="Contraseña de autorización..." style="padding: 6px 12px; border: 1px solid #fca5a5; border-radius: 6px; font-size: 13px; color: #7f1d1d; outline: none;">
+                        <button class="btn-sm" style="background: white; color: #7f1d1d;" onclick="ejecutarSilenciador('diff')">Confirmar</button>
+                    </div>
+                </div>
             </div>
 
-            <!-- ALERTA RETRASO SIRENA -->
+            <!-- ALERTA RETRASO SIRENA (Disfraz de clave de silenciador DNI discreto) -->
             <div id="bannerAlertaTransito" class="alert-banner warning">
-                ⏰ SIRENA ACTIVA — RETRASO EN TRÁNSITO: Unidades con más de 10 minutos sin ingresar a Labarthe.
+                <span>⏰ SIRENA ACTIVA — RETRASO EN TRÁNSITO: Unidades con más de 10 minutos sin ingresar a Labarthe.</span>
+                <div class="mute-area" style="margin-top: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn-sm" style="background: #92400e; color: white;" onclick="mostrarMutePrompt('transito')">🔕 Comunicar al Coordinador</button>
+                    <div id="mutePromptTransito" style="display: none; align-items: center; gap: 8px;">
+                        <input type="password" id="muteInputTransito" placeholder="Contraseña de autorización..." style="padding: 6px 12px; border: 1px solid #fcd34d; border-radius: 6px; font-size: 13px; color: #78350f; outline: none;">
+                        <button class="btn-sm" style="background: white; color: #78350f;" onclick="ejecutarSilenciador('transito')">Confirmar</button>
+                    </div>
+                </div>
             </div>
 
             <!-- MONITOREO PRINCIPAL (DASHBOARD) -->
@@ -461,6 +495,9 @@
     let buqueMuelleActual = "—";
     let audioCtx = null;
     let alarmInterval = null;
+
+    // Control de silencio de sirena
+    let sirenaSilenciada = false;
 
     // Control de voz de registros
     let knownTransactionIds = new Set();
@@ -754,16 +791,25 @@
             const confirmado = labartheMap.has(baseId);
             if (!confirmado) {
                 const fRegistro = parsearFechaExcel(m.fechaHora);
-                if (fRegistro && (ahora - fRegistro) > limiteTiempo) {
-                    hayRetrasoTransito = true;
+                if (fRegistro) {
+                    const fReg = fRegistro;
+                    if (fReg && (ahora - fReg) > limiteTiempo) {
+                        hayRetrasoTransito = true;
+                    }
                 }
             }
         });
 
+        // REINICIAR LA BANDERA DE SILENCIO SI EL PROBLEMA SE RESOLVIÓ
+        if (!hayDiscrepancia && !hayRetrasoTransito) {
+            sirenaSilenciada = false;
+        }
+
         document.getElementById('bannerAlertaDiff').style.display = hayDiscrepancia ? 'block' : 'none';
         document.getElementById('bannerAlertaTransito').style.display = hayRetrasoTransito ? 'block' : 'none';
 
-        if (hayDiscrepancia || hayRetrasoTransito) {
+        // SONAR SÓLO SI HAY ALERTAS ACTIVAS Y NO HAN SIDO SILENCIADAS POR UN DNI VÁLIDO
+        if ((hayDiscrepancia || hayRetrasoTransito) && !sirenaSilenciada) {
             activarSirenaDeEmergencia();
         } else {
             desactivarSirena();
@@ -857,7 +903,7 @@
         }
     }
 
-    // RENDERIZADO TABLAS Y CONSOLIDACIÓN DE SALDOS POR PRODUCTO (Estatus de doble vía: bolsones y productos)
+    // RENDERIZADO TABLAS Y CONSOLIDACIÓN DE SALDOS POR PRODUCTO CON MAPAS DE HASH DE BÚSQUEDA VELOZ O(1)
     function renderTablasYDashboard() {
         const ahora = new Date();
         const mins = ahora.getHours() * 60 + ahora.getMinutes();
@@ -907,6 +953,13 @@
         const totalRegistros = [...db.muelle, ...db.labarthe, ...db.despacho];
         totalRegistros.sort((a,b) => parsearFechaExcel(b.fechaHora) - parsearFechaExcel(a.fechaHora));
 
+        // INDEXACIÓN DE MAPAS DE HASH DE BÚSQUEDA RÁPIDA GLOBAL PARA LA TABLA MOVIMIENTOS
+        let globalLabartheMap = new Map();
+        db.labarthe.forEach(l => globalLabartheMap.set(obtenerBaseViajeId(l.viajeId), l));
+        
+        let globalMuelleMap = new Map();
+        db.muelle.forEach(m => globalMuelleMap.set(obtenerBaseViajeId(m.viajeId), m));
+
         const tbDash = document.getElementById('tbDash');
         if (totalRegistros.length === 0) {
             tbDash.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px;">No hay registros de hoy.</td></tr>`;
@@ -916,7 +969,8 @@
                 let estado = '<span class="badge badge-ok">CONFIRMADO</span>';
 
                 if (r.puesto === 'muelle') {
-                    const l = db.labarthe.find(x => obtenerBaseViajeId(x.viajeId) === obtenerBaseViajeId(r.viajeId));
+                    const baseId = obtenerBaseViajeId(r.viajeId);
+                    const l = globalLabartheMap.get(baseId);
                     if (!l) {
                         const trTime = parsearFechaExcel(r.fechaHora);
                         const retrasado = trTime && (ahora - trTime) > 600000;
@@ -931,7 +985,8 @@
                         }
                     }
                 } else if (r.puesto === 'labarthe') {
-                    const m = db.muelle.find(x => obtenerBaseViajeId(x.viajeId) === obtenerBaseViajeId(r.viajeId));
+                    const baseId = obtenerBaseViajeId(r.viajeId);
+                    const m = globalMuelleMap.get(baseId);
                     if (m) {
                         const difBolsones = parseInt(m.bolsones) !== parseInt(r.bolsones);
                         const difProductos = m.productos.trim().toLowerCase() !== r.productos.trim().toLowerCase();
@@ -1037,8 +1092,13 @@
             </tr>
         `).join('');
 
+        // INDEXAR LABARTHE EN EL COMPARATIVO
+        let labartheMap = new Map();
+        db.labarthe.forEach(l => labartheMap.set(obtenerBaseViajeId(l.viajeId), l));
+
         document.getElementById('tbComparativo').innerHTML = db.muelle.map(m => {
-            const l = db.labarthe.find(x => obtenerBaseViajeId(x.viajeId) === obtenerBaseViajeId(m.viajeId));
+            const baseId = obtenerBaseViajeId(m.viajeId);
+            const l = labartheMap.get(baseId);
             const bolsonesL = l ? l.bolsones : '—';
             let diff = '—';
             let rowCls = '';
@@ -1295,7 +1355,72 @@
         });
     }
 
-    // LISTO PARA COMPLETAR AJUSTES DE CCTV CON MIGRACIÓN Y DOBLE VÍA DE PRODUCTO
+    function syncProductosUI() {
+        fetch(`${gasUrl}?action=obtenerProductos`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.ok) {
+                    listadoProductos = data.productos;
+                    buqueNombreActual = data.buqueNombre || "—";
+                    buqueMuelleActual = data.buqueMuelle || "—";
+                    renderProductosTags();
+                }
+            });
+    }
+
+    function renderProductosTags() {
+        const div = document.getElementById('tagListProductos');
+        div.innerHTML = listadoProductos.map((p, idx) => `
+            <div style="display:grid; grid-template-columns: 1fr 1fr auto; gap:10px; align-items:center; padding:8px 0; border-bottom:1px solid #f1f5f9;">
+                <div style="font-weight:bold;">🧴 ${p.producto}</div>
+                <div style="color:var(--blue); font-weight:bold;">${p.cantidadBuque} bolsones</div>
+                <button class="btn-sm" style="background:var(--red-bg); color:#7f1d1d;" onclick="eliminarProductoMemoria(${idx})">×</button>
+            </div>
+        `).join('');
+    }
+
+    function agregarProductoMemoria() {
+        const val = document.getElementById('addProdInput').value.trim();
+        const cant = parseInt(document.getElementById('addProdCant').value) || 0;
+        if (!val) return;
+
+        const existe = listadoProductos.some(p => p.producto.toLowerCase() === val.toLowerCase());
+        if (!existe) {
+            listadoProductos.push({ producto: val, cantidadBuque: cant });
+            renderProductosTags();
+        }
+        document.getElementById('addProdInput').value = "";
+        document.getElementById('addProdCant').value = "";
+    }
+
+    function eliminarProductoMemoria(idx) {
+        listadoProductos.splice(idx, 1);
+        renderProductosTags();
+    }
+
+    function guardarProductosServidor() {
+        fetch(gasUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: "guardarProductos", data: { productos: listadoProductos } })
+        }).then(() => {
+            alert('✅ Catálogo y carga de Buque actualizados de forma exitosa.');
+            sincronizarServidor();
+        });
+    }
+
+    function guardarURLGas() {
+        const val = document.getElementById('gasUrlInput').value.trim();
+        if (val) {
+            gasUrl = val;
+            localStorage.setItem("iqbf_gas_url", val);
+            alert("✅ URL enlazada con éxito.");
+            sincronizarServidor();
+        }
+    }
 </script>
 </body>
 </html>
+--- END OF FILE panel_cctv.html ---
+este es mi panel de cctv, completa lo acordado para poder  pegar el codigo porfavor. lo demas dejalo tal cual como esta, gracias por tu ayuda, eres un crack!
