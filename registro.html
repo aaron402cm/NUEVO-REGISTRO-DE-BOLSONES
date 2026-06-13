@@ -422,8 +422,12 @@ let conductoresDisponibles = JSON.parse(localStorage.getItem('iqbf_cache_conduct
 let activeSubTab = 'muelle';
 
 window.onload = () => {
-  if (localStorage.getItem(SESSION_KEY) === 'true') {
+  // Verificar si la sesión actual pertenece al turno activo. Si no es así, forzar el login.
+  if (verificarSesionValida()) {
     mostrarAplicativo();
+  } else {
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
   }
   
   // Renderizar buque desde almacenamiento local en el primer arranque
@@ -433,8 +437,66 @@ window.onload = () => {
   }
   
   verificarPendientesAlmacenados();
-  setInterval(verificarPendientesAlmacenados, 30000); 
+  
+  // Comprobar periódicamente (cada 30 segundos) si hay datos pendientes y si el turno ya cambió para cerrar sesión
+  setInterval(() => {
+    verificarPendientesAlmacenados();
+    comprobarCambioDeTurnoActivo();
+  }, 30000); 
 };
+
+// CÁLCULO EXACTO DEL IDENTIFICADOR ÚNICO DEL TURNO ACTUAL (Corte exacto a las 06:45 y 18:45)
+function obtenerTurnoActual() {
+  const ahora = new Date();
+  const totalMins = ahora.getHours() * 60 + ahora.getMinutes();
+  const startDiurno = 6 * 60 + 45; // 06:45
+  const endDiurno = 18 * 60 + 45;  // 18:45
+  
+  let fechaClave = ahora.getFullYear() + '-' + String(ahora.getMonth() + 1).padStart(2, '0') + '-' + String(ahora.getDate()).padStart(2, '0');
+  let tipoTurno = "";
+  
+  if (totalMins >= startDiurno && totalMins < endDiurno) {
+    tipoTurno = "diurno";
+  } else {
+    tipoTurno = "nocturno";
+    // Si es antes de las 06:45 AM, pertenece técnicamente al turno nocturno que comenzó el día de ayer
+    if (totalMins < startDiurno) {
+      const ayer = new Date(ahora);
+      ayer.setDate(ahora.getDate() - 1);
+      fechaClave = ayer.getFullYear() + '-' + String(ayer.getMonth() + 1).padStart(2, '0') + '-' + String(ayer.getDate()).padStart(2, '0');
+    }
+  }
+  return `${fechaClave}_${tipoTurno}`;
+}
+
+// VALIDADOR DE SESIÓN POR TURNO
+function verificarSesionValida() {
+  const sesionGuardada = localStorage.getItem(SESSION_KEY);
+  if (!sesionGuardada) return false;
+  
+  // Si tiene un valor antiguo como "true" (del sistema anterior), se limpia para forzar la clave del turno
+  if (sesionGuardada === 'true') {
+    localStorage.removeItem(SESSION_KEY);
+    return false;
+  }
+  
+  const turnoActual = obtenerTurnoActual();
+  return sesionGuardada === turnoActual;
+}
+
+// COMPROBACIÓN DINÁMICA DE EXPIRACIÓN EN SEGUNDO PLANO
+function comprobarCambioDeTurnoActivo() {
+  if (document.getElementById('app').style.display === 'flex') {
+    if (!verificarSesionValida()) {
+      localStorage.removeItem(SESSION_KEY);
+      document.getElementById('app').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('pwInput').value = "";
+      document.getElementById('loginError').textContent = "";
+      alert("⏰ El turno ha finalizado (Cambio de turno 18:45 / 06:45). Ingrese la contraseña nuevamente.");
+    }
+  }
+}
 
 // MOSTRAR INDICADOR DE ESTADO EN LA PARTE SUPERIOR (Justo debajo del encabezado)
 function updateStatusIndicator(msg, type = "normal") {
@@ -473,7 +535,8 @@ async function doLogin() {
     });
     const data = await res.json();
     if (data.ok && data.valid) {
-      localStorage.setItem(SESSION_KEY, 'true');
+      // Guardar el identificador del turno actual en lugar de 'true'
+      localStorage.setItem(SESSION_KEY, obtenerTurnoActual());
       mostrarAplicativo();
     } else {
       err.textContent = "❌ Contraseña incorrecta";
