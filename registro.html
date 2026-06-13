@@ -215,6 +215,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 </head>
 <body>
 
+<!-- APP PRINCIPAL -->
 <div id="app">
   <div class="header">
     <div class="header-row">
@@ -225,6 +226,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
     </div>
   </div>
 
+  <!-- INDICADOR DE ESTADO ORDENADO (Justo debajo del encabezado principal) -->
   <div id="statusIndicator">Conectando...</div>
 
   <div id="buqueHeaderMovil">🚢 Cargando Buque y Carga Inicial...</div>
@@ -244,6 +246,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
     </div>
   </div>
 
+  <!-- SELECTOR DE PUESTO -->
   <div id="screenSelector">
     <div class="selector-title">Selecciona tu Puesto de Trabajo</div>
     <div class="puesto-card" onclick="entrarPuesto('muelle')">
@@ -269,11 +272,13 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
     </div>
   </div>
 
+  <!-- FORMULARIO DE REGISTRO -->
   <div id="screenForm">
     <div id="formDescarga">
       <div class="card" id="cardTTDescarga" style="border-color: #eab308; background: #fef9c3;">
         <div class="card-title" id="titleTTDescarga" style="color: #854d0e;">🚛 N° Terminal Truck</div>
         
+        <!-- Contenedor para Muelle: Teclado de Escritura -->
         <div id="muelleTTArea">
           <div class="digital-display" id="ttDisplay" style="color: #eab308; border-color: #854d0e;">
             TT - <span class="empty-dash">_</span><span class="empty-dash">_</span><span class="empty-dash">_</span>
@@ -281,6 +286,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
           <div class="keypad-container" id="keypadTT"></div>
         </div>
 
+        <!-- Contenedor para Labarthe: Unidades en Tránsito (Doble Ciega) -->
         <div id="labartheTTArea" style="display:none;">
           <div style="font-weight:bold; color:var(--muted); font-size:12px; margin-bottom:10px; text-transform:uppercase;">Seleccione el Camión que Arriba:</div>
           <div id="listaTransitoMovil" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; max-height:220px; overflow-y:auto;"></div>
@@ -307,6 +313,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 
     <div id="formDespacho" style="display:none">
       <div class="card">
+        <!-- DISEÑO INDEPENDIENTE DE DOS COLUMNAS DE SELECCIÓN DE CHOFER Y PLACA -->
         <div class="despacho-columns">
           <div>
             <div class="despacho-col-title">👤 Seleccionar Chofer</div>
@@ -340,6 +347,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
     </div>
   </div>
 
+  <!-- PANTALLA HISTORIAL -->
   <div id="screenHistorial">
     <div class="selector-title" style="margin-bottom:1rem;">Registros de este Turno</div>
     <div class="sub-tab-bar">
@@ -350,6 +358,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
     <div id="listaHistorial"></div>
   </div>
 
+  <!-- BOTTOM NAV (Reducido a la mitad) -->
   <div class="bottom-nav">
     <button class="bnav-btn active" id="bnavReg" onclick="changeTab('form')">
       <span class="bnav-icon">✏️</span>Registrar
@@ -360,6 +369,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
   </div>
 </div>
 
+<!-- PANTALLA LOGIN (Reintegrada para evitar pantalla blanca) -->
 <div id="loginScreen">
   <div class="login-box">
     <div class="login-brand">
@@ -607,7 +617,7 @@ function perteneceAlTurnoActual(fechaHoraStr) {
       endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1, 6, 44, 59);
     } else { 
       startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - 1, 18, 46, 0);
-      endShiftDate = new Date(ahora.getFullYear(), agora.getMonth(), ahora.getDate(), 6, 44, 59);
+      endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 6, 44, 59);
     }
   }
   return recDate >= startShiftDate && recDate <= endShiftDate;
@@ -710,390 +720,409 @@ async function sincronizarConExcel() {
   }
 }
 
-function renderEncabezadoBuqueMovil(nombre, muelle) {
-  const elem = document.getElementById('buqueHeaderMovil');
-  if (!elem) return;
-  if (!nombre) {
-    elem.innerHTML = `🚢 No hay buque operativo configurado`;
+function renderEncabezadoBuqueMovil(bNombre, bMuelle) {
+  const container = document.getElementById('buqueHeaderMovil');
+  if (!container) return;
+  const nom = bNombre || "—";
+  const mue = bMuelle || "—";
+  
+  if (!listadoProductos || listadoProductos.length === 0) {
+    container.innerHTML = `🚢 <strong>BUQUE:</strong> ${nom} en <strong>${mue}</strong>`;
     return;
   }
-  
-  let resumenProductos = "";
-  if (Array.isArray(listadoProductos) && listadoProductos.length > 0 && typeof listadoProductos[0] === 'object') {
-    resumenProductos = listadoProductos.map(p => `${p.producto.toUpperCase()}: ${p.saldo || 0}`).join(' | ');
-  }
-  
-  elem.innerHTML = `🚢 <b>${nombre.toUpperCase()} (${muelle || '—'})</b> | ${resumenProductos}`;
+  const strProd = listadoProductos.map(p => `<strong>${p.producto}:</strong> ${p.cantidadBuque}`).join(' | ');
+  container.innerHTML = `🚢 <strong>${nom}</strong> (${mue}) | ${strProd}`;
 }
 
-function renderProductosUI() {
-  const grid = document.getElementById('prodGrid');
-  const gridD = document.getElementById('prodGridD');
-  if (grid) grid.innerHTML = "";
-  if (gridD) gridD.innerHTML = "";
+function actualizarKPIsYHistorial() {
+  const muelleTurno = dbGlobal.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
+  const labartheTurno = dbGlobal.labarthe.filter(f => perteneceAlTurnoActual(f.fechaHora));
+  const despachoTurno = dbGlobal.despacho.filter(f => perteneceAlTurnoActual(f.fechaHora));
 
-  productosDisponibles.forEach(p => {
-    const btn = document.createElement('button');
-    btn.className = "prod-btn";
-    btn.textContent = p;
-    btn.onclick = () => seleccionarProducto(p, btn);
-    
-    // Clonar para despacho
-    const btnD = btn.cloneNode(true);
-    btnD.onclick = () => seleccionarProducto(p, btnD);
+  const sumM = muelleTurno.reduce((a, b) => a + (Number(b.bolsones) || 0), 0);
+  const sumL = labartheTurno.reduce((a, b) => a + (Number(b.bolsones) || 0), 0);
+  const sumD = despachoTurno.reduce((a, b) => a + (Number(b.bolsones) || 0), 0);
 
-    if (grid) grid.appendChild(btn);
-    if (gridD) gridD.appendChild(btnD);
+  document.getElementById('kpiMuelle').textContent = sumM;
+  document.getElementById('kpiLabarthe').textContent = sumL;
+  document.getElementById('kpiDespacho').textContent = sumD;
+
+  renderHistorialPuesto();
+}
+
+function changeSubTab(tab) {
+  activeSubTab = tab;
+  document.querySelectorAll('.sub-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.id === 'subTab' + tab.charAt(0).toUpperCase() + tab.slice(1));
   });
+  renderHistorialPuesto();
 }
 
-function seleccionarProducto(prod, btn) {
-  const contenedor = btn.parentElement;
-  contenedor.querySelectorAll('.prod-btn').forEach(b => b.classList.remove('sel'));
-  btn.classList.add('sel');
-  productosSeleccionados = [prod];
-  validarFormulario();
-}
-
-function renderConductoresUI() {
-  const lChoferes = document.getElementById('listaChoferes');
-  const lPlacas = document.getElementById('listaPlacas');
-  if (!lChoferes || !lPlacas) return;
-  lChoferes.innerHTML = "";
-  lPlacas.innerHTML = "";
-
-  // Extraer listas únicas de Choferes y Placas
-  const choferesUnicos = [...new Set(conductoresDisponibles.map(c => c.chofer).filter(Boolean))].sort();
-  const placasUnicas = [...new Set(conductoresDisponibles.map(c => c.placa).filter(Boolean))].sort();
-
-  choferesUnicos.forEach(ch => {
-    const item = document.createElement('div');
-    item.className = "conductor-item";
-    item.innerHTML = `<div class="conductor-name">${ch}</div>`;
-    item.onclick = () => {
-      lChoferes.querySelectorAll('.conductor-item').forEach(i => i.classList.remove('selected'));
-      item.classList.add('selected');
-      conductorSeleccionado = ch;
-      document.getElementById('despachoCampos').style.display = (conductorSeleccionado && placaSeleccionada) ? 'block' : 'none';
-      validarFormulario();
-    };
-    lChoferes.appendChild(item);
-  });
-
-  placasUnicas.forEach(pl => {
-    const item = document.createElement('div');
-    item.className = "conductor-item";
-    item.innerHTML = `<div class="conductor-placa">${pl}</div>`;
-    item.onclick = () => {
-      lPlacas.querySelectorAll('.conductor-item').forEach(i => i.classList.remove('selected'));
-      item.classList.add('selected');
-      placaSeleccionada = pl;
-      document.getElementById('despachoCampos').style.display = (conductorSeleccionado && placaSeleccionada) ? 'block' : 'none';
-      validarFormulario();
-    };
-    lPlacas.appendChild(item);
-  });
-}
-
-function renderTransitoLabartheUI() {
-  const container = document.getElementById('listaTransitoMovil');
+function renderHistorialPuesto() {
+  const container = document.getElementById('listaHistorial');
   if (!container) return;
   container.innerHTML = "";
 
-  // Unidades que están en muelle pero NO han llegado a labarthe
-  const enMuelle = dbGlobal.muelle || [];
-  const enLabarthe = dbGlobal.labarthe || [];
+  const listado = dbGlobal[activeSubTab] || [];
+  const filtrados = listado.filter(f => perteneceAlTurnoActual(f.fechaHora));
 
-  const vinculados = new Set(enLabarthe.map(l => l.viajeId).filter(Boolean));
-  const enTransito = enMuelle.filter(m => m.viajeId && !vinculados.has(m.viajeId));
-
-  if (enTransito.length === 0) {
-    container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:15px; color:var(--muted); font-weight:bold; font-size:14px;">⚠️ No hay camiones en tránsito desde muelle.</div>`;
+  if (filtrados.length === 0) {
+    container.innerHTML = `<div style="text-align:center;padding:3rem;font-size:1.1rem;color:var(--muted)">Sin movimientos registrados en este turno</div>`;
     return;
   }
 
-  enTransito.forEach(camion => {
-    const btn = document.createElement('div');
-    btn.className = "conductor-item";
-    btn.style.textAlign = "center";
-    btn.style.borderColor = "var(--blue-dark)";
-    btn.innerHTML = `
-      <div style="font-size:1.4rem; font-weight:900; color:var(--blue-dark);">${camion.tt || 'TT-???'}</div>
-      <div style="font-size:0.9rem; font-weight:bold; color:var(--muted); margin-top:4px;">${camion.producto || '—'}</div>
-      <div style="font-size:1.1rem; font-weight:900; color:var(--text); margin-top:2px;">${camion.bolsones || 0} Bols.</div>
-    `;
-    btn.onclick = () => {
-      container.querySelectorAll('.conductor-item').forEach(i => i.classList.remove('selected'));
-      btn.classList.add('selected');
-      
-      // Heredar de forma obligatoria los parámetros del muelle de forma unívoca
-      viajeIdHeredado = camion.viajeId;
-      bolsonesSeleccionados = parseInt(camion.bolsones, 10) || 0;
-      valBols = bolsonesSeleccionados;
-      productosSeleccionados = [camion.producto];
+  filtrados.sort((a,b) => parsearFechaExcel(b.fechaHora) - parsearFechaExcel(a.fechaHora));
 
-      // Fijar visualmente los displays automáticos
-      actualizarBolsDisplay();
-      
-      // Autofijar el producto en la UI
-      const grid = document.getElementById('prodGrid');
-      if (grid) {
-        grid.querySelectorAll('.prod-btn').forEach(b => {
-          if (b.textContent === camion.producto) b.classList.add('sel');
-          else b.classList.remove('sel');
-        });
-      }
-
-      validarFormulario();
-    };
-    container.appendChild(btn);
-  });
+  container.innerHTML = filtrados.map(r => `
+    <div class="hist-item">
+      <div class="hist-row">
+        <span class="hist-tt">🚛 ${r.tt}</span>
+        <span class="hist-qty">${r.bolsones} 📦</span>
+      </div>
+      <div class="hist-meta">${r.fechaHora}</div>
+      <div style="font-size:1.1rem;font-weight:bold;margin-top:0.3rem">🧴 ${r.productos}</div>
+      ${r.conductor && r.conductor !== '—' ? `<div class="hist-meta" style="margin-top:0.2rem">👤 Conductor: ${r.conductor}</div>` : ''}
+      <div class="hist-meta" style="margin-top:0.2rem;font-size:0.9rem">ID: ${r.viajeId}</div>
+    </div>
+  `).join('');
 }
 
+// EXTRAE EL IDENTIFICADOR BASE DE VIAJE
+function obtenerBaseViajeId(viajeId) {
+  if (!viajeId) return "";
+  const partes = viajeId.split('_');
+  return partes.slice(0, 2).join('_');
+}
+
+// ENTRAR AL PUESTO CON TRANSICIÓN DINÁMICA DE "UNIDADES EN TRÁNSITO" PARA LABARTHE
 function entrarPuesto(puesto) {
   puestoActual = puesto;
+  resetFormulario();
   document.getElementById('screenSelector').style.display = 'none';
   document.getElementById('screenForm').style.display = 'block';
   
-  const btnBack = document.getElementById('btnBack');
-  if (btnBack) btnBack.classList.add('visible');
-  
-  document.getElementById('headerTitle').textContent = `✏️ Registro — ${puesto.toUpperCase()}`;
-
-  // Reset de estados
-  valTT = ""; valBols = 0; bolsonesSeleccionados = 0; productosSeleccionados = []; fotosList = [];
-  viajeIdHeredado = ""; conductorSeleccionado = null; placaSeleccionada = null;
-  actualizarTTDisplay();
-  actualizarBolsDisplay();
-  
-  // Limpiar productos seleccionados visualmente
-  document.querySelectorAll('.prod-btn').forEach(b => b.classList.remove('sel'));
-
-  // Adaptar campos según puesto
-  const fDescarga = document.getElementById('formDescarga');
-  const fDespacho = document.getElementById('formDespacho');
-  const muelleArea = document.getElementById('muelleTTArea');
-  const labartheArea = document.getElementById('labartheTTArea');
-
-  if (puesto === 'muelle') {
-    fDescarga.style.display = 'block'; fDespacho.style.display = 'none';
-    muelleArea.style.display = 'block'; labartheArea.style.display = 'none';
-    document.getElementById('titleTTDescarga').textContent = "🚛 N° Terminal Truck";
-    document.getElementById('cardTTDescarga').style.background = "#fef9c3";
-    document.getElementById('cardTTDescarga').style.borderColor = "#eab308";
-  } else if (puesto === 'labarthe') {
-    fDescarga.style.display = 'block'; fDespacho.style.display = 'none';
-    muelleArea.style.display = 'none'; labartheArea.style.display = 'block';
-    document.getElementById('titleTTDescarga').textContent = "🏭 Confirmar Arribo de Unidad";
-    document.getElementById('cardTTDescarga').style.background = "#f3e8ff";
-    document.getElementById('cardTTDescarga').style.borderColor = "#c084fc";
-    renderTransitoLabartheUI();
-  } else if (puesto === 'despacho') {
-    fDescarga.style.display = 'none'; fDespacho.style.display = 'block';
-    document.getElementById('despachoCampos').style.display = 'none';
-    renderConductoresUI();
+  // CONFIGURACIÓN VISUAL DINÁMICA: MOSTRAR SECTORES DE ACUERDO AL ROL
+  if (puesto === 'labarthe') {
+    document.getElementById('muelleTTArea').style.display = 'none';
+    document.getElementById('labartheTTArea').style.display = 'block';
+    renderListaTransitoMovil();
+  } else {
+    document.getElementById('muelleTTArea').style.display = 'block';
+    document.getElementById('labartheTTArea').style.display = 'none';
   }
 
-  renderFotoSlotsUI();
-  validarFormulario();
+  // OCULTAR TEMPORALMENTE BUQUE Y KPIs AL ENTRAR AL FORMULARIO
+  document.getElementById('buqueHeaderMovil').style.display = 'none';
+  document.getElementById('totalFlotante').style.display = 'none';
+
+  const hTitle = document.getElementById('headerTitle');
+  const hPuesto = document.getElementById('headerPuesto');
+  const btnB = document.getElementById('btnBack');
+
+  hPuesto.style.visibility = 'visible';
+  btnB.classList.add('visible');
+
+  if (puesto === 'muelle') { hTitle.textContent = "🚢 MUELLE"; hPuesto.textContent = "MUELLE"; }
+  else if (puesto === 'labarthe') { hTitle.textContent = "🏭 LABARTHE"; hPuesto.textContent = "LABARTHE"; }
+  else { hTitle.textContent = "🚛 DESPACHO"; hPuesto.textContent = "DESPACHO"; }
+
+  document.getElementById('formDescarga').style.display = puesto !== 'despacho' ? 'block' : 'none';
+  document.getElementById('formDespacho').style.display = puesto === 'despacho' ? 'block' : 'none';
+
+  if (puesto === 'despacho') { renderConductoresUI(); }
+  renderFotosGrid();
+}
+
+// CARGAR LISTA CIEGA DE UNIDADES EN TRÁNSITO PARA LABARTHE
+function renderListaTransitoMovil() {
+  const listDiv = document.getElementById('listaTransitoMovil');
+  if (!listDiv) return;
+  listDiv.innerHTML = "";
+
+  const muelleActivos = dbGlobal.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
+  const labartheActivos = dbGlobal.labarthe.filter(f => perteneceAlTurnoActual(f.fechaHora));
+
+  // Indexar arribos de Labarthe por base de viajeId para comprobación instantánea O(1)
+  const labartheBases = new Set(labartheActivos.map(l => obtenerBaseViajeId(l.viajeId)));
+
+  let transitoDetectado = false;
+
+  muelleActivos.forEach(m => {
+    const baseId = obtenerBaseViajeId(m.viajeId);
+    // Si el viaje base de Muelle no existe en Labarthe, está EN TRÁNSITO
+    if (!labartheBases.has(baseId)) {
+      transitoDetectado = true;
+      const cleanPlate = m.tt.replace("TT-", "");
+
+      const btn = document.createElement('div');
+      btn.className = "conductor-item";
+      btn.innerHTML = `<div style="font-size:1.3rem; font-weight:800; text-align:center;">🚛 ${m.tt}</div>`;
+      
+      if (viajeIdHeredado === m.viajeId) {
+        btn.classList.add('selected');
+        btn.style.borderColor = "#ea580c";
+        btn.style.backgroundColor = "#ffedd5";
+      }
+
+      btn.onclick = () => {
+        viajeIdHeredado = m.viajeId;
+        valTT = cleanPlate;
+        
+        document.querySelectorAll('#listaTransitoMovil .conductor-item').forEach(el => {
+          el.classList.remove('selected');
+          el.style.borderColor = "";
+          el.style.backgroundColor = "";
+        });
+        
+        btn.classList.add('selected');
+        btn.style.borderColor = "#ea580c";
+        btn.style.backgroundColor = "#ffedd5";
+      };
+
+      listDiv.appendChild(btn);
+    }
+  });
+
+  if (!transitoDetectado) {
+    listDiv.innerHTML = '<div style="grid-column: span 2; text-align:center; padding:1.5rem; color:var(--muted); font-weight:bold;">● No hay camiones en tránsito en este turno.</div>';
+  }
 }
 
 function volverSelector() {
   puestoActual = null;
+  document.getElementById('screenSelector').style.display = 'block';
   document.getElementById('screenForm').style.display = 'none';
   document.getElementById('screenHistorial').style.display = 'none';
-  document.getElementById('screenSelector').style.display = 'block';
   
-  const btnBack = document.getElementById('btnBack');
-  if (btnBack) btnBack.classList.remove('visible');
-  
-  document.getElementById('headerTitle').textContent = "📦 IQBF Control";
+  // MOSTRAR BUQUE Y KPIs AL VOLVER AL SELECTOR
+  document.getElementById('buqueHeaderMovil').style.display = 'block';
+  document.getElementById('totalFlotante').style.display = 'flex';
 
-  // Sincronizar pestañas inferiores
-  document.getElementById('bnavReg').classList.add('active');
-  document.getElementById('bnavHist').classList.remove('active');
+  document.getElementById('headerTitle').textContent = "📦 IQBF Control";
+  document.getElementById('headerPuesto').style.visibility = 'hidden';
+  document.getElementById('btnBack').classList.remove('visible');
+  changeTab('form');
 }
 
 function changeTab(tab) {
   if (tab === 'form') {
+    document.getElementById('screenForm').style.display = puestoActual ? 'block' : 'none';
+    document.getElementById('screenSelector').style.display = !puestoActual ? 'block' : 'none';
+    document.getElementById('screenHistorial').style.display = 'none';
     document.getElementById('bnavReg').classList.add('active');
     document.getElementById('bnavHist').classList.remove('active');
-    if (puestoActual) {
-      document.getElementById('screenSelector').style.display = 'none';
-      document.getElementById('screenHistorial').style.display = 'none';
-      document.getElementById('screenForm').style.display = 'block';
-    } else {
-      volverSelector();
-    }
-  } else if (tab === 'historial') {
+  } else {
+    document.getElementById('screenForm').style.display = 'none';
+    document.getElementById('screenSelector').style.display = 'none';
+    document.getElementById('screenHistorial').style.display = 'block';
     document.getElementById('bnavReg').classList.remove('active');
     document.getElementById('bnavHist').classList.add('active');
-    document.getElementById('screenSelector').style.display = 'none';
-    document.getElementById('screenForm').style.display = 'none';
-    document.getElementById('screenHistorial').style.display = 'block';
-    
-    const btnBack = document.getElementById('btnBack');
-    if (btnBack) btnBack.classList.add('visible');
-    
-    document.getElementById('headerTitle').textContent = "📋 Historial Turno";
-    // Forzar render de la pestaña activa en el historial
-    changeSubTab(activeSubTab);
+    renderHistorialPuesto();
   }
 }
 
-function changeSubTab(puesto) {
-  activeSubTab = puesto;
-
-  // 1. Quitar la clase 'active' de todos los botones de la sub-barra
-  document.getElementById('subTabMuelle').classList.remove('active');
-  document.getElementById('subTabLabarthe').classList.remove('active');
-  document.getElementById('subTabDespacho').classList.remove('active');
-
-  // 2. Añadir la clase 'active' solo al botón seleccionado para que se pinte de azul
-  if (puesto === 'muelle') {
-    document.getElementById('subTabMuelle').classList.add('active');
-  } else if (puesto === 'labarthe') {
-    document.getElementById('subTabLabarthe').classList.add('active');
-  } else if (puesto === 'despacho') {
-    document.getElementById('subTabDespacho').classList.add('active');
-  }
-
-  // 3. Actualizar el historial visual
-  actualizarKPIsYHistorial();
-}
-
-// RENDERIZADO DE CONTENEDORES DE FOTOS DINÁMICAS
-function renderFotoSlotsUI() {
-  const container = (puestoActual === 'despacho') ? document.getElementById('fotoGridD') : document.getElementById('fotoGrid');
-  if (!container) return;
-  container.innerHTML = "";
-
-  for (let i = 0; i < 5; i++) {
-    const slot = document.createElement('div');
-    slot.className = "foto-slot";
-    
-    if (fotosList[i]) {
-      slot.classList.add('has-photo');
-      const img = document.createElement('img');
-      img.src = fotosList[i];
-      slot.appendChild(img);
-
-      const btnDel = document.createElement('button');
-      btnDel.className = "btn-del-foto";
-      btnDel.innerHTML = "×";
-      btnDel.onclick = (e) => {
-        e.stopPropagation();
-        eliminarFoto(i);
+// PRODUCTOS: LIMITAR A SELECCIÓN ÚNICA (Garantiza matemática exacta de saldos en CCTV)
+function renderProductosUI() {
+  ['prodGrid', 'prodGridD'].forEach(gridId => {
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+    grid.innerHTML = "";
+    productosDisponibles.forEach(prod => {
+      const b = document.createElement('button');
+      b.className = "prod-btn";
+      b.textContent = prod;
+      b.type = "button";
+      b.onclick = () => {
+        productosSeleccionados = [prod]; // Forzar selección única
+        document.querySelectorAll(`#${gridId} .prod-btn`).forEach(btn => btn.classList.remove('sel'));
+        b.classList.add('sel');
       };
-      slot.appendChild(btnDel);
-    } else {
-      slot.innerHTML = `<span style="font-size:2rem; color:var(--border);">📷</span><span class="foto-label">Foto ${i+1}</span>`;
-      slot.onclick = () => dispararCamaraOculta(i);
-    }
-    container.appendChild(slot);
-  }
+      grid.appendChild(b);
+    });
+  });
 }
 
-function dispararCamaraOculta(index) {
-  const hInputs = (puestoActual === 'despacho') ? document.getElementById('hiddenInputsD') : document.getElementById('hiddenInputs');
-  if (!hInputs) return;
-
-  // Eliminar input previo si existe para evitar duplicados en memoria
-  const viejo = document.getElementById(`cam_input_${index}`);
-  if (viejo) viejo.remove();
-
-  const input = document.createElement('input');
-  input.type = "file";
-  input.accept = "image/*";
-  input.capture = "environment";
-  input.id = `cam_input_${index}`;
-  input.style.display = "none";
+// DESPACHO: DOS COLUMNAS INDEPENDIENTES CON COLORES FUERTES DE SELECCIÓN DE ALTO CONTRASTE
+function renderConductoresUI() {
+  const listChof = document.getElementById('listaChoferes');
+  const listPlac = document.getElementById('listaPlacas');
+  if (!listChof || !listPlac) return;
   
-  input.onchange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    updateStatusIndicator("⌛ Procesando imagen...");
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      // Redimensión matemática exacta en Canvas para optimizar envío móvil a Google Sheets
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        const max_size = 800; // Resolución optimizada para reporte
-
-        if (width > height) {
-          if (width > max_size) { height *= max_size / width; width = max_size; }
-        } else {
-          if (height > max_size) { width *= max_size / height; height = max_size; }
-        }
-        canvas.width = width; canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        fotosList[index] = canvas.toDataURL('image/jpeg', 0.75);
-        updateStatusIndicator("● Foto cargada correctamente", "success");
-        renderFotoSlotsUI();
-        validarFormulario();
-      };
-      img.src = evt.target.result;
-    };
-    reader.readAsDataURL(file);
-  };
-
-  hInputs.appendChild(input);
-  input.click();
-}
-
-function eliminarFoto(index) {
-  fotosList.splice(index, 1);
-  renderFotoSlotsUI();
-  validarFormulario();
-}
-
-function validarFormulario() {
-  let valido = false;
-
-  if (puestoActual === 'muelle') {
-    valido = (valTT.length > 0) && (bolsonesSeleccionados >= 1 && bolsonesSeleccionados <= 30) && (productosSeleccionados.length > 0) && (fotosList.filter(Boolean).length >= 2);
-  } else if (puestoActual === 'labarthe') {
-    valido = (viajeIdHeredado !== "") && (bolsonesSeleccionados >= 1 && bolsonesSeleccionados <= 30) && (productosSeleccionados.length > 0) && (fotosList.filter(Boolean).length >= 2);
-  } else if (puestoActual === 'despacho') {
-    valido = (conductorSeleccionado !== null) && (placaSeleccionada !== null) && (bolsonesSeleccionados >= 1 && bolsonesSeleccionados <= 30) && (productosSeleccionados.length > 0) && (fotosList.filter(Boolean).length >= 2);
+  listChof.innerHTML = "";
+  listPlac.innerHTML = "";
+  
+  if (!conductoresDisponibles || conductoresDisponibles.length === 0) {
+    listChof.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--muted)">Sin datos</div>';
+    listPlac.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--muted)">Sin datos</div>';
+    return;
   }
+  
+  const choferesUnicos = [...new Set(conductoresDisponibles.map(c => c.nombre.trim()))];
+  const placasUnicas = [...new Set(conductoresDisponibles.map(c => c.placa.trim().toUpperCase()))];
+  
+  // Renderizar Choferes (Columna Izquierda - Se pinta con color fuerte azul al seleccionarlo)
+  choferesUnicos.forEach(nombre => {
+    const item = document.createElement('div');
+    item.className = "conductor-item";
+    item.innerHTML = `<div class="conductor-name">👤 ${nombre}</div>`;
+    if (conductorSeleccionado === nombre) {
+      item.classList.add('selected');
+      item.style.borderColor = "var(--blue-dark)";
+      item.style.backgroundColor = "var(--blue-light)";
+    }
+    item.onclick = () => {
+      conductorSeleccionado = nombre;
+      document.querySelectorAll('#listaChoferes .conductor-item').forEach(el => {
+        el.classList.remove('selected');
+        el.style.borderColor = "";
+        el.style.backgroundColor = "";
+      });
+      item.classList.add('selected');
+      item.style.borderColor = "var(--blue-dark)";
+      item.style.backgroundColor = "var(--blue-light)";
+      verificarDespachoFormVisibilidad();
+    };
+    listChof.appendChild(item);
+  });
+  
+  // Renderizar Placas (Columna Derecha - Se pinta con color fuerte naranja al seleccionarlo)
+  placasUnicas.forEach(placa => {
+    const item = document.createElement('div');
+    item.className = "conductor-item";
+    item.innerHTML = `<div class="conductor-name">🚛 ${placa}</div>`;
+    if (placaSeleccionada === placa) {
+      item.classList.add('selected');
+      item.style.borderColor = "#ea580c";
+      item.style.backgroundColor = "#ffedd5";
+    }
+    item.onclick = () => {
+      placaSeleccionada = placa;
+      document.querySelectorAll('#listaPlacas .conductor-item').forEach(el => {
+        el.classList.remove('selected');
+        el.style.borderColor = "";
+        el.style.backgroundColor = "";
+      });
+      item.classList.add('selected');
+      item.style.borderColor = "#ea580c";
+      item.style.backgroundColor = "#ffedd5";
+      verificarDespachoFormVisibilidad();
+    };
+    listPlac.appendChild(item);
+  });
+}
 
-  const btnG = document.getElementById('btnGuardar');
-  const btnGD = document.getElementById('btnGuardarD');
-  if (btnG) btnG.disabled = !valido;
-  if (btnGD) btnGD.disabled = !valido;
+function verificarDespachoFormVisibilidad() {
+  const campos = document.getElementById('despachoCampos');
+  if (conductorSeleccionado && placaSeleccionada) {
+    campos.style.display = 'block';
+  } else {
+    campos.style.display = 'none';
+  }
+}
+
+function renderFotosGrid() {
+  const isD = puestoActual === 'despacho';
+  const grid = document.getElementById(isD ? 'fotoGridD' : 'fotoGrid');
+  const inputs = document.getElementById(isD ? 'hiddenInputsD' : 'hiddenInputs');
+  if (!grid || !inputs) return;
+  grid.innerHTML = "";
+  inputs.innerHTML = "";
+
+  fotosList.forEach((src, idx) => {
+    const slot = document.createElement('div');
+    slot.className = "foto-slot has-photo";
+    slot.innerHTML = `<img src="${src}"><span class="foto-label">Foto ${idx+1}</span><button class="btn-del-foto" onclick="eliminarFoto(${idx})">✕</button>`;
+    grid.appendChild(slot);
+  });
+
+  const maxFotos = 5; 
+  if (fotosList.length < maxFotos) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment';
+    input.id = `foto_input_${fotosList.length}`;
+    input.onchange = (e) => procesarFotoYComprimir(e);
+    inputs.appendChild(input);
+
+    const slot = document.createElement('label');
+    slot.className = "foto-slot";
+    slot.setAttribute('for', input.id);
+    slot.innerHTML = `<span style="font-size:2.5rem;">📸</span><span class="foto-label">Tomar foto</span>`;
+    grid.appendChild(slot);
+  }
+}
+
+function procesarFotoYComprimir(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.src = e.target.result;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX_SIZE = 800; 
+      let w = img.width;
+      let h = img.height;
+
+      if (w > h && w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; }
+      else if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; }
+
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+
+      const b64 = canvas.toDataURL('image/jpeg', 0.5);
+      fotosList.push(b64);
+      renderFotosGrid();
+    };
+  };
+  reader.readAsDataURL(file);
+}
+
+function eliminarFoto(idx) {
+  fotosList.splice(idx, 1);
+  renderFotosGrid();
 }
 
 function abrirConfirmacion() {
-  let bodyHtml = "";
-
-  if (puestoActual === 'muelle' || puestoActual === 'labarthe') {
-    let camionTexto = (puestoActual === 'muelle') ? ("TT-" + valTT) : viajeIdHeredado.split('_')[1] || viajeIdHeredado;
-    bodyHtml = `
-      <div class="confirm-row"><div class="lbl">PUESTO</div><div class="val">${puestoActual.toUpperCase()}</div></div>
-      <div class="confirm-row"><div class="lbl">TT</div><div class="val">${camionTexto}</div></div>
-      <div class="confirm-row"><div class="lbl">BOLSONES</div><div class="val">${bolsonesSeleccionados} Bolsones</div></div>
-      <div class="confirm-row"><div class="lbl">PRODUCTO</div><div class="val">${productosSeleccionados.join(', ')}</div></div>
-      <div class="confirm-row"><div class="lbl">EVIDENCIAS</div><div class="val">${fotosList.filter(Boolean).length} Foto(s)</div></div>
-    `;
-  } else if (puestoActual === 'despacho') {
-    bodyHtml = `
-      <div class="confirm-row"><div class="lbl">PUESTO</div><div class="val">DESPACHO</div></div>
-      <div class="confirm-row"><div class="lbl">CHOFER</div><div class="val">${conductorSeleccionado}</div></div>
-      <div class="confirm-row"><div class="lbl">PLACA</div><div class="val">${placaSeleccionada}</div></div>
-      <div class="confirm-row"><div class="lbl">BOLSONES</div><div class="val">${bolsonesSeleccionados} Bolsones</div></div>
-      <div class="confirm-row"><div class="lbl">PRODUCTO</div><div class="val">${productosSeleccionados.join(', ')}</div></div>
-      <div class="confirm-row"><div class="lbl">EVIDENCIAS</div><div class="val">${fotosList.filter(Boolean).length} Foto(s)</div></div>
-    `;
+  const isD = puestoActual === 'despacho';
+  
+  if (!isD && !valTT) { showToast('⚠️ Seleccione o digite el número de TT', true); return; }
+  if (isD && (!conductorSeleccionado || !placaSeleccionada)) { showToast('⚠️ Seleccione Chofer y Placa', true); return; }
+  if (bolsonesSeleccionados === 0) { showToast('⚠️ Seleccione los bolsones', true); return; }
+  if (productosSeleccionados.length === 0) { showToast('⚠️ Seleccione el producto', true); return; }
+  
+  const minFotos = 2; 
+  if (fotosList.length < minFotos) {
+    showToast(`⚠️ Requiere mínimo ${minFotos} fotos de evidencia`, true);
+    return;
   }
 
-  document.getElementById('confirmBody').innerHTML = bodyHtml;
+  const rows = [
+    ['PUESTO', puestoActual.toUpperCase()]
+  ];
+
+  if (isD) {
+    rows.push(['CONDUCTOR', conductorSeleccionado]);
+    rows.push(['PLACA', placaSeleccionada]);
+  } else {
+    rows.push(['TT', `TT-${valTT}`]);
+  }
+
+  rows.push(
+    ['BOLSONES', `${bolsonesSeleccionados} Bolsones`],
+    ['PRODUCTO', productosSeleccionados.join(', ')],
+    ['EVIDENCIAS', `${fotosList.length} Foto(s)`]
+  );
+
+  document.getElementById('confirmBody').innerHTML = rows.map(([l, v]) => `
+    <div class="confirm-row"><span class="lbl">${l}</span><span class="val">${v}</span></div>
+  `).join('');
+
   document.getElementById('modalConfirm').classList.add('open');
 }
 
@@ -1101,168 +1130,213 @@ function cerrarConfirmacion() {
   document.getElementById('modalConfirm').classList.remove('open');
 }
 
-function generarFechaHoraLectura() {
-  const d = new Date();
-  const pad = (n) => n.toString().padStart(2, '0');
-  
-  let hours = d.getHours();
-  const ampm = hours >= 12 ? 'p. m.' : 'a. m.';
-  hours = hours % 12;
-  hours = hours ? hours : 12; // Formato 12 horas exactas para sincronización con Excel
-  
-  return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(hours)}:${pad(d.getMinutes())}:${pad(d.getSeconds())} ${ampm}`;
-}
-
-function guardarDatosFinal() {
+// PROTOCOLO DE SUBIDA RESILIENTE DE DOS FASES CON RETORNO DE PANTALLA INMEDIATO Y HEREDADO DE ID
+async function guardarDatosFinal() {
   cerrarConfirmacion();
-  updateStatusIndicator("⌛ Guardando registro localmente...");
-
-  const timestampStr = generarFechaHoraLectura();
-  const uniqueId = `ID_${Date.now()}`;
-  let vId = viajeIdHeredado;
-
-  if (puestoActual === 'muelle') {
-    vId = `V_${Date.now()}_TT${valTT}`;
+  const isD = puestoActual === 'despacho';
+  
+  const btn = document.getElementById(isD ? 'btnGuardarD' : 'btnGuardar');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "⏱️ ENVIANDO REGISTRO...";
   }
 
-  const nuevoRegistro = {
-    id: uniqueId,
-    viajeId: vId,
-    timestamp: timestampStr,
-    puesto: puestoActual,
-    tt: puestoActual === 'muelle' ? `TT-${valTT}` : (puestoActual === 'labarthe' ? (viajeIdHeredado.split('_')[2] || 'TT') : ''),
-    chofer: puestoActual === 'despacho' ? conductorSeleccionado : '',
-    placa: puestoActual === 'despacho' ? placaSeleccionada : '',
-    bolsones: bolsonesSeleccionados,
-    producto: productosSeleccionados[0],
-    fotos: fotosList.filter(Boolean),
-    status: 'pendiente_envio'
+  const now = new Date();
+  const fechaHora = now.toLocaleDateString('es-PE', {day:'2-digit', month:'2-digit', year:'numeric'}) + ' ' + now.toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+
+  const textPayload = {
+    action: isD ? 'registroDespacho' : 'registroDescarga',
+    data: {
+      puesto: puestoActual,
+      tt: isD ? placaSeleccionada : `TT-${valTT}`,
+      bolsones: bolsonesSeleccionados,
+      conductor: isD ? conductorSeleccionado : '—',
+      productos: productosSeleccionados.join(', '),
+      fechaHora: fechaHora,
+      viajeId: puestoActual === 'labarthe' ? viajeIdHeredado : "" // Enviar el viajeId original de Muelle si es Labarthe
+    }
   };
 
-  // Guardar en la base de datos local (Offline-First)
-  dbGlobal[puestoActual].unshift(nuevoRegistro);
-  localStorage.setItem('iqbf_cache_dbGlobal', JSON.stringify(dbGlobal));
+  try {
+    // FASE 1: Registro Textual Inmediato (Poco peso, ideal para red inestable)
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(textPayload)
+    });
+    const result = await res.json();
 
-  showToast("✅ Registro guardado localmente");
-  actualizarKPIsYHistorial();
-  
-  // Volver al selector de puestos automáticamente para la siguiente unidad
-  volverSelector();
+    if (result.ok) {
+      const viajeIdGenerado = result.viajeId;
+      
+      // AGILIDAD EXTREMA: Retornar inmediatamente a la pantalla de registros principal 
+      const fotosParaSubir = [...fotosList]; 
+      const puestoParaSubir = puestoActual;
+      
+      volverSelector(); // El usuario puede iniciar un nuevo registro ya mismo
+      showToast('✅ Registro Migrado a Excel. Subiendo evidencias...');
 
-  // Forzar intento de sincronización en segundo plano de manera asíncrona
-  verificarPendientesAlmacenados();
-}
+      // FASE 2: Subida de fotos en background sin bloquear la interfaz de usuario
+      subirFotosEnSegundoPlano(viajeIdGenerado, puestoParaSubir, fotosParaSubir);
 
-function actualizarKPIsYHistorial() {
-  // Inicialización de contadores matemáticos exactos
-  let tMuelle = 0, tLabarthe = 0, tDespacho = 0;
-
-  // Filtrado de registros en base al turno de trabajo actual
-  if (Array.isArray(dbGlobal.muelle)) {
-    dbGlobal.muelle.forEach(r => { if (perteneceAlTurnoActual(r.timestamp)) tMuelle += parseInt(r.bolsones, 10) || 0; });
-  }
-  if (Array.isArray(dbGlobal.labarthe)) {
-    dbGlobal.labarthe.forEach(r => { if (perteneceAlTurnoActual(r.timestamp)) tLabarthe += parseInt(r.bolsones, 10) || 0; });
-  }
-  if (Array.isArray(dbGlobal.despacho)) {
-    dbGlobal.despacho.forEach(r => { if (perteneceAlTurnoActual(r.timestamp)) tDespacho += parseInt(r.bolsones, 10) || 0; });
-  }
-
-  // Actualizar indicadores numéricos en la UI superior
-  const kM = document.getElementById('kpiMuelle');
-  const kL = document.getElementById('kpiLabarthe');
-  const kD = document.getElementById('kpiDespacho');
-  if (kM) kM.textContent = tMuelle;
-  if (kL) kL.textContent = tLabarthe;
-  if (kD) kD.textContent = tDespacho;
-
-  // Renderizar listado de historial de la pestaña seleccionada
-  const listaHist = document.getElementById('listaHistorial');
-  if (!listaHist) return;
-  listaHist.innerHTML = "";
-
-  const registrosMuestra = dbGlobal[activeSubTab] || [];
-  // Filtrar solo los del turno actual para no saturar la pantalla del operador
-  const registrosFiltrados = registrosMuestra.filter(r => perteneceAlTurnoActual(r.timestamp));
-
-  if (registrosFiltrados.length === 0) {
-    listaHist.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted); font-weight:bold;">No hay registros en este turno para la sección seleccionada.</div>`;
-    return;
-  }
-
-  registrosFiltrados.forEach(r => {
-    const item = document.createElement('div');
-    item.className = "hist-item";
-    if (r.status === 'pendiente_envio') item.style.borderLeft = "6px solid var(--amber)";
-    else item.style.borderLeft = "6px solid var(--green)";
-
-    let tituloSeccion = r.tt || '🚛 DESPACHO';
-    if (activeSubTab === 'despacho') tituloSeccion = `🚛 Placa: ${r.placa || '—'}`;
-
-    item.innerHTML = `
-      <div class="hist-row">
-        <div class="hist-tt">${tituloSeccion}</div>
-        <div class="hist-qty">${r.bolsones} 📦</div>
-      </div>
-      <div class="hist-meta">${r.timestamp}</div>
-      <div class="hist-meta" style="color:var(--blue-dark); font-weight:900;">🧴 ${r.producto || '—'}</div>
-      ${r.chofer ? `<div class="hist-meta">👤 Chofer: ${r.chofer}</div>` : ''}
-      <div class="hist-meta" style="text-align:right; font-size:0.8rem; color:${r.status==='pendiente_envio'?'var(--amber)':'var(--green)'}">
-        ${r.status === 'pendiente_envio' ? '⏳ Pendiente de subir al servidor...' : '✅ Sincronizado en la nube'}
-      </div>
-    `;
-    listaHist.appendChild(item);
-  });
-}
-
-let estaSincronizandoPendientes = false;
-async function verificarPendientesAlmacenados() {
-  if (estaSincronizandoPendientes) return;
-  
-  // Buscar cualquier registro marcado como pendiente en cualquier puesto
-  let pendientes = [];
-  ['muelle', 'labarthe', 'despacho'].forEach(p => {
-    if (Array.isArray(dbGlobal[p])) {
-      dbGlobal[p].forEach(r => { if (r.status === 'pendiente_envio') pendientes.push(r); });
+    } else {
+      showToast('❌ Error al subir: ' + result.error, true);
     }
-  });
+  } catch(e) {
+    // ERROR EN FASE 1: Guardamos localmente en localStorage para reintento automático
+    const backupKey = "iqbf_pending_" + Date.now();
+    const backupObject = {
+      payload: textPayload,
+      fotos: [...fotosList]
+    };
+    localStorage.setItem(backupKey, JSON.stringify(backupObject));
+    
+    showToast('⚠️ Red débil. Guardado en dispositivo. Se enviará automáticamente.', true);
+    volverSelector();
+  }
 
-  if (pendientes.length === 0) return;
-  
-  estaSincronizandoPendientes = true;
-  updateStatusIndicator(`🔄 Subiendo ${pendientes.length} registro(s) pendiente(s)...`);
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = "REVISAR Y GUARDAR";
+  }
+}
 
-  for (let reg of pendientes) {
+// ENVIAR FOTOS DE FORMA INDIVIDUAL EN SEGUNDO PLANO ACTUALIZANDO EL ENCABEZADO
+async function subirFotosEnSegundoPlano(viajeId, puesto, listaFotos) {
+  updateStatusIndicator(`📸 Subiendo foto 1/${listaFotos.length}...`);
+
+  for (let i = 0; i < listaFotos.length; i++) {
+    updateStatusIndicator(`📸 Subiendo foto ${i+1}/${listaFotos.length}...`);
     try {
-      const response = await fetch(GAS_URL, {
+      await fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'insertarFilaExcel', data: reg })
+        body: JSON.stringify({
+          action: 'subirFotoIndividual',
+          data: {
+            viajeId: viajeId,
+            puesto: puesto,
+            fotoBase64: listaFotos[i],
+            index: i
+          }
+        })
       });
-      const resData = await response.json();
-      if (resData.ok) {
-        reg.status = 'sincronizado';
-        localStorage.setItem('iqbf_cache_dbGlobal', JSON.stringify(dbGlobal));
-        actualizarKPIsYHistorial();
-      }
-    } catch(err) {
-      // Romper bucle si se corta el internet para reintentarlo en el próximo ciclo
-      break;
+    } catch (err) {
+      // Si la foto falla, la guardamos de respaldo específico en segundo plano
+      guardarFotoParaReintentar(viajeId, puesto, listaFotos[i], i);
     }
   }
+
+  updateStatusIndicator("✅ Fotos subidas con éxito", "success");
+  sincronizarConExcel();
+}
+
+function guardarFotoParaReintentar(viajeId, puesto, fotoB64, index) {
+  const failKey = "iqbf_fail_photo_" + Date.now();
+  const failObj = { viajeId, puesto, fotoB64, index };
+  localStorage.setItem(failKey, JSON.stringify(failObj));
+}
+
+// PROCESADOR EN SEGUNDO PLANO DE ENVÍO AUTOMÁTICO DE REGISTROS PENDIENTES
+async function verificarPendientesAlmacenados() {
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    
+    // 1. Reintentar registros completos que fallaron desde la Fase 1
+    if (key && key.startsWith("iqbf_pending_")) {
+      try {
+        const backup = JSON.parse(localStorage.getItem(key));
+        if (backup && backup.payload) {
+          const res = await fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(backup.payload)
+          });
+          const result = await res.json();
+          if (result.ok) {
+            const viajeId = result.viajeId;
+            for (let fIdx = 0; fIdx < backup.fotos.length; fIdx++) {
+              await fetch(GAS_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                  action: 'subirFotoIndividual',
+                  data: {
+                    viajeId: viajeId,
+                    puesto: backup.payload.data.puesto,
+                    fotoBase64: backup.fotos[fIdx],
+                    index: fIdx
+                  }
+                })
+              });
+            }
+            localStorage.removeItem(key);
+            showToast('✅ Registro pendiente sincronizado automáticamente.');
+            sincronizarConExcel();
+          }
+        }
+      } catch(e) {}
+    }
+
+    // 2. Reintentar fotos individuales que fallaron en la Fase 2
+    if (key && key.startsWith("iqbf_fail_photo_")) {
+      try {
+        const failObj = JSON.parse(localStorage.getItem(key));
+        if (failObj) {
+          const res = await fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              action: 'subirFotoIndividual',
+              data: {
+                viajeId: failObj.viajeId,
+                puesto: failObj.puesto,
+                fotoBase64: failObj.fotoB64,
+                index: failObj.index
+              }
+            })
+          });
+          const result = await res.json();
+          if (result.ok) {
+            localStorage.removeItem(key);
+            showToast('✅ Foto reintentada y subida con éxito.');
+          }
+        }
+      } catch(e) {}
+    }
+  }
+}
+
+function resetFormulario() {
+  valTT = "";
+  valBols = 0;
+  bolsonesSeleccionados = 0;
+  productosSeleccionados = [];
+  fotosList = [];
+  conductorSeleccionado = null;
+  placaSeleccionada = null;
+  viajeIdHeredado = "";
+
+  actualizarTTDisplay();
+  actualizarBolsDisplay();
+  renderProductosUI();
+  renderFotosGrid();
   
-  estaSincronizandoPendientes = false;
-  updateStatusIndicator("● Actualizado", "success");
+  const dCampos = document.getElementById('despachoCampos');
+  if (dCampos) dCampos.style.display = 'none';
+  document.querySelectorAll('.conductor-item').forEach(el => {
+    el.classList.remove('selected');
+    el.style.borderColor = "";
+    el.style.backgroundColor = "";
+  });
 }
 
 function showToast(msg, isError = false) {
-  const t = document.getElementById('toast');
-  if (!t) return;
-  t.textContent = msg;
-  if (isError) t.classList.add('error');
-  else t.classList.remove('error');
-  t.classList.add('show');
-  setTimeout(() => { t.classList.remove('show'); }, 3000);
+  const toast = document.getElementById('toast');
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => { toast.className = 'toast'; }, 3000);
 }
 </script>
 </body>
