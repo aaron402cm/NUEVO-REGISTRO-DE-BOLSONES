@@ -445,12 +445,12 @@ window.onload = () => {
   }, 30000); 
 };
 
-// CÁLCULO EXACTO DEL IDENTIFICADOR ÚNICO DEL TURNO ACTUAL (Corte exacto a las 06:45 y 18:45)
+// CÁLCULO EXACTO DEL IDENTIFICADOR ÚNICO DEL TURNO ACTUAL (Corte exacto a las 06:50 y 18:50)
 function obtenerTurnoActual() {
   const ahora = new Date();
   const totalMins = ahora.getHours() * 60 + ahora.getMinutes();
-  const startDiurno = 6 * 60 + 45; // 06:45
-  const endDiurno = 18 * 60 + 45;  // 18:45
+  const startDiurno = 6 * 60 + 50; // 06:50
+  const endDiurno = 18 * 60 + 50;  // 18:50
   
   let fechaClave = ahora.getFullYear() + '-' + String(ahora.getMonth() + 1).padStart(2, '0') + '-' + String(ahora.getDate()).padStart(2, '0');
   let tipoTurno = "";
@@ -459,7 +459,7 @@ function obtenerTurnoActual() {
     tipoTurno = "diurno";
   } else {
     tipoTurno = "nocturno";
-    // Si es antes de las 06:45 AM, pertenece técnicamente al turno nocturno que comenzó el día de ayer
+    // Si es antes de las 06:50 AM, pertenece técnicamente al turno nocturno que comenzó el día de ayer
     if (totalMins < startDiurno) {
       const ayer = new Date(ahora);
       ayer.setDate(ahora.getDate() - 1);
@@ -493,7 +493,7 @@ function comprobarCambioDeTurnoActivo() {
       document.getElementById('loginScreen').style.display = 'flex';
       document.getElementById('pwInput').value = "";
       document.getElementById('loginError').textContent = "";
-      alert("⏰ El turno ha finalizado (Cambio de turno 18:45 / 06:45). Ingrese la contraseña nuevamente.");
+      alert("⏰ El turno ha finalizado (Cambio de turno 18:50 / 06:50). Ingrese la contraseña nuevamente.");
     }
   }
 }
