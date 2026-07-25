@@ -233,10 +233,13 @@
         
         <div class="nav-section">Monitoreo</div>
         <div class="nav-item active" id="nav-dash" onclick="changePage('dash')">📊 Cuadro de Mando</div>
+        <div class="nav-item" id="nav-kpis" onclick="changePage('kpis')">📈 KPIs & Analítica</div>
+        
         <div class="nav-section">Operaciones</div>
         <div class="nav-item" id="nav-descarga" onclick="changePage('descarga')">📥 Descargas</div>
         <div class="nav-item" id="nav-despacho" onclick="changePage('despacho')">📤 Despacho</div>
         <div class="nav-item" id="nav-buscador" onclick="changePage('buscador')">🔍 Buscador Rango</div>
+        
         <div class="nav-section">Configuración</div>
         <div class="nav-item" id="nav-conductores" onclick="changePage('conductores')">👤 Conductores</div>
         <div class="nav-item" id="nav-productos" onclick="changePage('productos')">🧴 Productos</div>
@@ -333,6 +336,49 @@
                             <tr><td colspan="8" style="text-align:center; padding:30px;">Cargando base de datos...</td></tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- NUEVA PESTAÑA: KPIS & ANALÍTICA -->
+            <div id="pageKpis" class="page-container" style="display:none;">
+                <div class="card" style="margin-bottom:20px;">
+                    <div class="card-head"><h3>📈 Indicadores Clave de Rendimiento y Operatividad</h3></div>
+                    <div style="padding:20px;">
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:15px; margin-bottom:25px;">
+                            <div style="background:#f0f9ff; border:2px solid #0284c7; padding:20px; border-radius:12px; text-align:center;">
+                                <div style="font-size:12px; font-weight:bold; color:#0369a1; text-transform:uppercase;">Velocidad Promedio Descarga</div>
+                                <div id="kpiVelocidadPPH" style="font-size:2.2rem; font-weight:900; color:#0c4a6e; margin-top:5px;">0 bol/hr</div>
+                                <div style="font-size:11px; color:#0284c7; margin-top:4px;">Ritmo en Turno Activo</div>
+                            </div>
+                            <div style="background:#f3e8ff; border:2px solid #7c3aed; padding:20px; border-radius:12px; text-align:center;">
+                                <div style="font-size:12px; font-weight:bold; color:#6b21a8; text-transform:uppercase;">Tiempo Promedio de Ciclo</div>
+                                <div id="kpiTiempoCicloProm" style="font-size:2.2rem; font-weight:900; color:#581c87; margin-top:5px;">0 min</div>
+                                <div style="font-size:11px; color:#7c3aed; margin-top:4px;">Muelle ➔ Labarthe</div>
+                            </div>
+                            <div style="background:#dcfce7; border:2px solid #16a34a; padding:20px; border-radius:12px; text-align:center;">
+                                <div style="font-size:12px; font-weight:bold; color:#14532d; text-transform:uppercase;">Efectividad sin Discrepancias</div>
+                                <div id="kpiEfectividadPct" style="font-size:2.2rem; font-weight:900; color:#166534; margin-top:5px;">100%</div>
+                                <div style="font-size:11px; color:#15803d; margin-top:4px;">Viajes Correctos</div>
+                            </div>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                            <div class="card" style="margin-bottom:0;">
+                                <div class="card-head"><h3>🏆 Ranking de Unidades TTs más Activas</h3></div>
+                                <table>
+                                    <thead><tr><th>TT / Unidad</th><th>Viajes</th><th>Bolsones Movidos</th><th>Tiempo Ciclo Prom.</th></tr></thead>
+                                    <tbody id="tbRankingTTs"></tbody>
+                                </table>
+                            </div>
+                            <div class="card" style="margin-bottom:0;">
+                                <div class="card-head"><h3>📊 Avance de Operación por Producto</h3></div>
+                                <table>
+                                    <thead><tr><th>Producto</th><th>Descargado</th><th>Despachado</th><th>% Cumplimiento</th></tr></thead>
+                                    <tbody id="tbResumenCargaKPI"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -509,7 +555,6 @@
     </main>
 </div>
 
-<!-- MODAL VISUALIZADOR FOTOS -->
 <div id="modalOverlay" onclick="if(event.target===this)cerrarModal()">
     <div class="modal-box">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
@@ -520,7 +565,6 @@
     </div>
 </div>
 
-<!-- MODAL FICHA DE OPERACIÓN Y CICLOS POR TT -->
 <div id="modalTTOverlay" onclick="if(event.target===this)cerrarModalTT()">
     <div class="modal-box" style="max-width:700px;">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
@@ -531,7 +575,6 @@
     </div>
 </div>
 
-<!-- MODAL EDICIÓN AUDITABLE CON DNI DE COORDINADOR -->
 <div id="modalEditOverlay">
     <div class="modal-box" style="max-width:450px; border: 4px solid var(--blue-btn);">
         <h3 style="font-size:18px; font-weight:900; color:var(--navy); margin-bottom:15px; border-bottom:2px solid #e2e8f0; padding-bottom:8px;">
@@ -579,8 +622,6 @@
     let alarmInterval = null;
 
     let knownTransactionIds = new Set();
-    
-    // PERMANENCIA PERMANENTE EN LOCALSTORAGE (NUNCA SE BORRA AL RECARGAR PÁGINA)
     let incidenciasHistoricasSet = new Set(JSON.parse(localStorage.getItem('iqbf_incidencias_historicas') || '[]'));
     let productosCompletadosSet = new Set();
     let isFirstLoad = true;
@@ -730,9 +771,19 @@
         document.getElementById('page' + pageId.charAt(0).toUpperCase() + pageId.slice(1)).style.display = 'block';
         document.getElementById('nav-' + pageId).classList.add('active');
 
-        const headers = { dash: "Cuadro de Mando", descarga: "Descargas (Muelle vs Labarthe)", despacho: "Despacho de Bolsones", buscador: "Buscador por Rango", conductores: "Configuración Conductores", productos: "Catálogo Productos", gas: "Conexión Tecnológica" };
+        const headers = { 
+            dash: "Cuadro de Mando", 
+            kpis: "KPIs & Analítica Operativa", 
+            descarga: "Descargas (Muelle vs Labarthe)", 
+            despacho: "Despacho de Bolsones", 
+            buscador: "Buscador por Rango", 
+            conductores: "Configuración Conductores", 
+            productos: "Catálogo Productos", 
+            gas: "Conexión Tecnológica" 
+        };
         document.getElementById('pageTitle').textContent = headers[pageId] || "Monitoreo";
 
+        if (pageId === 'kpis') { renderKpisPage(); }
         if (pageId === 'conductores') { syncConductoresUI(); }
         if (pageId === 'productos') { syncProductosUI(); }
     }
@@ -847,7 +898,6 @@
         return partes.slice(0, 2).join('_');
     }
 
-    // REGISTRO Y PERSISTENCIA DE INCIDENCIAS (DISCREPANCIAS Y RETRASOS)
     function procesarAnalisisYAlarmas() {
         let hayDiscrepancia = false;
         let hayRetrasoTransito = false;
@@ -860,7 +910,6 @@
             labartheMap.set(obtenerBaseViajeId(l.viajeId), l);
         });
 
-        // 1. Evaluar diferencias activas entre Muelle y Labarthe
         db.muelle.forEach(m => {
             const baseId = obtenerBaseViajeId(m.viajeId);
             const l = labartheMap.get(baseId);
@@ -869,13 +918,12 @@
                 const difProductos = l.productos.trim().toLowerCase() !== m.productos.trim().toLowerCase();
                 if (difBolsones || difProductos) {
                     hayDiscrepancia = true;
-                    incidenciasHistoricasSet.add(baseId); // GUARDAR PERMANENTE
+                    incidenciasHistoricasSet.add(baseId);
                     guardarIncidenciasEnStorage();
                 }
             }
         });
 
-        // 2. Evaluar retrasos en tránsito
         db.muelle.forEach(m => {
             const baseId = obtenerBaseViajeId(m.viajeId);
             const l = labartheMap.get(baseId);
@@ -884,7 +932,7 @@
             if (!l) {
                 if (timeM && (ahora - timeM) > limiteTiempo) {
                     hayRetrasoTransito = true;
-                    incidenciasHistoricasSet.add(baseId); // GUARDAR PERMANENTE
+                    incidenciasHistoricasSet.add(baseId);
                     guardarIncidenciasEnStorage();
                 }
             } else {
@@ -892,7 +940,7 @@
                 if (timeM && timeL) {
                     const minsTransito = Math.round((timeL - timeM) / 60000);
                     if (minsTransito > 10) {
-                        incidenciasHistoricasSet.add(baseId); // GUARDAR PERMANENTE
+                        incidenciasHistoricasSet.add(baseId);
                         guardarIncidenciasEnStorage();
                     }
                 }
@@ -1044,6 +1092,7 @@
         renderPestañaDespachos();
     }
 
+    // BOTÓN EDITAR CONDICIONAL (SOLO APARECE SI HAY ERROR DE LABARTHE O DISCREPANCIA)
     function filtrarTablaDash() {
         const query = (document.getElementById('dashFilter').value || "").toLowerCase().trim();
         const totalRegistros = [...db.muelle, ...db.labarthe, ...db.despacho];
@@ -1072,6 +1121,7 @@
         tbDash.innerHTML = filtrados.slice(0, 30).map(r => {
             let badgeCls = `badge-${r.puesto}`;
             let estado = '<span class="badge badge-ok">CONFIRMADO</span>';
+            let tieneError = false;
 
             if (r.puesto === 'muelle') {
                 const baseId = obtenerBaseViajeId(r.viajeId);
@@ -1085,8 +1135,10 @@
                     const difProductos = l.productos.trim().toLowerCase() !== r.productos.trim().toLowerCase();
                     if (difBolsones) {
                         estado = '<span class="badge badge-alert">⚠️ DISC. CANTIDAD</span>';
+                        tieneError = true;
                     } else if (difProductos) {
                         estado = '<span class="badge badge-alert" style="background:#ea580c;">⚠️ DISC. PRODUCTO</span>';
+                        tieneError = true;
                     }
                 }
             } else if (r.puesto === 'labarthe') {
@@ -1097,11 +1149,18 @@
                     const difProductos = m.productos.trim().toLowerCase() !== r.productos.trim().toLowerCase();
                     if (difBolsones) {
                         estado = '<span class="badge badge-alert">⚠️ DISC. CANTIDAD</span>';
+                        tieneError = true;
                     } else if (difProductos) {
                         estado = '<span class="badge badge-alert" style="background:#ea580c;">⚠️ DISC. PRODUCTO</span>';
+                        tieneError = true;
                     }
                 }
             }
+
+            // MOSTRAR BOTÓN DE EDITAR ÚNICAMENTE SI HAY DISCREPANCIA/ERROR
+            const btnEditarHTML = tieneError 
+                ? `<button class="btn-sm" style="background:#fef3c7; color:#78350f; border:1px solid #f59e0b;" onclick="abrirModalEditar('${r.viajeId}','${r.puesto}',${r.bolsones},'${r.productos}')">✏️ Corregir</button>`
+                : '';
 
             return `
                 <tr>
@@ -1115,7 +1174,7 @@
                     <td>
                         <div style="display:flex; gap:6px;">
                             <button class="btn-sm" onclick="verEvidencias('${r.viajeId}','${r.puesto}')">Fotos</button>
-                            <button class="btn-sm" style="background:#fef3c7; color:#78350f;" onclick="abrirModalEditar('${r.viajeId}','${r.puesto}',${r.bolsones},'${r.productos}')">✏️ Editar</button>
+                            ${btnEditarHTML}
                         </div>
                     </td>
                 </tr>
@@ -1254,6 +1313,99 @@
         }).join('');
     }
 
+    // CÁLCULO Y RENDERIZADO DE LA PESTAÑA KPIS & ANALÍTICA
+    function renderKpisPage() {
+        const ahora = new Date();
+        const muelleTurno = db.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
+        const labartheTurno = db.labarthe.filter(f => perteneceAlTurnoActual(f.fechaHora));
+
+        let totalBolsonesL = labartheTurno.reduce((a,b)=>a+b.bolsones, 0);
+        
+        let minTiempoShift = ahora;
+        muelleTurno.forEach(m => {
+            const f = parsearFechaExcel(m.fechaHora);
+            if (f && f < minTiempoShift) minTiempoShift = f;
+        });
+
+        const horasTrans = Math.max(0.25, (ahora - minTiempoShift) / 3600000);
+        const velocidadPPH = Math.round(totalBolsonesL / horasTrans);
+        document.getElementById('kpiVelocidadPPH').textContent = `${velocidadPPH} bol/hr`;
+
+        // Tiempo Promedio Ciclo
+        let labartheMap = new Map();
+        labartheTurno.forEach(l => labartheMap.set(obtenerBaseViajeId(l.viajeId), l));
+
+        let tiemposMins = [];
+        let viajesConError = 0;
+
+        muelleTurno.forEach(m => {
+            const baseId = obtenerBaseViajeId(m.viajeId);
+            const l = labartheMap.get(baseId);
+            if (l) {
+                const tM = parsearFechaExcel(m.fechaHora);
+                const tL = parsearFechaExcel(l.fechaHora);
+                if (tM && tL) {
+                    tiemposMins.push(Math.round((tL - tM) / 60000));
+                }
+                if (m.bolsones !== l.bolsones || m.productos.toLowerCase() !== l.productos.toLowerCase()) {
+                    viajesConError++;
+                }
+            }
+        });
+
+        const promCiclo = tiemposMins.length > 0 ? Math.round(tiemposMins.reduce((a,b)=>a+b,0) / tiemposMins.length) : 0;
+        document.getElementById('kpiTiempoCicloProm').textContent = `${promCiclo} min`;
+
+        const pctEfectividad = muelleTurno.length > 0 ? Math.round(((muelleTurno.length - viajesConError) / muelleTurno.length) * 100) : 100;
+        document.getElementById('kpiEfectividadPct').textContent = `${pctEfectividad}%`;
+
+        // Ranking TTs
+        let ttMap = {};
+        muelleTurno.forEach(m => {
+            const ttName = m.tt.toUpperCase();
+            if (!ttMap[ttName]) ttMap[ttName] = { viajes: 0, bolsones: 0, tiempos: [] };
+            ttMap[ttName].viajes++;
+            ttMap[ttName].bolsones += m.bolsones;
+
+            const l = labartheMap.get(obtenerBaseViajeId(m.viajeId));
+            if (l) {
+                const tM = parsearFechaExcel(m.fechaHora);
+                const tL = parsearFechaExcel(l.fechaHora);
+                if (tM && tL) ttMap[ttName].tiempos.push(Math.round((tL - tM) / 60000));
+            }
+        });
+
+        const sortedTTs = Object.keys(ttMap).sort((a,b) => ttMap[b].viajes - ttMap[a].viajes);
+        document.getElementById('tbRankingTTs').innerHTML = sortedTTs.map(ttKey => {
+            const item = ttMap[ttKey];
+            const pCiclo = item.tiempos.length > 0 ? Math.round(item.tiempos.reduce((a,b)=>a+b,0)/item.tiempos.length) : 0;
+            return `
+                <tr>
+                    <td><span class="tt-link" onclick="verFichaTT('${ttKey}')">${ttKey}</span></td>
+                    <td style="font-weight:bold; color:var(--blue);">${item.viajes} viajes</td>
+                    <td style="font-weight:bold; color:var(--green);">${item.bolsones} bolsones</td>
+                    <td>${pCiclo} min</td>
+                </tr>
+            `;
+        }).join('') || '<tr><td colspan="4" style="text-align:center;">Sin actividad en el turno</td></tr>';
+
+        // Resumen Carga
+        document.getElementById('tbResumenCargaKPI').innerHTML = listadoProductos.map(p => {
+            const totalDesc = db.labarthe.reduce((a,r) => r.productos.toLowerCase().includes(p.producto.toLowerCase()) ? a + r.bolsones : a, 0);
+            const totalDesp = db.despacho.reduce((a,r) => r.productos.toLowerCase().includes(p.producto.toLowerCase()) ? a + r.bolsones : a, 0);
+            const pct = p.cantidadBuque > 0 ? Math.min(100, Math.round((totalDesc / p.cantidadBuque)*100)) : 0;
+
+            return `
+                <tr>
+                    <td style="font-weight:bold;">🧴 ${p.producto}</td>
+                    <td style="color:var(--green); font-weight:bold;">${totalDesc} / ${p.cantidadBuque}</td>
+                    <td style="color:var(--amber); font-weight:bold;">${totalDesp}</td>
+                    <td style="font-weight:bold; color:var(--blue);">${pct}%</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
     function verFichaTT(ttNombre) {
         if (!ttNombre) return;
         const cleanTT = ttNombre.toString().trim().toUpperCase();
@@ -1350,7 +1502,6 @@
             return;
         }
 
-        // REGISTRAR PERMANENTEMENTE EN HISTORIAL DE INCIDENCIAS
         const baseId = obtenerBaseViajeId(viajeId);
         incidenciasHistoricasSet.add(baseId);
         guardarIncidenciasEnStorage();
@@ -1384,42 +1535,60 @@
         });
     }
 
-    // TABLA COMPARATIVA CON RETENCIÓN PERMANENTE DE HISTORIAL
     function renderPestañaDescargas() {
-        document.getElementById('tbMuelle').innerHTML = db.muelle.map(r => `
-            <tr>
-                <td style="font-weight:bold;">${r.viajeId}</td>
-                <td><span class="tt-link" onclick="verFichaTT('${r.tt}')">${r.tt}</span></td>
-                <td style="font-weight:bold; font-size:14px;">${r.bolsones}</td>
-                <td>${r.productos}</td>
-                <td>${r.fechaHora}</td>
-                <td>
-                    <div style="display:flex; gap:6px;">
-                        <button class="btn-sm" onclick="verEvidencias('${r.viajeId}','muelle')">Fotos</button>
-                        <button class="btn-sm" style="background:#fef3c7; color:#78350f;" onclick="abrirModalEditar('${r.viajeId}','muelle',${r.bolsones},'${r.productos}')">✏️ Editar</button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
-
-        document.getElementById('tbLabarthe').innerHTML = db.labarthe.map(r => `
-            <tr>
-                <td style="font-weight:bold;">${r.viajeId}</td>
-                <td><span class="tt-link" onclick="verFichaTT('${r.tt}')">${r.tt}</span></td>
-                <td style="font-weight:bold; font-size:14px;">${r.bolsones}</td>
-                <td>${r.productos}</td>
-                <td>${r.fechaHora}</td>
-                <td>
-                    <div style="display:flex; gap:6px;">
-                        <button class="btn-sm" onclick="verEvidencias('${r.viajeId}','labarthe')">Fotos</button>
-                        <button class="btn-sm" style="background:#fef3c7; color:#78350f;" onclick="abrirModalEditar('${r.viajeId}','labarthe',${r.bolsones},'${r.productos}')">✏️ Editar</button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
-
         let labartheMap = new Map();
         db.labarthe.forEach(l => labartheMap.set(obtenerBaseViajeId(l.viajeId), l));
+
+        document.getElementById('tbMuelle').innerHTML = db.muelle.map(r => {
+            const baseId = obtenerBaseViajeId(r.viajeId);
+            const l = labartheMap.get(baseId);
+            let btnEdit = (l && (l.bolsones !== r.bolsones || l.productos.toLowerCase() !== r.productos.toLowerCase()))
+                ? `<button class="btn-sm" style="background:#fef3c7; color:#78350f;" onclick="abrirModalEditar('${r.viajeId}','muelle',${r.bolsones},'${r.productos}')">✏️ Corregir</button>`
+                : '';
+
+            return `
+                <tr>
+                    <td style="font-weight:bold;">${r.viajeId}</td>
+                    <td><span class="tt-link" onclick="verFichaTT('${r.tt}')">${r.tt}</span></td>
+                    <td style="font-weight:bold; font-size:14px;">${r.bolsones}</td>
+                    <td>${r.productos}</td>
+                    <td>${r.fechaHora}</td>
+                    <td>
+                        <div style="display:flex; gap:6px;">
+                            <button class="btn-sm" onclick="verEvidencias('${r.viajeId}','muelle')">Fotos</button>
+                            ${btnEdit}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        let muelleMap = new Map();
+        db.muelle.forEach(m => muelleMap.set(obtenerBaseViajeId(m.viajeId), m));
+
+        document.getElementById('tbLabarthe').innerHTML = db.labarthe.map(r => {
+            const baseId = obtenerBaseViajeId(r.viajeId);
+            const m = muelleMap.get(baseId);
+            let btnEdit = (m && (m.bolsones !== r.bolsones || m.productos.toLowerCase() !== r.productos.toLowerCase()))
+                ? `<button class="btn-sm" style="background:#fef3c7; color:#78350f;" onclick="abrirModalEditar('${r.viajeId}','labarthe',${r.bolsones},'${r.productos}')">✏️ Corregir</button>`
+                : '';
+
+            return `
+                <tr>
+                    <td style="font-weight:bold;">${r.viajeId}</td>
+                    <td><span class="tt-link" onclick="verFichaTT('${r.tt}')">${r.tt}</span></td>
+                    <td style="font-weight:bold; font-size:14px;">${r.bolsones}</td>
+                    <td>${r.productos}</td>
+                    <td>${r.fechaHora}</td>
+                    <td>
+                        <div style="display:flex; gap:6px;">
+                            <button class="btn-sm" onclick="verEvidencias('${r.viajeId}','labarthe')">Fotos</button>
+                            ${btnEdit}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
 
         document.getElementById('tbComparativo').innerHTML = db.muelle.map(m => {
             const baseId = obtenerBaseViajeId(m.viajeId);
@@ -1446,7 +1615,6 @@
                 const horastr = `${m.fechaHora.split(' ')[1] || ''} → ${l.fechaHora.split(' ')[1] || ''}`;
 
                 if (!difBolsones && !difProductos) {
-                    // SI HUBO DEMORA O ESTÁ REGISTRADO EN EL HISTORIAL PERMANENTE
                     if (huboDemora) {
                         diff = `⏱️ Retraso (${minsTransito} min)`;
                         rowCls = 'tr-warning';
@@ -1475,7 +1643,6 @@
                         est = '<span class="badge badge-alert" style="background:#ea580c;">⚠️ DISC. PRODUCTO</span>';
                     }
 
-                    // GUARDADO PERMANENTE AUTOMÁTICO AL DETECTAR DISCREPANCIA
                     incidenciasHistoricasSet.add(baseId);
                     guardarIncidenciasEnStorage();
                 }
@@ -1484,7 +1651,7 @@
                     <tr class="${rowCls}">
                         <td><span class="tt-link" onclick="verFichaTT('${m.tt}')">${m.tt}</span></td>
                         <td>${m.bolsones} <br><small style="color:var(--muted)">(${m.productos})</small></td>
-                        <td>${bolsonesL} <br><small style="color:var(--muted)">(${l.productos})</small></td>
+                        <td>${bolsonesL} <br><small style="color:var(--muted)">(${l ? l.productos : '—'})</small></td>
                         <td style="font-weight:bold;">${diff}</td>
                         <td style="font-size:12px;">${horastr}</td>
                         <td>${est}</td>
@@ -1532,7 +1699,6 @@
                 <td>
                     <div style="display:flex; gap:6px;">
                         <button class="btn-sm" onclick="verEvidencias('${r.viajeId}','despacho')">Fotos</button>
-                        <button class="btn-sm" style="background:#fef3c7; color:#78350f;" onclick="abrirModalEditar('${r.viajeId}','despacho',${r.bolsones},'${r.productos}')">✏️ Editar</button>
                     </div>
                 </td>
             </tr>
@@ -2026,7 +2192,6 @@
             if (data.ok) {
                 alert(`✅ Buque finalizado con éxito.\n\n* Se creó el archivo de respaldo en Drive.\n* Todas las carpetas de fotos activas fueron archivadas.\n* Las hojas activas se vaciaron e iniciaron a cero.`);
                 
-                // LIMPIAR MEMORIA PERMANENTE DE INCIDENCIAS PARA EL SIGUIENTE BUQUE
                 incidenciasHistoricasSet.clear();
                 guardarIncidenciasEnStorage();
 
