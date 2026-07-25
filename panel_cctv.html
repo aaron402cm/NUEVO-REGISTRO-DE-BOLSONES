@@ -64,6 +64,45 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
+        /* ESTILOS DEL OVERLAY DE CELEBRACIÓN Y CONFETI */
+        #celebrationOverlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.92);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20000;
+            color: white;
+            text-align: center;
+        }
+        .celebration-box {
+            background: white;
+            color: var(--navy);
+            padding: 40px;
+            border-radius: 24px;
+            max-width: 500px;
+            width: 90%;
+            border: 6px solid #eab308;
+            box-shadow: 0 20px 50px rgba(234, 179, 8, 0.5);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            z-index: 20002;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        #confettiCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 20001;
+        }
+
         #loginScreen { position: fixed; inset: 0; background: var(--navy); display: flex; align-items: center; justify-content: center; z-index: 9999; }
         .login-card { background: var(--white); padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 400px; text-align: center; }
         .login-card h2 { color: var(--navy); margin-bottom: 8px; font-size: 24px; font-weight: 800; }
@@ -118,6 +157,13 @@
         .btn-sm { padding: 8px 14px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; background: #e2e8f0; display: inline-flex; align-items: center; gap: 6px; }
         .btn-sm:hover { background: #cbd5e1; }
 
+        /* BARRAS DE PROGRESO DE PRODUCTOS */
+        .progress-bar-bg { width: 100%; background: #e2e8f0; border-radius: 10px; height: 16px; overflow: hidden; margin-top: 6px; position: relative; border: 1px solid #cbd5e1; }
+        .progress-bar-fill { height: 100%; border-radius: 10px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        .progress-bar-fill.descarga { background: linear-gradient(90deg, #10b981, #059669); }
+        .progress-bar-fill.despacho { background: linear-gradient(90deg, #f59e0b, #d97706); }
+        .progress-bar-fill.complete { background: linear-gradient(90deg, #2563eb, #1d4ed8); }
+
         .tab-bar { display: flex; gap: 10px; margin-bottom: 20px; }
         .tab-btn { padding: 10px 20px; border-radius: 8px; border: 2px solid #cbd5e1; background: white; font-weight: bold; cursor: pointer; }
         .tab-btn.active { background: var(--blue); color: white; border-color: var(--blue); }
@@ -132,6 +178,17 @@
 <body onclick="desbloquearAudioPorClic()">
 
 <div id="audioUnlockBanner" onclick="desbloquearAudioPorClic(event)">🔊 CLIC AQUÍ para activar las Alertas Sonoras de Emergencia</div>
+
+<!-- OVERLAY DE CELEBRACIÓN COMPLETA (CONFENTI Y GLOBOS) -->
+<div id="celebrationOverlay">
+    <canvas id="confettiCanvas"></canvas>
+    <div class="celebration-box">
+        <div style="font-size: 4rem; margin-bottom: 10px;">🏆🎉🎈</div>
+        <h2 id="celebTitle" style="font-size: 26px; font-weight: 900; color: var(--navy); margin-bottom: 10px;">¡CUMPLIMIENTO DE META 100%!</h2>
+        <p id="celebMessage" style="font-size: 16px; font-weight: bold; color: #0284c7; margin-bottom: 25px; line-height: 1.4;">Se ha completado con éxito la descarga del producto.</p>
+        <button class="btn-sm" style="background: #16a34a; color: white; padding: 14px 28px; font-size: 16px; border-radius: 12px; margin: 0 auto;" onclick="cerrarCelebracion()">¡Excelente, Continuar! 👍</button>
+    </div>
+</div>
 
 <div id="modalMigracion">
     <div class="modal-migrar-box">
@@ -232,19 +289,19 @@
 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:25px;">
                     <div class="card">
-                        <div class="card-head"><h3>📋 Control de Saldos de Descarga (Consolidado Histórico)</h3></div>
+                        <div class="card-head"><h3>📋 Control de Saldos de Descarga (Avance del Buque)</h3></div>
                         <table style="width:100%">
                             <thead>
-                                <tr><th>Producto</th><th>Total Buque</th><th>Descargado Total</th><th>Saldo Faltante</th></tr>
+                                <tr><th>Producto</th><th>Total Buque</th><th>Descargado Total</th><th>Saldo Faltante</th><th>Avance Operación</th></tr>
                             </thead>
                             <tbody id="tbSaldosDescarga"></tbody>
                         </table>
                     </div>
                     <div class="card">
-                        <div class="card-head"><h3>📋 Control de Saldos de Despacho (Consolidado Histórico)</h3></div>
+                        <div class="card-head"><h3>📋 Control de Saldos de Despacho (Avance del Buque)</h3></div>
                         <table style="width:100%">
                             <thead>
-                                <tr><th>Producto</th><th>Total Buque</th><th>Despachado Total</th><th>Saldo Faltante</th></tr>
+                                <tr><th>Producto</th><th>Total Buque</th><th>Despachado Total</th><th>Saldo Faltante</th><th>Avance Salida</th></tr>
                             </thead>
                             <tbody id="tbSaldosDespacho"></tbody>
                         </table>
@@ -474,7 +531,8 @@
     let alarmInterval = null;
 
     let knownTransactionIds = new Set();
-    let incidenciasHistoricasSet = new Set(); // REGISTRO PERMANENTE DE TTS CON INCIDENCIAS
+    let incidenciasHistoricasSet = new Set();
+    let productosCompletadosSet = new Set(); // SEGUIMIENTO PARA NO REPETIR CELEBRACIONES DE 100%
     let isFirstLoad = true;
     let sirenaSilenciada = false;
     let lastDataHash = "";
@@ -686,7 +744,6 @@
         hBuque.innerHTML = `🚢 <strong>BUQUE:</strong> ${buqueNombreActual} en <strong>${buqueMuelleActual}</strong> | ${strProd}`;
     }
 
-    // VOZ DE ALERTA DETALLADA (DICE PUESTO, TT Y CANTIDAD DE BOLSONES)
     function procesarVocesNue(filas) {
         if (isFirstLoad) {
             filas.forEach(f => {
@@ -756,7 +813,7 @@
                 const difProductos = l.productos.trim().toLowerCase() !== m.productos.trim().toLowerCase();
                 if (difBolsones || difProductos) {
                     hayDiscrepancia = true;
-                    incidenciasHistoricasSet.add(baseId); // Guardar en el historial de incidencias del turno
+                    incidenciasHistoricasSet.add(baseId);
                 }
             }
         });
@@ -768,7 +825,7 @@
                 const fRegistro = parsearFechaExcel(m.fechaHora);
                 if (fRegistro && (ahora - fRegistro) > limiteTiempo) {
                     hayRetrasoTransito = true;
-                    incidenciasHistoricasSet.add(baseId); // Guardar retraso en el historial
+                    incidenciasHistoricasSet.add(baseId);
                 }
             }
         });
@@ -992,17 +1049,19 @@
         }).join('');
     }
 
+    // CONTROL DE SALDOS CON BARRAS DE AVANCE Y DISPARO DE CELEBRACIÓN AL 100%
     function renderControlDeSaldos() {
         const tbDescarga = document.getElementById('tbSaldosDescarga');
         const tbDespacho = document.getElementById('tbSaldosDespacho');
 
         if (listadoProductos.length === 0) {
-            const empty = `<tr><td colspan="4" style="text-align:center; padding:15px; color:var(--muted)">Sin productos configurados en el catálogo.</td></tr>`;
+            const empty = `<tr><td colspan="5" style="text-align:center; padding:15px; color:var(--muted)">Sin productos configurados en el catálogo.</td></tr>`;
             tbDescarga.innerHTML = empty;
             tbDespacho.innerHTML = empty;
             return;
         }
 
+        // 1. DIBUJAR TABLA DESCARGA (LABARTHE)
         tbDescarga.innerHTML = listadoProductos.map(p => {
             const totalDescargadoLabarthe = db.labarthe.reduce((sum, r) => {
                 if (r.productos && r.productos.toLowerCase().includes(p.producto.toLowerCase())) {
@@ -1012,17 +1071,40 @@
             }, 0);
 
             const saldoDescarga = p.cantidadBuque - totalDescargadoLabarthe;
+            const pctDescarga = p.cantidadBuque > 0 ? Math.min(100, Math.round((totalDescargadoLabarthe / p.cantidadBuque) * 100)) : 0;
+            const esCompleto = pctDescarga >= 100;
+
+            // EVALUAR CELEBRACIÓN AL ALCANZAR EL 100%
+            const key = `descarga_${p.producto}`;
+            if (esCompleto) {
+                if (!productosCompletadosSet.has(key)) {
+                    productosCompletadosSet.add(key);
+                    if (!isFirstLoad) {
+                        dispararCelebracion('Descarga', p.producto);
+                    }
+                }
+            }
 
             return `
                 <tr>
                     <td style="font-weight:bold;">🧴 ${p.producto}</td>
                     <td>${p.cantidadBuque}</td>
                     <td style="color:var(--green); font-weight:bold;">${totalDescargadoLabarthe}</td>
-                    <td style="font-weight:bold; color:${saldoDescarga > 0 ? 'var(--blue)' : 'var(--green)'}">${saldoDescarga}</td>
+                    <td style="font-weight:bold; color:${saldoDescarga > 0 ? 'var(--blue)' : 'var(--green)'}">${saldoDescarga <= 0 ? '0 (Completado)' : saldoDescarga}</td>
+                    <td style="min-width:140px;">
+                        <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:bold;">
+                            <span>${pctDescarga}%</span>
+                            <span>${esCompleto ? '✅ 100%' : ''}</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill descarga ${esCompleto ? 'complete' : ''}" style="width: ${pctDescarga}%;"></div>
+                        </div>
+                    </td>
                 </tr>
             `;
         }).join('');
 
+        // 2. DIBUJAR TABLA DESPACHO
         tbDespacho.innerHTML = listadoProductos.map(p => {
             const totalDespachado = db.despacho.reduce((sum, r) => {
                 if (r.productos && r.productos.toLowerCase().includes(p.producto.toLowerCase())) {
@@ -1032,19 +1114,164 @@
             }, 0);
 
             const saldoDespacho = p.cantidadBuque - totalDespachado;
+            const pctDespacho = p.cantidadBuque > 0 ? Math.min(100, Math.round((totalDespachado / p.cantidadBuque) * 100)) : 0;
+            const esCompleto = pctDespacho >= 100;
+
+            // EVALUAR CELEBRACIÓN DESPACHO
+            const key = `despacho_${p.producto}`;
+            if (esCompleto) {
+                if (!productosCompletadosSet.has(key)) {
+                    productosCompletadosSet.add(key);
+                    if (!isFirstLoad) {
+                        dispararCelebracion('Despacho', p.producto);
+                    }
+                }
+            }
 
             return `
                 <tr>
                     <td style="font-weight:bold;">🧴 ${p.producto}</td>
                     <td>${p.cantidadBuque}</td>
                     <td style="color:var(--amber); font-weight:bold;">${totalDespachado}</td>
-                    <td style="font-weight:bold; color:${saldoDespacho > 0 ? 'var(--blue)' : 'var(--green)'}">${saldoDespacho}</td>
+                    <td style="font-weight:bold; color:${saldoDespacho > 0 ? 'var(--blue)' : 'var(--green)'}">${saldoDespacho <= 0 ? '0 (Completado)' : saldoDespacho}</td>
+                    <td style="min-width:140px;">
+                        <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:bold;">
+                            <span>${pctDespacho}%</span>
+                            <span>${esCompleto ? '✅ 100%' : ''}</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill despacho ${esCompleto ? 'complete' : ''}" style="width: ${pctDespacho}%;"></div>
+                        </div>
+                    </td>
                 </tr>
             `;
         }).join('');
     }
 
-    // TABLA COMPARATIVA AUDITABLE Y RETROACTIVA (RETENCION DE HISTORIAL DE INCIDENCIAS)
+    // DISPARADOR DE CELEBRACIÓN (AUDIO DE GANADOR, ANUNCIO Y CONFETI)
+    function dispararCelebracion(tipoOperacion, productoNombre) {
+        document.getElementById('celebTitle').textContent = `🎉 ¡${tipoOperacion.toUpperCase()} COMPLETADA AL 100%!`;
+        document.getElementById('celebMessage').textContent = `Se ha cumplido con éxito el total del producto: ${productoNombre}. ¡Felicitaciones a todo el equipo!`;
+        document.getElementById('celebrationOverlay').style.display = "flex";
+
+        tocarSonidoVictoria();
+        iniciarAnimacionConfetti();
+
+        try {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const msj = `Atención. Se ha completado al cien por ciento la ${tipoOperacion} del producto ${productoNombre}. Operación finalizada exitosamente. Felicitaciones.`;
+                const utterance = new SpeechSynthesisUtterance(msj);
+                utterance.lang = 'es-PE';
+                utterance.rate = 0.95;
+                window.speechSynthesis.speak(utterance);
+            }
+        } catch(e) {}
+    }
+
+    function cerrarCelebracion() {
+        document.getElementById('celebrationOverlay').style.display = "none";
+        detenerAnimacionConfetti();
+    }
+
+    // GENERADOR DE FANFARRIA Y SONIDO DE VICTORIA
+    function tocarSonidoVictoria() {
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const notas = [
+                { f: 261.63, dur: 0.15, delay: 0 },    // Do
+                { f: 329.63, dur: 0.15, delay: 0.15 }, // Mi
+                { f: 392.00, dur: 0.15, delay: 0.30 }, // Sol
+                { f: 523.25, dur: 0.60, delay: 0.45 }  // Do Agudo (Sostenido)
+            ];
+
+            notas.forEach(n => {
+                setTimeout(() => {
+                    try {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.type = 'triangle';
+                        osc.frequency.value = n.f;
+
+                        const now = audioCtx.currentTime;
+                        gain.gain.setValueAtTime(0.4, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + n.dur);
+
+                        osc.start(now);
+                        osc.stop(now + n.dur);
+                    } catch(e){}
+                }, n.delay * 1000);
+            });
+        } catch(e){}
+    }
+
+    // MOTOR DE CONFETI EN CANVAS (PURE JS SIN LIBRERÍAS EXTERNAS)
+    let confettiAnimationId = null;
+    function iniciarAnimacionConfetti() {
+        const canvas = document.getElementById('confettiCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const particles = [];
+        const colors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#eab308'];
+
+        for (let i = 0; i < 120; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height - canvas.height,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                size: Math.random() * 10 + 6,
+                speedY: Math.random() * 3 + 2,
+                speedX: Math.random() * 2 - 1,
+                rotation: Math.random() * 360,
+                rotSpeed: Math.random() * 10 - 5
+            });
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.y += p.speedY;
+                p.x += p.speedX;
+                p.rotation += p.rotSpeed;
+
+                if (p.y > canvas.height) {
+                    p.y = -20;
+                    p.x = Math.random() * canvas.width;
+                }
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate((p.rotation * Math.PI) / 180);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                ctx.restore();
+            });
+
+            confettiAnimationId = requestAnimationFrame(render);
+        }
+
+        render();
+    }
+
+    function detenerAnimacionConfetti() {
+        if (confettiAnimationId) {
+            cancelAnimationFrame(confettiAnimationId);
+            confettiAnimationId = null;
+        }
+        const canvas = document.getElementById('confettiCanvas');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    }
+
     function renderPestañaDescargas() {
         document.getElementById('tbMuelle').innerHTML = db.muelle.map(r => `
             <tr>
