@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel CCTV — Monitoreo IQBF</title>
 
-    <!-- LIBRERÍA DE GRÁFICAS INTERACTIVAS DE ALTO RENDIMIENTO -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
@@ -238,6 +237,7 @@
         <div class="nav-section">Monitoreo</div>
         <div class="nav-item active" id="nav-dash" onclick="changePage('dash')">📊 Cuadro de Mando</div>
         <div class="nav-item" id="nav-kpis" onclick="changePage('kpis')">📈 KPIs & Analítica</div>
+        <div class="nav-item" id="nav-soporte" onclick="changePage('soporte')">🛠️ Diagnóstico & Soporte</div>
         
         <div class="nav-section">Operaciones</div>
         <div class="nav-item" id="nav-descarga" onclick="changePage('descarga')">📥 Descargas</div>
@@ -343,7 +343,6 @@
                 </div>
             </div>
 
-            <!-- PESTAÑA COMPLETA: KPIS, ANALÍTICA & HISTORIAL DE TURNOS -->
             <div id="pageKpis" class="page-container" style="display:none;">
                 <div class="card" style="margin-bottom:20px;">
                     <div class="card-head"><h3>📈 Indicadores Clave de Rendimiento y Operatividad</h3></div>
@@ -366,7 +365,6 @@
                             </div>
                         </div>
 
-                        <!-- GRÁFICO COMPARATIVO POR TURNOS -->
                         <div class="card" style="margin-bottom:20px;">
                             <div class="card-head"><h3>📊 Rendimiento Comparativo por Turnos (Descarga vs Despacho)</h3></div>
                             <div style="padding:15px; height: 300px; position: relative;">
@@ -374,7 +372,6 @@
                             </div>
                         </div>
 
-                        <!-- HISTORIAL TABULAR DE TURNOS REALIZADOS EN EL BUQUE -->
                         <div class="card" style="margin-bottom:20px;">
                             <div class="card-head"><h3>📋 Historial Consolidado por Turno Realizado</h3></div>
                             <table>
@@ -407,6 +404,49 @@
                                     <tbody id="tbResumenCargaKPI"></tbody>
                                 </table>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NUEVA PESTAÑA: DIAGNÓSTICO Y SOPORTE EN VIVO PARA EL CCTV -->
+            <div id="pageSoporte" class="page-container" style="display:none;">
+                <div class="card" style="margin-bottom:20px;">
+                    <div class="card-head"><h3>🛠️ Monitor de Estado de Dispositivos de Inspectores (En Vivo)</h3></div>
+                    <div style="padding:20px;">
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:15px; margin-bottom:25px;" id="containerHeartbeats">
+                            <div style="background:#f1f5f9; padding:15px; border-radius:10px; border:2px solid #cbd5e1;">
+                                <strong>🚢 Inspector de Muelle</strong><br>
+                                <span class="badge badge-transit" style="margin-top:6px;">Esperando señal...</span>
+                            </div>
+                            <div style="background:#f1f5f9; padding:15px; border-radius:10px; border:2px solid #cbd5e1;">
+                                <strong>🏭 Inspector de Labarthe</strong><br>
+                                <span class="badge badge-transit" style="margin-top:6px;">Esperando señal...</span>
+                            </div>
+                            <div style="background:#f1f5f9; padding:15px; border-radius:10px; border:2px solid #cbd5e1;">
+                                <strong>🚛 Inspector de Despacho</strong><br>
+                                <span class="badge badge-transit" style="margin-top:6px;">Esperando señal...</span>
+                            </div>
+                        </div>
+
+                        <div class="card" style="margin-bottom:0;">
+                            <div class="card-head">
+                                <h3>📋 Historial de Alertas Técnicas e Instrucciones de Solución</h3>
+                                <button class="btn-sm" onclick="cargarTelemetriaServidor()">🔄 Actualizar Alertas</button>
+                            </div>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Hora</th>
+                                        <th>Puesto / Dispositivo</th>
+                                        <th>Tipo de Alerta</th>
+                                        <th>Solución Guiada para Decir por Radio 📻</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbTelemetriaLogs">
+                                    <tr><td colspan="4" style="text-align:center; padding:25px; color:var(--muted)">Sin alertas técnicas registradas en este turno.</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -808,6 +848,7 @@
         const headers = { 
             dash: "Cuadro de Mando", 
             kpis: "KPIs & Analítica Operativa", 
+            soporte: "🛠️ Diagnóstico & Soporte en Vivo",
             descarga: "Descargas (Muelle vs Labarthe)", 
             despacho: "Despacho de Bolsones", 
             buscador: "Buscador por Rango", 
@@ -818,6 +859,7 @@
         document.getElementById('pageTitle').textContent = headers[pageId] || "Monitoreo";
 
         if (pageId === 'kpis') { renderKpisPage(); }
+        if (pageId === 'soporte') { cargarTelemetriaServidor(); }
         if (pageId === 'conductores') { syncConductoresUI(); }
         if (pageId === 'productos') { syncProductosUI(); }
     }
@@ -861,9 +903,8 @@
                     if (currentHash !== lastDataHash) {
                         lastDataHash = currentHash;
                         renderTablasYDashboard();
-                        if (document.getElementById('pageKpis').style.display === 'block') {
-                            renderKpisPage();
-                        }
+                        if (document.getElementById('pageKpis').style.display === 'block') renderKpisPage();
+                        if (document.getElementById('pageSoporte').style.display === 'block') cargarTelemetriaServidor();
                     }
                 }
                 document.getElementById('syncStatus').textContent = "Sincronizado: " + new Date().toLocaleTimeString('es-PE');
@@ -871,6 +912,104 @@
             .catch(() => {
                 document.getElementById('syncStatus').textContent = "⚠️ Error de Conexión";
             });
+    }
+
+    // ============================================================
+    // MÓDULO DE TELEMETRÍA Y SOPORTE GUIADO (TRADUCTOR DE ERRORES)
+    // ============================================================
+    function cargarTelemetriaServidor() {
+        if (!gasUrl) return;
+        fetch(`${gasUrl}?action=obtenerTelemetriaSoporte`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.ok) {
+                    renderMonitorHeartbeats(data.pings);
+                    renderTablaTelemetriaLogs(data.logs);
+                }
+            })
+            .catch(() => {});
+    }
+
+    function renderMonitorHeartbeats(pings) {
+        const container = document.getElementById('containerHeartbeats');
+        if (!container) return;
+
+        const puestosRequeridos = ['Inspector de Muelle', 'Inspector de Labarthe', 'Inspector de Despacho'];
+        const ahora = new Date().getTime();
+
+        container.innerHTML = puestosRequeridos.map(pNombre => {
+            const pingMatch = pings.find(p => p.puesto.toLowerCase().includes(pNombre.split(' ')[2].toLowerCase()));
+            
+            let estadoHTML = `<span class="badge badge-transit" style="margin-top:6px;">⚪ Sin Conectar</span>`;
+            let horaPing = "Sin actividad reciente";
+
+            if (pingMatch && pingMatch.timestamp) {
+                horaPing = "Último latido: " + pingMatch.fechaHora.split(' ')[1] || pingMatch.fechaHora;
+                const segsTranscurridos = (ahora - pingMatch.timestamp) / 1000;
+
+                if (segsTranscurridos <= 40) {
+                    estadoHTML = `<span class="badge badge-ok" style="margin-top:6px;">🟢 ACTIVO Y FLUIDO (${Math.round(segsTranscurridos)}s)</span>`;
+                } else if (segsTranscurridos <= 90) {
+                    estadoHTML = `<span class="badge badge-transit" style="margin-top:6px; background:#d97706;">🟡 ESPERANDO RESPUESTA (${Math.round(segsTranscurridos)}s)</span>`;
+                } else {
+                    estadoHTML = `<span class="badge badge-alert" style="margin-top:6px;">🔴 SIN SEÑAL / CONGELADO (${Math.round(segsTranscurridos / 60)}m)</span>`;
+                }
+            }
+
+            return `
+                <div style="background:white; padding:18px; border-radius:12px; border:2px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <div style="font-weight:900; font-size:15px; color:var(--navy);">${pNombre}</div>
+                    <div>${estadoHTML}</div>
+                    <div style="font-size:11px; color:var(--muted); margin-top:8px; font-weight:bold;">${horaPing}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function traducirErrorAInstruccion(puesto, tipoError, detalle) {
+        let instruccion = "";
+        let colorBadge = "badge-alert";
+
+        if (tipoError === "RED_DEBIL_GUARDADO_LOCAL") {
+            instruccion = `💬 <strong>Dile por radio:</strong> "Dile al ${puesto} que no se preocupe. Se le fue la señal, pero su registro está a salvo en la memoria de su celular. Que camine unos metros hacia la balanza y se enviará solo."`;
+            colorBadge = "badge-transit";
+        } else if (tipoError === "RECHAZO_SERVIDOR") {
+            instruccion = `💬 <strong>Dile por radio:</strong> "Dile al ${puesto} que espere 10 segundos y vuelva a presionar 'REVISAR Y GUARDAR'."`;
+            colorBadge = "badge-alert";
+        } else if (tipoError === "REGISTRO_DESCARTADO") {
+            instruccion = `💬 <strong>Dile por radio:</strong> "El celular excedió los reintentos por mala red. Dile al ${puesto} que presione el botón naranja '📥 en cola' de la cabecera para forzar el envío."`;
+            colorBadge = "badge-alert";
+        } else if (tipoError === "ERROR_SISTEMA" || tipoError === "PROMESA_FALLIDA") {
+            instruccion = `💬 <strong>Dile por radio:</strong> "Dile al ${puesto} que la pantalla se le congeló. Que deslice el dedo hacia abajo para refrescar la página o cierre y vuelva a abrir la App. Sus datos previos no se perderán."`;
+            colorBadge = "badge-alert";
+        } else {
+            instruccion = `💬 <strong>Dile por radio:</strong> "Indícale al ${puesto} que vuelva al menú principal de Puestos y reingrese. Detalle: ${detalle}"`;
+            colorBadge = "badge-history";
+        }
+
+        return { instruccion, colorBadge };
+    }
+
+    function renderTablaTelemetriaLogs(logs) {
+        const tbody = document.getElementById('tbTelemetriaLogs');
+        if (!tbody) return;
+
+        if (!logs || logs.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:25px; color:var(--muted)">🟢 Sistema operando con 100% de fluidez. Sin incidencias en los celulares.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = logs.reverse().slice(0, 15).map(l => {
+            const trad = traducirErrorAInstruccion(l.puesto, l.tipoError, l.detalle);
+            return `
+                <tr>
+                    <td style="font-weight:bold; font-size:12px;">${l.fechaHora.split(' ')[1] || l.fechaHora}</td>
+                    <td style="font-weight:900; color:var(--navy);">${l.puesto}</td>
+                    <td><span class="badge ${trad.colorBadge}">${l.tipoError}</span></td>
+                    <td style="font-size:13px; color:#0369a1; background:#f0f9ff; padding:12px; border-radius:8px;">${trad.instruccion}</td>
+                </tr>
+            `;
+        }).join('');
     }
 
     function renderEncabezadoBuque() {
@@ -1348,7 +1487,6 @@
         }).join('');
     }
 
-    // AGRUPADOR Y DIBUJADOR DE HISTORIAL DE TURNOS Y GRÁFICA INTERACTIVA
     function renderKpisPage() {
         const ahora = new Date();
         const muelleTurno = db.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
@@ -1366,7 +1504,6 @@
         const velocidadPPH = Math.round(totalBolsonesL / horasTrans);
         document.getElementById('kpiVelocidadPPH').textContent = `${velocidadPPH} bol/hr`;
 
-        // Tiempo Promedio Ciclo
         let labartheMap = new Map();
         labartheTurno.forEach(l => labartheMap.set(obtenerBaseViajeId(l.viajeId), l));
 
@@ -1394,9 +1531,6 @@
         const pctEfectividad = muelleTurno.length > 0 ? Math.round(((muelleTurno.length - viajesConError) / muelleTurno.length) * 100) : 100;
         document.getElementById('kpiEfectividadPct').textContent = `${pctEfectividad}%`;
 
-        // ============================================================
-        // 📋 CONSOLIDADO E HISTORIAL DE TURNOS REALIZADOS
-        // ============================================================
         let turnosMap = {};
 
         function registrarEnTurnoMap(registro, puesto) {
@@ -1404,11 +1538,11 @@
             if (!fDate) return;
 
             const mins = fDate.getHours() * 60 + fDate.getMinutes();
-            const esDiurno = (mins >= 405 && mins <= 1125); // 06:45 a 18:45
+            const esDiurno = (mins >= 405 && mins <= 1125); 
 
             let fechaBase = new Date(fDate);
             if (!esDiurno && mins < 405) {
-                fechaBase.setDate(fechaBase.getDate() - 1); // Pertenece al turno nocturno que arrancó ayer
+                fechaBase.setDate(fechaBase.getDate() - 1); 
             }
 
             const strFecha = String(fechaBase.getDate()).padStart(2,'0') + '/' + String(fechaBase.getMonth()+1).padStart(2,'0') + '/' + fechaBase.getFullYear();
@@ -1451,7 +1585,6 @@
         let chartDataDespacho = [];
 
         document.getElementById('tbHistorialTurnos').innerHTML = listaTurnosOrdenados.map(t => {
-            // Calcular diferencias del turno
             let difsTurno = 0;
             t.mMap.forEach((mObj, bId) => {
                 const lObj = t.lMap.get(bId);
@@ -1462,7 +1595,6 @@
 
             const esTurnoActivo = perteneceAlTurnoActual(new Date().toLocaleDateString('es-PE') + " 12:00:00") && t.titulo.includes(new Date().toLocaleDateString('es-PE'));
 
-            // Datos para el gráfico (en orden cronológico inverso para render de izquierda a derecha)
             chartLabels.unshift(t.titulo.split(' — ')[0] + " (" + (t.titulo.includes('DIURNO') ? 'D' : 'N') + ")");
             chartDataLabarthe.unshift(t.labarthe);
             chartDataDespacho.unshift(t.despacho);
@@ -1479,10 +1611,8 @@
             `;
         }).join('') || '<tr><td colspan="6" style="text-align:center; padding:20px;">Sin historial de turnos</td></tr>';
 
-        // DIBUJAR GRÁFICA CHART.JS
         renderizarGraficoTurnos(chartLabels, chartDataLabarthe, chartDataDespacho);
 
-        // Ranking TTs
         let ttMap = {};
         muelleTurno.forEach(m => {
             const ttName = m.tt.toUpperCase();
@@ -1512,7 +1642,6 @@
             `;
         }).join('') || '<tr><td colspan="4" style="text-align:center;">Sin actividad en el turno</td></tr>';
 
-        // Resumen Carga
         document.getElementById('tbResumenCargaKPI').innerHTML = listadoProductos.map(p => {
             const totalDesc = db.labarthe.reduce((a,r) => r.productos.toLowerCase().includes(p.producto.toLowerCase()) ? a + r.bolsones : a, 0);
             const totalDesp = db.despacho.reduce((a,r) => r.productos.toLowerCase().includes(p.producto.toLowerCase()) ? a + r.bolsones : a, 0);
@@ -1529,7 +1658,6 @@
         }).join('');
     }
 
-    // FUNCIONALIDAD DE GRÁFICO INTERACTIVO CHART.JS
     function renderizarGraficoTurnos(labels, dataDescarga, dataDespacho) {
         const ctx = document.getElementById('chartTurnos');
         if (!ctx) return;
