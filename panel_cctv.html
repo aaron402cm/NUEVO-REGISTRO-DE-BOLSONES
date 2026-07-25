@@ -701,6 +701,8 @@
     let isFirstLoad = true;
     let sirenaSilenciada = false;
     let lastDataHash = "";
+    let globalPingsData = [];
+    let globalLogsData = [];
 
     function guardarIncidenciasEnStorage() {
         localStorage.setItem('iqbf_incidencias_historicas', JSON.stringify([...incidenciasHistoricasSet]));
@@ -802,8 +804,16 @@
         setInterval(updateClock, 1000);
         
         sincronizarServidor();
+        cargarTelemetriaServidor(); // Carga inicial inmediata
+        
         backgroundWorker.postMessage('start');
         
+        // RELEO INDEPENDIENTE CADA 10 SEGUNDOS PARA CONSULTAR SEÑAL AL SERVIDOR
+        setInterval(cargarTelemetriaServidor, 10000);
+
+        // RELEO VIVO CADA 1 SEGUNDO PARA ACTUALIZAR CONTADORES EN PANTALLA (hace 1s, hace 2s...)
+        setInterval(renderMonitorHeartbeatsLive, 1000);
+
         setTimeout(verificarEstadoDeAudio, 1000);
     }
 
@@ -923,14 +933,17 @@
             .then(res => res.json())
             .then(data => {
                 if (data.ok) {
-                    renderMonitorHeartbeats(data.pings);
-                    renderTablaTelemetriaLogs(data.logs);
+                    globalPingsData = data.pings || [];
+                    globalLogsData = data.logs || [];
+                    renderMonitorHeartbeatsLive();
+                    renderTablaTelemetriaLogs(globalLogsData);
                 }
             })
             .catch(() => {});
     }
 
-    function renderMonitorHeartbeats(pings) {
+    // CONTADOR VIVO SEGUNDO A SEGUNDO EN PANTALLA
+    function renderMonitorHeartbeatsLive() {
         const container = document.getElementById('containerHeartbeats');
         if (!container) return;
 
@@ -938,21 +951,23 @@
         const ahora = new Date().getTime();
 
         container.innerHTML = puestosRequeridos.map(pNombre => {
-            const pingMatch = pings.find(p => p.puesto.toLowerCase().includes(pNombre.split(' ')[2].toLowerCase()));
+            const pingMatch = globalPingsData.find(p => p.puesto && p.puesto.toLowerCase().includes(pNombre.split(' ')[2].toLowerCase()));
             
-            let estadoHTML = `<span class="badge badge-transit" style="margin-top:6px;">⚪ Sin Conectar</span>`;
+            let estadoHTML = `<span class="badge badge-transit" style="margin-top:6px; background:#64748b;">⚪ Sin Conectar</span>`;
             let horaPing = "Sin actividad reciente";
 
             if (pingMatch && pingMatch.timestamp) {
-                horaPing = "Último latido: " + pingMatch.fechaHora.split(' ')[1] || pingMatch.fechaHora;
-                const segsTranscurridos = (ahora - pingMatch.timestamp) / 1000;
+                horaPing = "Último latido: " + (pingMatch.fechaHora.split(' ')[1] || pingMatch.fechaHora);
+                const segsTranscurridos = Math.max(0, Math.floor((ahora - pingMatch.timestamp) / 1000));
 
-                if (segsTranscurridos <= 40) {
-                    estadoHTML = `<span class="badge badge-ok" style="margin-top:6px;">🟢 ACTIVO Y FLUIDO (${Math.round(segsTranscurridos)}s)</span>`;
-                } else if (segsTranscurridos <= 90) {
-                    estadoHTML = `<span class="badge badge-transit" style="margin-top:6px; background:#d97706;">🟡 ESPERANDO RESPUESTA (${Math.round(segsTranscurridos)}s)</span>`;
+                if (segsTranscurridos <= 35) {
+                    estadoHTML = `<span class="badge badge-ok" style="margin-top:6px;">🟢 ACTIVO Y FLUIDO (hace ${segsTranscurridos}s)</span>`;
+                } else if (segsTranscurridos <= 75) {
+                    estadoHTML = `<span class="badge badge-transit" style="margin-top:6px; background:#d97706;">🟡 ESPERANDO SEÑAL (hace ${segsTranscurridos}s)</span>`;
                 } else {
-                    estadoHTML = `<span class="badge badge-alert" style="margin-top:6px;">🔴 SIN SEÑAL / CONGELADO (${Math.round(segsTranscurridos / 60)}m)</span>`;
+                    const mins = Math.floor(segsTranscurridos / 60);
+                    const segs = segsTranscurridos % 60;
+                    estadoHTML = `<span class="badge badge-alert" style="margin-top:6px;">🔴 SIN SEÑAL / CONGELADO (hace ${mins}m ${segs}s)</span>`;
                 }
             }
 
