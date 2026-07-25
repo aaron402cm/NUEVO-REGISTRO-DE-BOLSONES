@@ -28,6 +28,35 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
   border-bottom: 2px solid #0284c7;
 }
 
+#shiftCountdownBanner {
+  display: none;
+  background: #7f1d1d;
+  color: #ffffff;
+  text-align: center;
+  padding: 10px 14px;
+  font-weight: 900;
+  font-size: 1rem;
+  border-bottom: 3px solid #ef4444;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  z-index: 1001;
+  letter-spacing: 0.5px;
+}
+#countdownClock {
+  font-family: monospace, Courier, monospace;
+  font-size: 1.4rem;
+  color: #fef08a;
+  margin-left: 6px;
+  background: rgba(0,0,0,0.4);
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid #f59e0b;
+}
+
+@keyframes pulseShiftWarning {
+  from { background-color: #991b1b; transform: scale(1); }
+  to { background-color: #dc2626; transform: scale(1.01); }
+}
+
 .digital-display {
   background: #0f172a;
   color: #38bdf8;
@@ -232,6 +261,12 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
   </div>
 
   <div id="statusIndicator">Conectando...</div>
+
+  <div id="shiftCountdownBanner">
+    <span id="countdownText">⏱️ FIN DE TURNO EN:</span>
+    <span id="countdownClock">05:00</span>
+  </div>
+
   <div id="buqueHeaderMovil">🚢 Cargando Buque y Carga Inicial...</div>
 
   <div class="total-flotante" id="totalFlotante">
@@ -417,6 +452,8 @@ let conductorSeleccionado = null;
 let placaSeleccionada = null;
 
 let isSyncingPendientes = false;
+let isSubiendoFotosActivo = false;
+let shiftExpiredPendingLogout = false;
 
 let dbGlobal = JSON.parse(localStorage.getItem('iqbf_cache_dbGlobal')) || { muelle: [], labarthe: [], despacho: [] };
 let listadoProductos = JSON.parse(localStorage.getItem('iqbf_cache_listadoProductos')) || [];
@@ -441,12 +478,18 @@ window.onload = () => {
   verificarPendientesAlmacenados();
   
   setInterval(() => {
+    actualizarRelojFinDeTurno();
+  }, 1000);
+
+  // BUCLE DE AUTO-SINCRONIZACIÓN EN SEGUNDO PLANO (CADA 12 SEGUNDOS SI ESTÁ EN LABARTHE O REGISTRANDO)
+  setInterval(() => {
+    if (puestoActual === 'labarthe') {
+      sincronizarConExcel(true); // Silencioso
+    }
     verificarPendientesAlmacenados();
-    comprobarCambioDeTurnoActivo();
-  }, 30000); 
+  }, 12000); 
 };
 
-// GENERADOR ESTÁNDAR DE FECHA Y HORA (INMUNE A CONFIGURACIONES DEL CELULAR)
 function obtenerFechaHoraEstandar() {
   const d = new Date();
   const pad = (n) => String(n).padStart(2, '0');
@@ -461,7 +504,7 @@ function obtenerFechaHoraEstandar() {
   
   const ampm = horas >= 12 ? 'p. m.' : 'a. m.';
   horas = horas % 12;
-  horas = horas ? horas : 12; // Formato 12 horas estricto
+  horas = horas ? horas : 12;
   
   return `${dia}/${mes}/${anio} ${pad(horas)}:${mins}:${segs} ${ampm}`;
 }
@@ -488,6 +531,66 @@ function obtenerTurnoActual() {
   return `${fechaClave}_${tipoTurno}`;
 }
 
+function obtenerFechaFinTurnoActual() {
+  const ahora = new Date();
+  const startDiurno = 6 * 60 + 50; 
+  const endDiurno = 18 * 60 + 50;  
+  const currentMins = ahora.getHours() * 60 + ahora.getMinutes();
+
+  let targetDate = new Date(ahora);
+
+  if (currentMins >= startDiurno && currentMins < endDiurno) {
+    targetDate.setHours(18, 50, 0, 0); 
+  } else {
+    if (currentMins >= endDiurno) {
+      targetDate.setDate(targetDate.getDate() + 1);
+      targetDate.setHours(6, 50, 0, 0); 
+    } else {
+      targetDate.setHours(6, 50, 0, 0); 
+    }
+  }
+  return targetDate;
+}
+
+function actualizarRelojFinDeTurno() {
+  if (document.getElementById('app').style.display !== 'flex') return;
+
+  const ahora = new Date();
+  const targetEnd = obtenerFechaFinTurnoActual();
+  const diffMs = targetEnd - ahora;
+  const diffSecs = Math.floor(diffMs / 1000);
+
+  const banner = document.getElementById('shiftCountdownBanner');
+  const clockEl = document.getElementById('countdownClock');
+  const textEl = document.getElementById('countdownText');
+
+  if (diffSecs <= 300 && diffSecs > 0) {
+    banner.style.display = 'block';
+    const mins = Math.floor(diffSecs / 60);
+    const secs = diffSecs % 60;
+    clockEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+    if (diffSecs <= 60) {
+      banner.style.background = "#b91c1c";
+      banner.style.animation = "pulseShiftWarning 0.8s infinite alternate";
+      textEl.textContent = "🚨 ¡ÚLTIMO MINUTO DE TURNO! :";
+    } else {
+      banner.style.background = "#7f1d1d";
+      banner.style.animation = "none";
+      textEl.textContent = "⏱️ FIN DE TURNO EN:";
+    }
+  } else if (diffSecs <= 0) {
+    banner.style.display = 'block';
+    banner.style.background = "#b91c1c";
+    textEl.textContent = "⏰ TURNO FINALIZADO:";
+    clockEl.textContent = "00:00";
+
+    comprobarCambioDeTurnoActivo();
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
 function verificarSesionValida() {
   const sesionGuardada = localStorage.getItem(SESSION_KEY);
   if (!sesionGuardada) return false;
@@ -499,17 +602,45 @@ function verificarSesionValida() {
   return sesionGuardada === turnoActual;
 }
 
+function isUsuarioTrabajandoEnFormulario() {
+  if (puestoActual !== null) {
+    if (valTT !== "" || bolsonesSeleccionados > 0 || productosSeleccionados.length > 0 || fotosList.length > 0 || conductorSeleccionado !== null || placaSeleccionada !== null) {
+      return true;
+    }
+  }
+  const modalConf = document.getElementById('modalConfirm');
+  if (modalConf && modalConf.classList.contains('open')) return true;
+
+  if (isSubiendoFotosActivo) return true;
+
+  return false;
+}
+
 function comprobarCambioDeTurnoActivo() {
   if (document.getElementById('app').style.display === 'flex') {
     if (!verificarSesionValida()) {
-      localStorage.removeItem(SESSION_KEY);
-      document.getElementById('app').style.display = 'none';
-      document.getElementById('loginScreen').style.display = 'flex';
-      document.getElementById('pwInput').value = "";
-      document.getElementById('loginError').textContent = "";
-      alert("⏰ El turno ha finalizado (Cambio de turno 18:50 / 06:50). Ingrese la contraseña nuevamente.");
+      if (isUsuarioTrabajandoEnFormulario()) {
+        shiftExpiredPendingLogout = true;
+        updateStatusIndicator("⚠️ TURNO FINALIZADO: Termine de completar su registro. Se cerrará al guardar.", "error");
+      } else {
+        ejecutarCierreDeTurnoInmediato();
+      }
     }
   }
+}
+
+function ejecutarCierreDeTurnoInmediato() {
+  localStorage.removeItem(SESSION_KEY);
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('pwInput').value = "";
+  document.getElementById('loginError').textContent = "";
+  
+  const banner = document.getElementById('shiftCountdownBanner');
+  if (banner) banner.style.display = 'none';
+  
+  shiftExpiredPendingLogout = false;
+  alert("⏰ El turno ha finalizado (Cambio de turno 18:50 / 06:50). Ingrese la contraseña del nuevo turno.");
 }
 
 function updateStatusIndicator(msg, type = "normal") {
@@ -524,7 +655,7 @@ function updateStatusIndicator(msg, type = "normal") {
   } else if (type === "error") {
     statusInd.style.color = "#ef4444";
     statusInd.style.borderColor = "#ef4444";
-    setTimeout(() => { statusInd.style.display = "none"; }, 4000);
+    setTimeout(() => { statusInd.style.display = "none"; }, 5000);
   } else {
     statusInd.style.color = "#38bdf8";
     statusInd.style.borderColor = "#0284c7";
@@ -723,14 +854,14 @@ function parsearFechaExcel(fStr) {
   }
 }
 
-// SINCRONIZACIÓN EN PARALELO ULTRA RÁPIDA CON PROMISE.ALL
-async function sincronizarConExcel() {
+// SINCRONIZACIÓN ULTRA RÁPIDA CON RE-DIBUJADO AUTOMÁTICO DE LABARTHE Y DESPACHO
+async function sincronizarConExcel(silencioso = false) {
   const btnSync = document.getElementById('btnSyncHeader');
-  if (btnSync) {
+  if (btnSync && !silencioso) {
     btnSync.disabled = true;
     btnSync.textContent = "⏱️ Sinc...";
+    updateStatusIndicator("⌛ Sincronizando con el puerto...");
   }
-  updateStatusIndicator("⌛ Sincronizando en paralelo con el puerto...");
 
   try {
     const [pRes, cRes, rRes] = await Promise.all([
@@ -769,10 +900,15 @@ async function sincronizarConExcel() {
       });
       localStorage.setItem('iqbf_cache_dbGlobal', JSON.stringify(dbGlobal));
       actualizarKPIsYHistorial();
+
+      // CORRECCIÓN CLAVE: DIBUJAR LISTA DE TRÁNSITO DE LABARTHE SI ESTÁ EN ESA PANTALLA
+      if (puestoActual === 'labarthe') {
+        renderListaTransitoMovil();
+      }
     }
-    updateStatusIndicator("● Puerto Conectado", "success");
+    if (!silencioso) updateStatusIndicator("● Puerto Conectado", "success");
   } catch (e) {
-    updateStatusIndicator("⚠️ Sin conexión. Mostrando datos locales.", "error");
+    if (!silencioso) updateStatusIndicator("⚠️ Sin conexión. Mostrando datos locales.", "error");
     actualizarKPIsYHistorial();
   }
 
@@ -865,6 +1001,7 @@ function entrarPuesto(puesto) {
     document.getElementById('muelleTTArea').style.display = 'none';
     document.getElementById('labartheTTArea').style.display = 'block';
     renderListaTransitoMovil();
+    sincronizarConExcel(true); // Carga inmediata al entrar a Labarthe
   } else {
     document.getElementById('muelleTTArea').style.display = 'block';
     document.getElementById('labartheTTArea').style.display = 'none';
@@ -896,7 +1033,6 @@ function entrarPuesto(puesto) {
 function renderListaTransitoMovil() {
   const listDiv = document.getElementById('listaTransitoMovil');
   if (!listDiv) return;
-  listDiv.innerHTML = "";
 
   const muelleActivos = dbGlobal.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
   const labartheActivos = dbGlobal.labarthe.filter(f => perteneceAlTurnoActual(f.fechaHora));
@@ -904,45 +1040,36 @@ function renderListaTransitoMovil() {
   const labartheBases = new Set(labartheActivos.map(l => obtenerBaseViajeId(l.viajeId)));
 
   let transitoDetectado = false;
+  let htmlContenido = "";
 
   muelleActivos.forEach(m => {
     const baseId = obtenerBaseViajeId(m.viajeId);
     if (!labartheBases.has(baseId)) {
       transitoDetectado = true;
       const cleanPlate = m.tt.replace("TT-", "");
+      const isSelected = (viajeIdHeredado === m.viajeId);
 
-      const btn = document.createElement('div');
-      btn.className = "conductor-item";
-      btn.innerHTML = `<div style="font-size:1.3rem; font-weight:800; text-align:center;">🚛 ${m.tt}</div>`;
-      
-      if (viajeIdHeredado === m.viajeId) {
-        btn.classList.add('selected');
-        btn.style.borderColor = "#ea580c";
-        btn.style.backgroundColor = "#ffedd5";
-      }
-
-      btn.onclick = () => {
-        viajeIdHeredado = m.viajeId;
-        valTT = cleanPlate;
-        
-        document.querySelectorAll('#listaTransitoMovil .conductor-item').forEach(el => {
-          el.classList.remove('selected');
-          el.style.borderColor = "";
-          el.style.backgroundColor = "";
-        });
-        
-        btn.classList.add('selected');
-        btn.style.borderColor = "#ea580c";
-        btn.style.backgroundColor = "#ffedd5";
-      };
-
-      listDiv.appendChild(btn);
+      htmlContenido += `
+        <div class="conductor-item ${isSelected ? 'selected' : ''}" 
+             style="${isSelected ? 'border-color:#ea580c; background-color:#ffedd5;' : ''}"
+             onclick="seleccionarTTTransito('${m.viajeId}', '${cleanPlate}')">
+          <div style="font-size:1.3rem; font-weight:800; text-align:center;">🚛 ${m.tt}</div>
+        </div>
+      `;
     }
   });
 
   if (!transitoDetectado) {
     listDiv.innerHTML = '<div style="grid-column: span 2; text-align:center; padding:1.5rem; color:var(--muted); font-weight:bold;">● No hay camiones en tránsito en este turno.</div>';
+  } else {
+    listDiv.innerHTML = htmlContenido;
   }
+}
+
+function seleccionarTTTransito(viajeId, cleanPlate) {
+  viajeIdHeredado = viajeId;
+  valTT = cleanPlate;
+  renderListaTransitoMovil();
 }
 
 function volverSelector() {
@@ -1226,7 +1353,6 @@ async function guardarDatosFinal() {
     btn.textContent = "⏱️ ENVIANDO REGISTRO...";
   }
 
-  // USO DE FECHA Y HORA ESTÁNDAR
   const fechaHora = obtenerFechaHoraEstandar();
 
   const textPayload = {
@@ -1282,6 +1408,7 @@ function guardarEnLocalBackup(payload, fotos) {
 }
 
 async function subirFotosEnSegundoPlano(viajeId, puesto, listaFotos) {
+  isSubiendoFotosActivo = true;
   updateStatusIndicator(`📸 Subiendo fotos (0/${listaFotos.length})...`);
 
   for (let i = 0; i < listaFotos.length; i++) {
@@ -1305,8 +1432,15 @@ async function subirFotosEnSegundoPlano(viajeId, puesto, listaFotos) {
     }
   }
 
+  isSubiendoFotosActivo = false;
   updateStatusIndicator("✅ Fotos subidas con éxito", "success");
   sincronizarConExcel();
+
+  if (shiftExpiredPendingLogout || !verificarSesionValida()) {
+    setTimeout(() => {
+      ejecutarCierreDeTurnoInmediato();
+    }, 1200);
+  }
 }
 
 function guardarFotoParaReintentar(viajeId, puesto, fotoB64, index) {
@@ -1335,7 +1469,6 @@ function actualizarContadorOutbox() {
   }
 }
 
-// PROCESADOR DE PENDIENTES CON CONTROL DE MÁXIMOS REINTENTOS (MAX 5)
 async function verificarPendientesAlmacenados(manualClick = false) {
   if (isSyncingPendientes) return;
   isSyncingPendientes = true;
