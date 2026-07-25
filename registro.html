@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Registro IQBF — Celular</title>
+<title>Registro IQBF — Celular Inspector</title>
 <style>
 :root {
   --blue: #0c4a6e; --blue-light: #e0f2fe; --blue-dark: #0369a1;
@@ -461,6 +461,61 @@ let productosDisponibles = JSON.parse(localStorage.getItem('iqbf_cache_productos
 let conductoresDisponibles = JSON.parse(localStorage.getItem('iqbf_cache_conductoresDisponibles')) || [];
 let activeSubTab = 'muelle';
 
+// ============================================================
+// 1. SENSOR SILENCIOSO DE TELEMETRÍA DE ERRORES Y ATRAAPADOR
+// ============================================================
+window.onerror = function(msg, url, lineNo, columnNo, error) {
+  enviarTelemetriaError("ERROR_SISTEMA", `Línea ${lineNo}: ${msg}`);
+  return false;
+};
+
+window.onunhandledrejection = function(event) {
+  enviarTelemetriaError("PROMESA_FALLIDA", `Async: ${event.reason}`);
+};
+
+function enviarTelemetriaError(tipoError, detalle) {
+  try {
+    const puestoNombre = puestoActual ? `Inspector de ${puestoActual.charAt(0).toUpperCase() + puestoActual.slice(1)}` : 'Inspector';
+    const payload = {
+      action: 'registrarTelemetriaError',
+      data: {
+        puesto: puestoNombre,
+        tipoError: tipoError,
+        detalle: detalle,
+        fechaHora: obtenerFechaHoraEstandar()
+      }
+    };
+    // Disparo ultraligero y asíncrono sin bloquear la interfaz
+    fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    }).catch(() => {});
+  } catch(e) {}
+}
+
+// ============================================================
+// 2. LATIDO DE VIDA SILENCIOSO (HEARTBEAT CADA 15 SEGUNDOS)
+// ============================================================
+function enviarLatidoDeVida() {
+  if (document.getElementById('app').style.display !== 'flex') return;
+  try {
+    const puestoNombre = puestoActual ? `Inspector de ${puestoActual.charAt(0).toUpperCase() + puestoActual.slice(1)}` : 'Inspector (En Selección)';
+    const payload = {
+      action: 'pingHeartbeat',
+      data: {
+        puesto: puestoNombre,
+        fechaHora: obtenerFechaHoraEstandar()
+      }
+    };
+    fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    }).catch(() => {});
+  } catch(e) {}
+}
+
 window.onload = () => {
   if (verificarSesionValida()) {
     mostrarAplicativo();
@@ -481,6 +536,12 @@ window.onload = () => {
     actualizarRelojFinDeTurno();
   }, 1000);
 
+  // LATIDO DE VIDA CADA 15 SEGUNDOS AL PANEL CCTV
+  setInterval(() => {
+    enviarLatidoDeVida();
+  }, 15000);
+
+  // AUTO-SINCRONIZACIÓN EN LABARTHE CADA 12 SEGUNDOS
   setInterval(() => {
     if (puestoActual === 'labarthe') {
       sincronizarConExcel(true);
@@ -790,7 +851,6 @@ function actualizarBolsDisplay() {
   if (displayD) displayD.innerHTML = htmlContent;
 }
 
-// CORRECCIÓN CLAVE: ALINEACIÓN ESTRICTA DEL CORTE A LAS 06:50 / 18:50
 function perteneceAlTurnoActual(fechaHoraStr) {
   const recDate = parsearFechaExcel(fechaHoraStr);
   if (!recDate) return false;
@@ -1386,10 +1446,12 @@ async function guardarDatosFinal() {
     } else {
       guardarEnLocalBackup(textPayload, fotosParaSubir);
       showToast('⚠️ Error en servidor. Guardado en dispositivo.', true);
+      enviarTelemetriaError("RECHAZO_SERVIDOR", `Servidor rechazó registro en ${puestoGuardar}`);
     }
   } catch(e) {
     guardarEnLocalBackup(textPayload, fotosParaSubir);
     showToast('⚠️ Red débil. Guardado en dispositivo. Se enviará automáticamente.', true);
+    enviarTelemetriaError("RED_DEBIL_GUARDADO_LOCAL", `Corte de red en ${puestoGuardar}`);
   }
 
   if (btn) {
@@ -1405,7 +1467,6 @@ function guardarEnLocalBackup(payload, fotos) {
   actualizarContadorOutbox();
 }
 
-// SUBIDA DE FOTOS CON VALIDACIÓN DE RESPUESTA REAL DE GOOGLE DRIVE
 async function subirFotosEnSegundoPlano(viajeId, puesto, listaFotos) {
   isSubiendoFotosActivo = true;
   updateStatusIndicator(`📸 Subiendo fotos (0/${listaFotos.length})...`);
@@ -1501,6 +1562,7 @@ async function verificarPendientesAlmacenados(manualClick = false) {
         if (backup.retries > 5) {
           localStorage.removeItem(key);
           showToast("⚠️ Registro descartado tras 5 intentos fallidos.", true);
+          enviarTelemetriaError("REGISTRO_DESCARTADO", `Límite 5 reintentos excedido`);
           continue;
         }
 
