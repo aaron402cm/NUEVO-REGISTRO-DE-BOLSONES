@@ -94,7 +94,6 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
   box-shadow: 0 0px 0px transparent;
 }
 
-/* ESTRUCTURA VERTICAL PARA DESPACHO (CHOFER ARRIBA / PLACA ABAJO) */
 .despacho-stack {
   display: flex;
   flex-direction: column;
@@ -111,7 +110,6 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
   align-items: center;
 }
 
-/* INPUT DE BÚSQUEDA TÁCTIL DE ALTO CONTRASTE */
 .search-input {
   width: 100%;
   padding: 0.9rem 1.1rem;
@@ -142,11 +140,13 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 
 #app { display: none; min-height: 100vh; flex-direction: column; }
 .header { background: var(--blue); color: white; padding: 0.8rem 1rem; position: sticky; top: 0; z-index: 100; border-bottom: 4px solid var(--blue-dark); }
-.header-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-.header-title { font-size: 1.3rem; font-weight: 800; text-align: center; flex: 1; }
+.header-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 8px; }
+.header-title { font-size: 1.2rem; font-weight: 800; text-align: center; flex: 1; }
 .header-puesto { background: rgba(255,255,255,0.25); padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 1.1rem; font-weight: bold; border: 1px solid white; }
-.btn-back { background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.6rem 1rem; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; display: none; }
+.btn-back { background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.6rem 0.8rem; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; display: none; }
 .btn-back.visible { display: block; }
+
+#btnOutboxBadge { background: #f59e0b; color: #78350f; border: none; font-weight: 900; padding: 0.4rem 0.7rem; border-radius: 8px; font-size: 0.9rem; cursor: pointer; display: none; }
 
 #buqueHeaderMovil { background: var(--blue-light); border-left: 6px solid var(--blue-dark); padding: 1rem 1.2rem; font-size: 1.1rem; font-weight: 800; color: var(--blue); border-bottom: 2px solid var(--border); line-height: 1.3; }
 
@@ -225,6 +225,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
     <div class="header-row">
       <button class="btn-back" id="btnBack" onclick="volverSelector()">← Puestos</button>
       <div class="header-title" id="headerTitle">📦 IQBF Control</div>
+      <button id="btnOutboxBadge" onclick="verificarPendientesAlmacenados(true)">📥 0</button>
       <button id="btnSyncHeader" onclick="sincronizarConExcel()" style="background:var(--blue-light); color:var(--blue); border:none; font-weight:bold; padding:0.5rem 0.8rem; border-radius:8px; font-size:1rem; cursor:pointer;">🔄 Sincronizar</button>
       <div class="header-puesto" id="headerPuesto" style="display:none; visibility:hidden">—</div>
     </div>
@@ -248,7 +249,6 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
     </div>
   </div>
 
-  <!-- SELECTOR DE PUESTO -->
   <div id="screenSelector">
     <div class="selector-title">Selecciona tu Puesto de Trabajo</div>
     <div class="puesto-card" onclick="entrarPuesto('muelle')">
@@ -274,7 +274,6 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
     </div>
   </div>
 
-  <!-- FORMULARIO DE REGISTRO -->
   <div id="screenForm">
     <div id="formDescarga">
       <div class="card" id="cardTTDescarga" style="border-color: #eab308; background: #fef9c3;">
@@ -311,11 +310,9 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
       <button class="btn-guardar" id="btnGuardar" onclick="abrirConfirmacion()">REVISAR Y GUARDAR</button>
     </div>
 
-    <!-- FORMULARIO DESPACHO ORDENADO: CHOFER ARRIBA Y PLACA ABAJO CON BUSCADORES -->
     <div id="formDespacho" style="display:none">
       <div class="card">
         <div class="despacho-stack">
-          <!-- 1. SECCIÓN CHOFER (ARRIBA) -->
           <div>
             <div class="despacho-section-title">
               <span>👤 1. Seleccionar Chofer</span>
@@ -325,7 +322,6 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
             <div class="conductor-list" id="listaChoferes"></div>
           </div>
 
-          <!-- 2. SECCIÓN PLACA (ABAJO) -->
           <div style="margin-top: 10px; border-top: 2px dashed var(--border); padding-top: 15px;">
             <div class="despacho-section-title">
               <span>🚛 2. Seleccionar Placa</span>
@@ -359,7 +355,6 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
     </div>
   </div>
 
-  <!-- PANTALLA HISTORIAL -->
   <div id="screenHistorial">
     <div class="selector-title" style="margin-bottom:1rem;">Registros de este Turno</div>
     <div class="sub-tab-bar">
@@ -442,6 +437,7 @@ window.onload = () => {
     renderEncabezadoBuqueMovil(cachedBuque.nombre, cachedBuque.muelle);
   }
   
+  actualizarContadorOutbox();
   verificarPendientesAlmacenados();
   
   setInterval(() => {
@@ -449,6 +445,26 @@ window.onload = () => {
     comprobarCambioDeTurnoActivo();
   }, 30000); 
 };
+
+// GENERADOR ESTÁNDAR DE FECHA Y HORA (INMUNE A CONFIGURACIONES DEL CELULAR)
+function obtenerFechaHoraEstandar() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  
+  const dia = pad(d.getDate());
+  const mes = pad(d.getMonth() + 1);
+  const anio = d.getFullYear();
+  
+  let horas = d.getHours();
+  const mins = pad(d.getMinutes());
+  const segs = pad(d.getSeconds());
+  
+  const ampm = horas >= 12 ? 'p. m.' : 'a. m.';
+  horas = horas % 12;
+  horas = horas ? horas : 12; // Formato 12 horas estricto
+  
+  return `${dia}/${mes}/${anio} ${pad(horas)}:${mins}:${segs} ${ampm}`;
+}
 
 function obtenerTurnoActual() {
   const ahora = new Date();
@@ -707,16 +723,22 @@ function parsearFechaExcel(fStr) {
   }
 }
 
+// SINCRONIZACIÓN EN PARALELO ULTRA RÁPIDA CON PROMISE.ALL
 async function sincronizarConExcel() {
   const btnSync = document.getElementById('btnSyncHeader');
   if (btnSync) {
     btnSync.disabled = true;
     btnSync.textContent = "⏱️ Sinc...";
   }
-  updateStatusIndicator("⌛ Sincronizando con el puerto...");
+  updateStatusIndicator("⌛ Sincronizando en paralelo con el puerto...");
 
   try {
-    const pRes = await fetch(`${GAS_URL}?action=obtenerProductos`);
+    const [pRes, cRes, rRes] = await Promise.all([
+      fetch(`${GAS_URL}?action=obtenerProductos`),
+      fetch(`${GAS_URL}?action=obtenerConductores`),
+      fetch(`${GAS_URL}?action=obtenerFilasExcel`)
+    ]);
+
     const pData = await pRes.json();
     if (pData.ok) {
       listadoProductos = pData.productos;
@@ -730,7 +752,6 @@ async function sincronizarConExcel() {
       renderProductosUI();
     }
 
-    const cRes = await fetch(`${GAS_URL}?action=obtenerConductores`);
     const cData = await cRes.json();
     if (cData.ok) {
       conductoresDisponibles = cData.conductores;
@@ -738,7 +759,6 @@ async function sincronizarConExcel() {
       if (puestoActual === 'despacho') renderConductoresUI();
     }
 
-    const rRes = await fetch(`${GAS_URL}?action=obtenerFilasExcel`);
     const rData = await rRes.json();
     if (rData.ok) {
       dbGlobal.muelle = []; dbGlobal.labarthe = []; dbGlobal.despacho = [];
@@ -980,7 +1000,6 @@ function renderProductosUI() {
   });
 }
 
-// RENDERING DE DESPACHO CON BUSCADORES EN TIEMPO REAL Y ASOCIACIÓN AUTOMÁTICA
 function renderConductoresUI() {
   const listChof = document.getElementById('listaChoferes');
   const listPlac = document.getElementById('listaPlacas');
@@ -998,14 +1017,12 @@ function renderConductoresUI() {
     return;
   }
   
-  // Extraer Choferes Únicos filtrados
   const choferesFiltrados = [...new Set(
     conductoresDisponibles
       .map(c => c.nombre.trim())
       .filter(n => n.toLowerCase().includes(qChof))
   )].sort((a,b) => a.localeCompare(b));
   
-  // Extraer Placas Únicas filtradas
   const placasFiltradas = [...new Set(
     conductoresDisponibles
       .map(c => c.placa.trim().toUpperCase())
@@ -1015,7 +1032,6 @@ function renderConductoresUI() {
   document.getElementById('countChoferes').textContent = `(${choferesFiltrados.length})`;
   document.getElementById('countPlacas').textContent = `(${placasFiltradas.length})`;
   
-  // Renderizar Lista de Choferes
   if (choferesFiltrados.length === 0) {
     listChof.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--muted);font-weight:bold">No encontrado</div>';
   } else {
@@ -1031,7 +1047,6 @@ function renderConductoresUI() {
       item.onclick = () => {
         conductorSeleccionado = nombre;
         
-        // AUTO-ASOCIACIÓN INTELIGENTE: Si el chofer tiene una placa asociada en la BD, la autoselecciona
         const match = conductoresDisponibles.find(c => c.nombre.trim() === nombre);
         if (match && match.placa) {
           placaSeleccionada = match.placa.trim().toUpperCase();
@@ -1044,7 +1059,6 @@ function renderConductoresUI() {
     });
   }
   
-  // Renderizar Lista de Placas
   if (placasFiltradas.length === 0) {
     listPlac.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--muted);font-weight:bold">No encontrada</div>';
   } else {
@@ -1109,7 +1123,6 @@ function renderFotosGrid() {
   }
 }
 
-// COMPRESIÓN HIPER-EFICIENTE PARA PUERTOS (Max 600px / Calidad 0.40 = ~35KB por foto)
 function procesarFotoYComprimir(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -1120,7 +1133,7 @@ function procesarFotoYComprimir(event) {
     img.src = e.target.result;
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const MAX_SIZE = 600; // Reducido de 800 a 600px para volar en redes 2G/3G de muelle
+      const MAX_SIZE = 600; 
       let w = img.width;
       let h = img.height;
 
@@ -1132,7 +1145,6 @@ function procesarFotoYComprimir(event) {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, w, h);
 
-      // Calidad 0.40 suficiente para legibilidad de foto y ultraligera
       const b64 = canvas.toDataURL('image/jpeg', 0.40);
       fotosList.push(b64);
       renderFotosGrid();
@@ -1214,8 +1226,8 @@ async function guardarDatosFinal() {
     btn.textContent = "⏱️ ENVIANDO REGISTRO...";
   }
 
-  const now = new Date();
-  const fechaHora = now.toLocaleDateString('es-PE', {day:'2-digit', month:'2-digit', year:'numeric'}) + ' ' + now.toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  // USO DE FECHA Y HORA ESTÁNDAR
+  const fechaHora = obtenerFechaHoraEstandar();
 
   const textPayload = {
     action: isD ? 'registroDespacho' : 'registroDescarga',
@@ -1264,8 +1276,9 @@ async function guardarDatosFinal() {
 
 function guardarEnLocalBackup(payload, fotos) {
   const backupKey = "iqbf_pending_" + Date.now() + "_" + Math.floor(Math.random()*1000);
-  const backupObject = { payload: payload, fotos: fotos };
+  const backupObject = { payload: payload, fotos: fotos, retries: 0 };
   localStorage.setItem(backupKey, JSON.stringify(backupObject));
+  actualizarContadorOutbox();
 }
 
 async function subirFotosEnSegundoPlano(viajeId, puesto, listaFotos) {
@@ -1298,13 +1311,35 @@ async function subirFotosEnSegundoPlano(viajeId, puesto, listaFotos) {
 
 function guardarFotoParaReintentar(viajeId, puesto, fotoB64, index) {
   const failKey = "iqbf_fail_photo_" + Date.now() + "_" + Math.floor(Math.random()*1000);
-  const failObj = { viajeId, puesto, fotoB64, index };
+  const failObj = { viajeId, puesto, fotoB64, index, retries: 0 };
   localStorage.setItem(failKey, JSON.stringify(failObj));
+  actualizarContadorOutbox();
 }
 
-async function verificarPendientesAlmacenados() {
+function actualizarContadorOutbox() {
+  let count = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && (k.startsWith("iqbf_pending_") || k.startsWith("iqbf_fail_photo_"))) {
+      count++;
+    }
+  }
+  const btn = document.getElementById('btnOutboxBadge');
+  if (btn) {
+    if (count > 0) {
+      btn.style.display = "block";
+      btn.textContent = `📥 ${count} en cola`;
+    } else {
+      btn.style.display = "none";
+    }
+  }
+}
+
+// PROCESADOR DE PENDIENTES CON CONTROL DE MÁXIMOS REINTENTOS (MAX 5)
+async function verificarPendientesAlmacenados(manualClick = false) {
   if (isSyncingPendientes) return;
   isSyncingPendientes = true;
+  actualizarContadorOutbox();
 
   try {
     const keys = [];
@@ -1315,12 +1350,24 @@ async function verificarPendientesAlmacenados() {
       }
     }
 
+    if (manualClick && keys.length === 0) {
+      showToast("✅ No hay registros pendientes en cola.");
+    }
+
     for (const key of keys) {
       const rawData = localStorage.getItem(key);
       if (!rawData) continue;
 
       if (key.startsWith("iqbf_pending_")) {
         const backup = JSON.parse(rawData);
+        backup.retries = (backup.retries || 0) + 1;
+
+        if (backup.retries > 5) {
+          localStorage.removeItem(key);
+          showToast("⚠️ Registro descartado tras 5 intentos fallidos.", true);
+          continue;
+        }
+
         localStorage.removeItem(key);
         try {
           const res = await fetch(GAS_URL, {
@@ -1332,17 +1379,24 @@ async function verificarPendientesAlmacenados() {
           if (result.ok) {
             const viajeId = result.viajeId;
             subirFotosEnSegundoPlano(viajeId, backup.payload.data.puesto, backup.fotos);
-            showToast('✅ Registro pendiente sincronizado automáticamente.');
+            showToast('✅ Registro en cola sincronizado.');
           } else {
-            localStorage.setItem(key, rawData);
+            localStorage.setItem(key, JSON.stringify(backup));
           }
         } catch(e) {
-          localStorage.setItem(key, rawData);
+          localStorage.setItem(key, JSON.stringify(backup));
         }
       }
 
       if (key.startsWith("iqbf_fail_photo_")) {
         const failObj = JSON.parse(rawData);
+        failObj.retries = (failObj.retries || 0) + 1;
+
+        if (failObj.retries > 5) {
+          localStorage.removeItem(key);
+          continue;
+        }
+
         localStorage.removeItem(key);
         try {
           const res = await fetch(GAS_URL, {
@@ -1360,15 +1414,16 @@ async function verificarPendientesAlmacenados() {
           });
           const result = await res.json();
           if (!result.ok) {
-            localStorage.setItem(key, rawData);
+            localStorage.setItem(key, JSON.stringify(failObj));
           }
         } catch(e) {
-          localStorage.setItem(key, rawData);
+          localStorage.setItem(key, JSON.stringify(failObj));
         }
       }
     }
   } finally {
     isSyncingPendientes = false;
+    actualizarContadorOutbox();
   }
 }
 
