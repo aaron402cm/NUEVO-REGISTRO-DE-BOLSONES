@@ -1109,6 +1109,7 @@ function renderFotosGrid() {
   }
 }
 
+// COMPRESIÓN HIPER-EFICIENTE PARA PUERTOS (Max 600px / Calidad 0.40 = ~35KB por foto)
 function procesarFotoYComprimir(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -1119,7 +1120,7 @@ function procesarFotoYComprimir(event) {
     img.src = e.target.result;
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const MAX_SIZE = 800; 
+      const MAX_SIZE = 600; // Reducido de 800 a 600px para volar en redes 2G/3G de muelle
       let w = img.width;
       let h = img.height;
 
@@ -1131,7 +1132,8 @@ function procesarFotoYComprimir(event) {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, w, h);
 
-      const b64 = canvas.toDataURL('image/jpeg', 0.5);
+      // Calidad 0.40 suficiente para legibilidad de foto y ultraligera
+      const b64 = canvas.toDataURL('image/jpeg', 0.40);
       fotosList.push(b64);
       renderFotosGrid();
     };
