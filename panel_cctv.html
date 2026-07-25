@@ -1833,7 +1833,15 @@
         let labartheMap = new Map();
         db.labarthe.forEach(l => labartheMap.set(obtenerBaseViajeId(l.viajeId), l));
 
-        document.getElementById('tbMuelle').innerHTML = db.muelle.map(r => {
+        let muelleMap = new Map();
+        db.muelle.forEach(m => muelleMap.set(obtenerBaseViajeId(m.viajeId), m));
+
+        // ORDENAR MÁS NUEVOS PRIMERO (DESCENTENTE)
+        const muelleOrdenado = [...db.muelle].sort((a,b) => parsearFechaExcel(b.fechaHora) - parsearFechaExcel(a.fechaHora));
+        const labartheOrdenado = [...db.labarthe].sort((a,b) => parsearFechaExcel(b.fechaHora) - parsearFechaExcel(a.fechaHora));
+
+        // 1. REGISTROS MUELLE (ORDENADO)
+        document.getElementById('tbMuelle').innerHTML = muelleOrdenado.map(r => {
             const baseId = obtenerBaseViajeId(r.viajeId);
             const l = labartheMap.get(baseId);
             let btnEdit = (l && (l.bolsones !== r.bolsones || l.productos.toLowerCase() !== r.productos.toLowerCase()))
@@ -1857,10 +1865,8 @@
             `;
         }).join('');
 
-        let muelleMap = new Map();
-        db.muelle.forEach(m => muelleMap.set(obtenerBaseViajeId(m.viajeId), m));
-
-        document.getElementById('tbLabarthe').innerHTML = db.labarthe.map(r => {
+        // 2. REGISTROS LABARTHE (ORDENADO)
+        document.getElementById('tbLabarthe').innerHTML = labartheOrdenado.map(r => {
             const baseId = obtenerBaseViajeId(r.viajeId);
             const m = muelleMap.get(baseId);
             let btnEdit = (m && (m.bolsones !== r.bolsones || m.productos.toLowerCase() !== r.productos.toLowerCase()))
@@ -1884,7 +1890,8 @@
             `;
         }).join('');
 
-        document.getElementById('tbComparativo').innerHTML = db.muelle.map(m => {
+        // 3. TABLA COMPARATIVA (ORDENADO)
+        document.getElementById('tbComparativo').innerHTML = muelleOrdenado.map(m => {
             const baseId = obtenerBaseViajeId(m.viajeId);
             const l = labartheMap.get(baseId);
             const bolsonesL = l ? l.bolsones : '—';
@@ -1982,7 +1989,9 @@
     }
 
     function renderPestañaDespachos() {
-        document.getElementById('tbDespacho').innerHTML = db.despacho.map(r => `
+        const despachoOrdenado = [...db.despacho].sort((a,b) => parsearFechaExcel(b.fechaHora) - parsearFechaExcel(a.fechaHora));
+
+        document.getElementById('tbDespacho').innerHTML = despachoOrdenado.map(r => `
             <tr>
                 <td style="font-weight:bold;">${r.viajeId}</td>
                 <td style="font-weight:bold;">${r.conductor}</td>
