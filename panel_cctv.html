@@ -520,7 +520,7 @@
     </div>
 </div>
 
-<!-- PUNTO 2: MODAL FICHA DE OPERACIÓN Y CICLOS POR TT -->
+<!-- MODAL FICHA DE OPERACIÓN Y CICLOS POR TT -->
 <div id="modalTTOverlay" onclick="if(event.target===this)cerrarModalTT()">
     <div class="modal-box" style="max-width:700px;">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
@@ -531,7 +531,7 @@
     </div>
 </div>
 
-<!-- PUNTO 3: MODAL EDICIÓN AUDITABLE CON DNI DE COORDINADOR -->
+<!-- MODAL EDICIÓN AUDITABLE CON DNI DE COORDINADOR -->
 <div id="modalEditOverlay">
     <div class="modal-box" style="max-width:450px; border: 4px solid var(--blue-btn);">
         <h3 style="font-size:18px; font-weight:900; color:var(--navy); margin-bottom:15px; border-bottom:2px solid #e2e8f0; padding-bottom:8px;">
@@ -579,11 +579,17 @@
     let alarmInterval = null;
 
     let knownTransactionIds = new Set();
-    let incidenciasHistoricasSet = new Set();
+    
+    // PERMANENCIA PERMANENTE EN LOCALSTORAGE (NUNCA SE BORRA AL RECARGAR PÁGINA)
+    let incidenciasHistoricasSet = new Set(JSON.parse(localStorage.getItem('iqbf_incidencias_historicas') || '[]'));
     let productosCompletadosSet = new Set();
     let isFirstLoad = true;
     let sirenaSilenciada = false;
     let lastDataHash = "";
+
+    function guardarIncidenciasEnStorage() {
+        localStorage.setItem('iqbf_incidencias_historicas', JSON.stringify([...incidenciasHistoricasSet]));
+    }
 
     let workerCode = `
         let intervalId = null;
@@ -841,6 +847,7 @@
         return partes.slice(0, 2).join('_');
     }
 
+    // REGISTRO Y PERSISTENCIA DE INCIDENCIAS (DISCREPANCIAS Y RETRASOS)
     function procesarAnalisisYAlarmas() {
         let hayDiscrepancia = false;
         let hayRetrasoTransito = false;
@@ -853,6 +860,7 @@
             labartheMap.set(obtenerBaseViajeId(l.viajeId), l);
         });
 
+        // 1. Evaluar diferencias activas entre Muelle y Labarthe
         db.muelle.forEach(m => {
             const baseId = obtenerBaseViajeId(m.viajeId);
             const l = labartheMap.get(baseId);
@@ -861,19 +869,32 @@
                 const difProductos = l.productos.trim().toLowerCase() !== m.productos.trim().toLowerCase();
                 if (difBolsones || difProductos) {
                     hayDiscrepancia = true;
-                    incidenciasHistoricasSet.add(baseId);
+                    incidenciasHistoricasSet.add(baseId); // GUARDAR PERMANENTE
+                    guardarIncidenciasEnStorage();
                 }
             }
         });
 
+        // 2. Evaluar retrasos en tránsito
         db.muelle.forEach(m => {
             const baseId = obtenerBaseViajeId(m.viajeId);
-            const confirmado = labartheMap.has(baseId);
-            if (!confirmado) {
-                const fRegistro = parsearFechaExcel(m.fechaHora);
-                if (fRegistro && (ahora - fRegistro) > limiteTiempo) {
+            const l = labartheMap.get(baseId);
+            const timeM = parsearFechaExcel(m.fechaHora);
+
+            if (!l) {
+                if (timeM && (ahora - timeM) > limiteTiempo) {
                     hayRetrasoTransito = true;
-                    incidenciasHistoricasSet.add(baseId);
+                    incidenciasHistoricasSet.add(baseId); // GUARDAR PERMANENTE
+                    guardarIncidenciasEnStorage();
+                }
+            } else {
+                const timeL = parsearFechaExcel(l.fechaHora);
+                if (timeM && timeL) {
+                    const minsTransito = Math.round((timeL - timeM) / 60000);
+                    if (minsTransito > 10) {
+                        incidenciasHistoricasSet.add(baseId); // GUARDAR PERMANENTE
+                        guardarIncidenciasEnStorage();
+                    }
                 }
             }
         });
@@ -1102,7 +1123,6 @@
         }).join('');
     }
 
-    // PUNTO 1: CONTROL DE SALDOS CON RENDIMIENTO PPH (BOLSONES/HORA), ETA Y BARRAS
     function renderControlDeSaldos() {
         const tbDescarga = document.getElementById('tbSaldosDescarga');
         const tbDespacho = document.getElementById('tbSaldosDespacho');
@@ -1125,7 +1145,6 @@
 
         const horasTranscurridas = Math.max(0.25, (ahora - minTiempoShift) / 3600000);
 
-        // 1. DIBUJAR TABLA DESCARGA (LABARTHE)
         tbDescarga.innerHTML = listadoProductos.map(p => {
             const totalDescargadoLabarthe = db.labarthe.reduce((sum, r) => {
                 if (r.productos && r.productos.toLowerCase().includes(p.producto.toLowerCase())) {
@@ -1180,7 +1199,6 @@
             `;
         }).join('');
 
-        // 2. DIBUJAR TABLA DESPACHO
         tbDespacho.innerHTML = listadoProductos.map(p => {
             const totalDespachado = db.despacho.reduce((sum, r) => {
                 if (r.productos && r.productos.toLowerCase().includes(p.producto.toLowerCase())) {
@@ -1236,7 +1254,6 @@
         }).join('');
     }
 
-    // PUNTO 2: FICHA DE CICLOS Y TRAZABILIDAD POR TT
     function verFichaTT(ttNombre) {
         if (!ttNombre) return;
         const cleanTT = ttNombre.toString().trim().toUpperCase();
@@ -1302,7 +1319,6 @@
         document.getElementById('modalTTOverlay').classList.remove('open');
     }
 
-    // PUNTO 3: MÓDULO DE EDICIÓN AUDITABLE CON DNI DE COORDINADOR
     function abrirModalEditar(viajeId, puesto, bolsonesActuales, productoActual) {
         document.getElementById('editViajeId').value = viajeId;
         document.getElementById('editViajeIdDisplay').value = viajeId;
@@ -1334,6 +1350,11 @@
             return;
         }
 
+        // REGISTRAR PERMANENTEMENTE EN HISTORIAL DE INCIDENCIAS
+        const baseId = obtenerBaseViajeId(viajeId);
+        incidenciasHistoricasSet.add(baseId);
+        guardarIncidenciasEnStorage();
+
         fetch(gasUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -1361,6 +1382,161 @@
         .catch(() => {
             alert("⚠️ Error de conexión con el servidor.");
         });
+    }
+
+    // TABLA COMPARATIVA CON RETENCIÓN PERMANENTE DE HISTORIAL
+    function renderPestañaDescargas() {
+        document.getElementById('tbMuelle').innerHTML = db.muelle.map(r => `
+            <tr>
+                <td style="font-weight:bold;">${r.viajeId}</td>
+                <td><span class="tt-link" onclick="verFichaTT('${r.tt}')">${r.tt}</span></td>
+                <td style="font-weight:bold; font-size:14px;">${r.bolsones}</td>
+                <td>${r.productos}</td>
+                <td>${r.fechaHora}</td>
+                <td>
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn-sm" onclick="verEvidencias('${r.viajeId}','muelle')">Fotos</button>
+                        <button class="btn-sm" style="background:#fef3c7; color:#78350f;" onclick="abrirModalEditar('${r.viajeId}','muelle',${r.bolsones},'${r.productos}')">✏️ Editar</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+
+        document.getElementById('tbLabarthe').innerHTML = db.labarthe.map(r => `
+            <tr>
+                <td style="font-weight:bold;">${r.viajeId}</td>
+                <td><span class="tt-link" onclick="verFichaTT('${r.tt}')">${r.tt}</span></td>
+                <td style="font-weight:bold; font-size:14px;">${r.bolsones}</td>
+                <td>${r.productos}</td>
+                <td>${r.fechaHora}</td>
+                <td>
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn-sm" onclick="verEvidencias('${r.viajeId}','labarthe')">Fotos</button>
+                        <button class="btn-sm" style="background:#fef3c7; color:#78350f;" onclick="abrirModalEditar('${r.viajeId}','labarthe',${r.bolsones},'${r.productos}')">✏️ Editar</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+
+        let labartheMap = new Map();
+        db.labarthe.forEach(l => labartheMap.set(obtenerBaseViajeId(l.viajeId), l));
+
+        document.getElementById('tbComparativo').innerHTML = db.muelle.map(m => {
+            const baseId = obtenerBaseViajeId(m.viajeId);
+            const l = labartheMap.get(baseId);
+            const bolsonesL = l ? l.bolsones : '—';
+            let diff = '—';
+            let rowCls = '';
+            let est = '<span class="badge badge-transit">EN TRÁNSITO</span>';
+
+            const timeM = parsearFechaExcel(m.fechaHora);
+
+            if (l) {
+                const timeL = parsearFechaExcel(l.fechaHora);
+                let minsTransito = 0;
+                if (timeM && timeL) {
+                    minsTransito = Math.round((timeL - timeM) / 60000);
+                }
+                const huboDemora = minsTransito > 10;
+
+                const resta = m.bolsones - l.bolsones;
+                const difBolsones = resta !== 0;
+                const difProductos = m.productos.trim().toLowerCase() !== l.productos.trim().toLowerCase();
+
+                const horastr = `${m.fechaHora.split(' ')[1] || ''} → ${l.fechaHora.split(' ')[1] || ''}`;
+
+                if (!difBolsones && !difProductos) {
+                    // SI HUBO DEMORA O ESTÁ REGISTRADO EN EL HISTORIAL PERMANENTE
+                    if (huboDemora) {
+                        diff = `⏱️ Retraso (${minsTransito} min)`;
+                        rowCls = 'tr-warning';
+                        est = `<span class="badge badge-transit" style="background:#d97706;">⚠️ LLEGÓ CON RETRASO (${minsTransito} min)</span>`;
+                    } else if (incidenciasHistoricasSet.has(baseId)) {
+                        diff = `🟡 Corregido (${minsTransito} min)`;
+                        rowCls = 'tr-info';
+                        est = '<span class="badge badge-history">ℹ️ INCIDENCIA CORREGIDA</span>';
+                    } else {
+                        diff = `✅ Sin Diferencias (${minsTransito} min)`;
+                        rowCls = 'tr-success';
+                        est = '<span class="badge badge-ok">CORRECTO</span>';
+                    }
+                } else {
+                    rowCls = 'tr-danger';
+                    let txtDemora = huboDemora ? ` | Tardó ${minsTransito} min` : '';
+                    
+                    if (difBolsones && difProductos) {
+                        diff = `❌ Cant: ${resta} | Prod. Diferente${txtDemora}`;
+                        est = '<span class="badge badge-alert">⚠️ DISC. DOBLE</span>';
+                    } else if (difBolsones) {
+                        diff = `❌ Dif: ${resta} bolsones${txtDemora}`;
+                        est = '<span class="badge badge-alert">⚠️ DISC. CANTIDAD</span>';
+                    } else if (difProductos) {
+                        diff = `❌ Productos Diferentes${txtDemora}`;
+                        est = '<span class="badge badge-alert" style="background:#ea580c;">⚠️ DISC. PRODUCTO</span>';
+                    }
+
+                    // GUARDADO PERMANENTE AUTOMÁTICO AL DETECTAR DISCREPANCIA
+                    incidenciasHistoricasSet.add(baseId);
+                    guardarIncidenciasEnStorage();
+                }
+
+                return `
+                    <tr class="${rowCls}">
+                        <td><span class="tt-link" onclick="verFichaTT('${m.tt}')">${m.tt}</span></td>
+                        <td>${m.bolsones} <br><small style="color:var(--muted)">(${m.productos})</small></td>
+                        <td>${bolsonesL} <br><small style="color:var(--muted)">(${l.productos})</small></td>
+                        <td style="font-weight:bold;">${diff}</td>
+                        <td style="font-size:12px;">${horastr}</td>
+                        <td>${est}</td>
+                    </tr>
+                `;
+            } else {
+                let minsTransitoAhorita = 0;
+                if (timeM) {
+                    minsTransitoAhorita = Math.round((new Date() - timeM) / 60000);
+                }
+                const retrasado = minsTransitoAhorita > 10;
+                if (retrasado) {
+                    rowCls = 'tr-warning';
+                    est = `<span class="badge badge-alert">⏱️ RETRASADO (${minsTransitoAhorita} min)</span>`;
+                    diff = `⚠️ Excedió 10 min (${minsTransitoAhorita} min en ruta)`;
+                    incidenciasHistoricasSet.add(baseId);
+                    guardarIncidenciasEnStorage();
+                } else {
+                    diff = `En camino (${minsTransitoAhorita} min)`;
+                }
+
+                return `
+                    <tr class="${rowCls}">
+                        <td><span class="tt-link" onclick="verFichaTT('${m.tt}')">${m.tt}</span></td>
+                        <td>${m.bolsones} <br><small style="color:var(--muted)">(${m.productos})</small></td>
+                        <td>—</td>
+                        <td style="font-weight:bold;">${diff}</td>
+                        <td style="font-size:12px;">${m.fechaHora.split(' ')[1] || m.fechaHora}</td>
+                        <td>${est}</td>
+                    </tr>
+                `;
+            }
+        }).join('');
+    }
+
+    function renderPestañaDespachos() {
+        document.getElementById('tbDespacho').innerHTML = db.despacho.map(r => `
+            <tr>
+                <td style="font-weight:bold;">${r.viajeId}</td>
+                <td style="font-weight:bold;">${r.conductor}</td>
+                <td><span class="tt-link" onclick="verFichaTT('${r.tt}')">${r.tt}</span></td>
+                <td style="font-weight:bold; font-size:14px;">${r.bolsones}</td>
+                <td>${r.productos}</td>
+                <td>${r.fechaHora}</td>
+                <td>
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn-sm" onclick="verEvidencias('${r.viajeId}','despacho')">Fotos</button>
+                        <button class="btn-sm" style="background:#fef3c7; color:#78350f;" onclick="abrirModalEditar('${r.viajeId}','despacho',${r.bolsones},'${r.productos}')">✏️ Editar</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
     }
 
     function dispararCelebracion(tipoOperacion, productoNombre) {
@@ -1482,152 +1658,6 @@
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
-    }
-
-    function renderPestañaDescargas() {
-        document.getElementById('tbMuelle').innerHTML = db.muelle.map(r => `
-            <tr>
-                <td style="font-weight:bold;">${r.viajeId}</td>
-                <td><span class="tt-link" onclick="verFichaTT('${r.tt}')">${r.tt}</span></td>
-                <td style="font-weight:bold; font-size:14px;">${r.bolsones}</td>
-                <td>${r.productos}</td>
-                <td>${r.fechaHora}</td>
-                <td>
-                    <div style="display:flex; gap:6px;">
-                        <button class="btn-sm" onclick="verEvidencias('${r.viajeId}','muelle')">Fotos</button>
-                        <button class="btn-sm" style="background:#fef3c7; color:#78350f;" onclick="abrirModalEditar('${r.viajeId}','muelle',${r.bolsones},'${r.productos}')">✏️ Editar</button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
-
-        document.getElementById('tbLabarthe').innerHTML = db.labarthe.map(r => `
-            <tr>
-                <td style="font-weight:bold;">${r.viajeId}</td>
-                <td><span class="tt-link" onclick="verFichaTT('${r.tt}')">${r.tt}</span></td>
-                <td style="font-weight:bold; font-size:14px;">${r.bolsones}</td>
-                <td>${r.productos}</td>
-                <td>${r.fechaHora}</td>
-                <td>
-                    <div style="display:flex; gap:6px;">
-                        <button class="btn-sm" onclick="verEvidencias('${r.viajeId}','labarthe')">Fotos</button>
-                        <button class="btn-sm" style="background:#fef3c7; color:#78350f;" onclick="abrirModalEditar('${r.viajeId}','labarthe',${r.bolsones},'${r.productos}')">✏️ Editar</button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
-
-        let labartheMap = new Map();
-        db.labarthe.forEach(l => labartheMap.set(obtenerBaseViajeId(l.viajeId), l));
-
-        document.getElementById('tbComparativo').innerHTML = db.muelle.map(m => {
-            const baseId = obtenerBaseViajeId(m.viajeId);
-            const l = labartheMap.get(baseId);
-            const bolsonesL = l ? l.bolsones : '—';
-            let diff = '—';
-            let rowCls = '';
-            let est = '<span class="badge badge-transit">EN TRÁNSITO</span>';
-
-            const timeM = parsearFechaExcel(m.fechaHora);
-
-            if (l) {
-                const timeL = parsearFechaExcel(l.fechaHora);
-                let minsTransito = 0;
-                if (timeM && timeL) {
-                    minsTransito = Math.round((timeL - timeM) / 60000);
-                }
-                const huboDemora = minsTransito > 10;
-
-                const resta = m.bolsones - l.bolsones;
-                const difBolsones = resta !== 0;
-                const difProductos = m.productos.trim().toLowerCase() !== l.productos.trim().toLowerCase();
-
-                const horastr = `${m.fechaHora.split(' ')[1] || ''} → ${l.fechaHora.split(' ')[1] || ''}`;
-
-                if (!difBolsones && !difProductos) {
-                    if (huboDemora) {
-                        diff = `⏱️ Retraso (${minsTransito} min)`;
-                        rowCls = 'tr-warning';
-                        est = '<span class="badge badge-transit" style="background:#d97706;">⚠️ LLEGÓ CON RETRASO</span>';
-                    } else if (incidenciasHistoricasSet.has(baseId)) {
-                        diff = `🟡 Corregido (${minsTransito} min)`;
-                        rowCls = 'tr-info';
-                        est = '<span class="badge badge-history">ℹ️ INCIDENCIA CORREGIDA</span>';
-                    } else {
-                        diff = `✅ Sin Diferencias (${minsTransito} min)`;
-                        rowCls = 'tr-success';
-                        est = '<span class="badge badge-ok">CORRECTO</span>';
-                    }
-                } else {
-                    rowCls = 'tr-danger';
-                    let txtDemora = huboDemora ? ` (Tardó ${minsTransito} min)` : '';
-                    if (difBolsones && difProductos) {
-                        diff = `❌ Cant: ${resta} | Prod. Diferente${txtDemora}`;
-                        est = '<span class="badge badge-alert">⚠️ DISC. DOBLE</span>';
-                    } else if (difBolsones) {
-                        diff = `❌ Dif: ${resta} bolsones${txtDemora}`;
-                        est = '<span class="badge badge-alert">⚠️ DISC. CANTIDAD</span>';
-                    } else if (difProductos) {
-                        diff = `❌ Productos Diferentes${txtDemora}`;
-                        est = '<span class="badge badge-alert" style="background:#ea580c;">⚠️ DISC. PRODUCTO</span>';
-                    }
-                }
-
-                return `
-                    <tr class="${rowCls}">
-                        <td><span class="tt-link" onclick="verFichaTT('${m.tt}')">${m.tt}</span></td>
-                        <td>${m.bolsones} <br><small style="color:var(--muted)">(${m.productos})</small></td>
-                        <td>${bolsonesL} <br><small style="color:var(--muted)">(${l.productos})</small></td>
-                        <td style="font-weight:bold;">${diff}</td>
-                        <td style="font-size:12px;">${horastr}</td>
-                        <td>${est}</td>
-                    </tr>
-                `;
-            } else {
-                let minsTransitoAhorita = 0;
-                if (timeM) {
-                    minsTransitoAhorita = Math.round((new Date() - timeM) / 60000);
-                }
-                const retrasado = minsTransitoAhorita > 10;
-                if (retrasado) {
-                    rowCls = 'tr-warning';
-                    est = `<span class="badge badge-alert">⏱️ RETRASADO (${minsTransitoAhorita} min)</span>`;
-                    diff = `⚠️ Excedió 10 min (${minsTransitoAhorita} min en ruta)`;
-                } else {
-                    diff = `En camino (${minsTransitoAhorita} min)`;
-                }
-
-                return `
-                    <tr class="${rowCls}">
-                        <td><span class="tt-link" onclick="verFichaTT('${m.tt}')">${m.tt}</span></td>
-                        <td>${m.bolsones} <br><small style="color:var(--muted)">(${m.productos})</small></td>
-                        <td>—</td>
-                        <td style="font-weight:bold;">${diff}</td>
-                        <td style="font-size:12px;">${m.fechaHora.split(' ')[1] || m.fechaHora}</td>
-                        <td>${est}</td>
-                    </tr>
-                `;
-            }
-        }).join('');
-    }
-
-    function renderPestañaDespachos() {
-        document.getElementById('tbDespacho').innerHTML = db.despacho.map(r => `
-            <tr>
-                <td style="font-weight:bold;">${r.viajeId}</td>
-                <td style="font-weight:bold;">${r.conductor}</td>
-                <td><span class="tt-link" onclick="verFichaTT('${r.tt}')">${r.tt}</span></td>
-                <td style="font-weight:bold; font-size:14px;">${r.bolsones}</td>
-                <td>${r.productos}</td>
-                <td>${r.fechaHora}</td>
-                <td>
-                    <div style="display:flex; gap:6px;">
-                        <button class="btn-sm" onclick="verEvidencias('${r.viajeId}','despacho')">Fotos</button>
-                        <button class="btn-sm" style="background:#fef3c7; color:#78350f;" onclick="abrirModalEditar('${r.viajeId}','despacho',${r.bolsones},'${r.productos}')">✏️ Editar</button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
     }
 
     function exportarExcelTurno() {
@@ -1995,6 +2025,11 @@
         .then(data => {
             if (data.ok) {
                 alert(`✅ Buque finalizado con éxito.\n\n* Se creó el archivo de respaldo en Drive.\n* Todas las carpetas de fotos activas fueron archivadas.\n* Las hojas activas se vaciaron e iniciaron a cero.`);
+                
+                // LIMPIAR MEMORIA PERMANENTE DE INCIDENCIAS PARA EL SIGUIENTE BUQUE
+                incidenciasHistoricasSet.clear();
+                guardarIncidenciasEnStorage();
+
                 sincronizarServidor();
             } else {
                 alert("❌ Error en la migración: " + data.error);
