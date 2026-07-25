@@ -16,7 +16,6 @@
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 16px; }
 
-/* INDICADOR DE ESTADO ORDENADO DEBAJO DEL ENCABEZADO */
 #statusIndicator {
   background: #0f172a;
   color: #38bdf8;
@@ -29,7 +28,6 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
   border-bottom: 2px solid #0284c7;
 }
 
-/* PANTALLA DIGITAL DE ALTA VISIBILIDAD (Estilo Panel Industrial LCD) */
 .digital-display {
   background: #0f172a;
   color: #38bdf8;
@@ -49,7 +47,6 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
   opacity: 0.25;
 }
 
-/* TECLADO NUMÉRICO TIPO CALCULADORA DE ALTO CONTRASTE */
 .keypad-container {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -97,32 +94,52 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
   box-shadow: 0 0px 0px transparent;
 }
 
-/* COLUMNAS DOSIFICADAS PARA DESPACHO */
-.despacho-columns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+/* ESTRUCTURA VERTICAL PARA DESPACHO (CHOFER ARRIBA / PLACA ABAJO) */
+.despacho-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
-.despacho-col-title {
-  font-size: 1.1rem;
-  font-weight: bold;
+.despacho-section-title {
+  font-size: 1.15rem;
+  font-weight: 900;
   color: var(--text);
   margin-bottom: 8px;
   text-transform: uppercase;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-/* LOGIN PERSISTENTE */
+/* INPUT DE BÚSQUEDA TÁCTIL DE ALTO CONTRASTE */
+.search-input {
+  width: 100%;
+  padding: 0.9rem 1.1rem;
+  font-size: 1.2rem;
+  border: 3px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 0.8rem;
+  outline: none;
+  font-weight: bold;
+  background: #f8fafc;
+  color: var(--text);
+}
+.search-input:focus {
+  border-color: var(--blue);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(12, 74, 110, 0.15);
+}
+
 #loginScreen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; background: #0f172a; }
 .login-box { background: white; border-radius: 20px; padding: 2.5rem 1.5rem; width: 100%; max-width: 380px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 3px solid var(--blue); }
 .login-brand { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 1rem; }
 .login-brand h1 { font-size: 2.2rem; font-weight: 900; color: var(--blue); }
 .login-sub { font-size: 1.2rem; color: var(--muted); margin-bottom: 2rem; font-weight: bold; }
-.login-box input[type="password"] { width: 100%; padding: 1.2rem; font-size: 1.8rem; border: 3px solid var(--border); border-radius: 12px; margin-bottom: 1.5rem; text-align: center; outline: none; margin-bottom: 15px; }
+.login-box input[type="password"] { width: 100%; padding: 1.2rem; font-size: 1.8rem; border: 3px solid var(--border); border-radius: 12px; margin-bottom: 1.5rem; text-align: center; outline: none; }
 .login-box input:focus { border-color: var(--blue); }
 .btn-login { width: 100%; padding: 1.2rem; font-size: 1.5rem; font-weight: bold; background: var(--blue); color: white; border: none; border-radius: 12px; cursor: pointer; }
 .login-error { color: var(--red); font-size: 1.1rem; margin-top: 1rem; font-weight: bold; min-height: 1.5rem; }
 
-/* APP */
 #app { display: none; min-height: 100vh; flex-direction: column; }
 .header { background: var(--blue); color: white; padding: 0.8rem 1rem; position: sticky; top: 0; z-index: 100; border-bottom: 4px solid var(--blue-dark); }
 .header-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
@@ -131,15 +148,12 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 .btn-back { background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.6rem 1rem; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; display: none; }
 .btn-back.visible { display: block; }
 
-/* HEADER BUQUE DINÁMICO */
 #buqueHeaderMovil { background: var(--blue-light); border-left: 6px solid var(--blue-dark); padding: 1rem 1.2rem; font-size: 1.1rem; font-weight: 800; color: var(--blue); border-bottom: 2px solid var(--border); line-height: 1.3; }
 
-/* RESUMEN FLOTANTE */
 .total-flotante { background: #f8fafc; border-bottom: 3px solid var(--border); padding: 0.8rem 1.2rem; display: flex; justify-content: space-between; align-items: center; }
 .total-flotante .lbl { font-size: 0.85rem; font-weight: bold; color: var(--muted); text-transform: uppercase; margin-bottom: 2px; }
 .total-flotante .num { font-size: 1.6rem; font-weight: 900; color: var(--text); }
 
-/* SELECTOR DE PUESTO */
 #screenSelector { padding: 1.5rem; }
 .selector-title { font-size: 1.3rem; font-weight: bold; color: var(--text); text-align: center; margin-bottom: 1.5rem; text-transform: uppercase; }
 .puesto-card { display: flex; align-items: center; gap: 1rem; background: white; border: 4px solid var(--border); border-radius: 20px; padding: 1.5rem; margin-bottom: 1.2rem; cursor: pointer; }
@@ -148,24 +162,19 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 .puesto-info h2 { font-size: 1.8rem; font-weight: 800; color: var(--blue); }
 .puesto-info p { font-size: 1.1rem; color: var(--muted); font-weight: bold; }
 
-/* PANTALLA FORMULARIO */
 #screenForm { display: none; padding: 1rem; padding-bottom: 6rem; }
 .card { background: white; border-radius: 16px; padding: 1.2rem; margin-bottom: 1.2rem; border: 3px solid var(--border); }
 .card-title { font-size: 1.2rem; font-weight: 800; color: var(--text); margin-bottom: 1rem; text-transform: uppercase; display: flex; justify-content: space-between; }
 
-/* PRODUCTOS */
 .producto-grid { display: grid; grid-template-columns: 1fr; gap: 0.8rem; }
 .prod-btn { padding: 1.2rem; font-size: 1.4rem; font-weight: bold; border: 3px solid var(--border); border-radius: 12px; background: white; color: var(--text); text-align: left; }
 .prod-btn.sel { background: var(--blue-light); color: var(--blue); border-color: var(--blue); font-weight: 900; }
 
-/* CONDUCTOR */
-.conductor-list { display: flex; flex-direction: column; gap: 0.8rem; max-height: 250px; overflow-y: auto; }
-.conductor-item { padding: 1.2rem; border: 3px solid var(--border); border-radius: 12px; background: white; cursor: pointer; }
+.conductor-list { display: flex; flex-direction: column; gap: 0.6rem; max-height: 180px; overflow-y: auto; padding-right: 4px; }
+.conductor-item { padding: 1rem 1.2rem; border: 3px solid var(--border); border-radius: 12px; background: white; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
 .conductor-item.selected { border-color: var(--blue); background: var(--blue-light); }
 .conductor-name { font-size: 1.2rem; font-weight: 800; }
-.conductor-placa { font-size: 1.1rem; color: var(--muted); font-weight: bold; }
 
-/* FOTOS */
 .foto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
 .foto-slot { aspect-ratio: 4/3; border: 3px dashed var(--border); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8fafc; cursor: pointer; overflow: hidden; position: relative; }
 .foto-slot.has-photo { border-style: solid; border-color: #16a34a; }
@@ -173,11 +182,9 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 .foto-slot .foto-label { font-size: 1rem; font-weight: bold; color: var(--text); text-align: center; z-index: 1; padding: 0.2rem; background: rgba(255,255,255,0.85); border-radius: 4px; }
 .btn-del-foto { position: absolute; top: 6px; right: 6px; background: #dc2626; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 1.2rem; font-weight: bold; z-index: 10; display: flex; align-items: center; justify-content: center; }
 
-/* BOTÓN GUARDAR GIGANTE */
 .btn-guardar { width: 100%; padding: 1.5rem; font-size: 1.8rem; font-weight: 900; border: none; border-radius: 16px; cursor: pointer; margin-top: 1rem; color: white; background: #16a34a; border-bottom: 6px solid #15803d; }
 .btn-guardar:disabled { background: #94a3b8; border-color: #64748b; }
 
-/* HISTORIAL POR SECCIÓN */
 #screenHistorial { display: none; padding: 1rem; padding-bottom: 6rem; }
 .sub-tab-bar { display: flex; gap: 8px; margin-bottom: 1.2rem; }
 .sub-tab-btn { flex: 1; padding: 0.9rem 0; font-size: 1.1rem; font-weight: 800; border: 3px solid var(--border); border-radius: 12px; background: white; color: var(--text); cursor: pointer; text-align: center; }
@@ -189,13 +196,11 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 .hist-qty { font-size: 1.8rem; font-weight: 900; color: var(--blue); }
 .hist-meta { font-size: 1.1rem; color: var(--muted); font-weight: bold; }
 
-/* BOTTOM NAV (Reducido a la mitad) */
 .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 3px solid var(--border); display: flex; z-index: 200; height: 50px; }
 .bnav-btn { flex: 1; padding: 0.3rem 0; display: flex; flex-direction: column; align-items: center; font-size: 0.8rem; font-weight: bold; color: var(--muted); background: none; border: none; justify-content: center; }
 .bnav-btn.active { color: var(--blue); background: var(--blue-light); }
 .bnav-icon { font-size: 1.2rem; margin-bottom: 2px; }
 
-/* MODAL CONFIRMACIÓN */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: flex-end; justify-content: center; z-index: 500; }
 .modal-overlay.open { display: flex; }
 .modal-box { background: white; border-radius: 24px 24px 0 0; padding: 1.5rem; width: 100%; max-width: 480px; }
@@ -215,7 +220,6 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
 </head>
 <body>
 
-<!-- APP PRINCIPAL -->
 <div id="app">
   <div class="header">
     <div class="header-row">
@@ -226,9 +230,7 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
     </div>
   </div>
 
-  <!-- INDICADOR DE ESTADO ORDENADO (Justo debajo del encabezado principal) -->
   <div id="statusIndicator">Conectando...</div>
-
   <div id="buqueHeaderMovil">🚢 Cargando Buque y Carga Inicial...</div>
 
   <div class="total-flotante" id="totalFlotante">
@@ -278,7 +280,6 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
       <div class="card" id="cardTTDescarga" style="border-color: #eab308; background: #fef9c3;">
         <div class="card-title" id="titleTTDescarga" style="color: #854d0e;">🚛 N° Terminal Truck</div>
         
-        <!-- Contenedor para Muelle: Teclado de Escritura -->
         <div id="muelleTTArea">
           <div class="digital-display" id="ttDisplay" style="color: #eab308; border-color: #854d0e;">
             TT - <span class="empty-dash">_</span><span class="empty-dash">_</span><span class="empty-dash">_</span>
@@ -286,7 +287,6 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
           <div class="keypad-container" id="keypadTT"></div>
         </div>
 
-        <!-- Contenedor para Labarthe: Unidades en Tránsito (Doble Ciega) -->
         <div id="labartheTTArea" style="display:none;">
           <div style="font-weight:bold; color:var(--muted); font-size:12px; margin-bottom:10px; text-transform:uppercase;">Seleccione el Camión que Arriba:</div>
           <div id="listaTransitoMovil" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; max-height:220px; overflow-y:auto;"></div>
@@ -311,20 +311,32 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
       <button class="btn-guardar" id="btnGuardar" onclick="abrirConfirmacion()">REVISAR Y GUARDAR</button>
     </div>
 
+    <!-- FORMULARIO DESPACHO ORDENADO: CHOFER ARRIBA Y PLACA ABAJO CON BUSCADORES -->
     <div id="formDespacho" style="display:none">
       <div class="card">
-        <!-- DISEÑO INDEPENDIENTE DE DOS COLUMNAS DE SELECCIÓN DE CHOFER Y PLACA -->
-        <div class="despacho-columns">
+        <div class="despacho-stack">
+          <!-- 1. SECCIÓN CHOFER (ARRIBA) -->
           <div>
-            <div class="despacho-col-title">👤 Seleccionar Chofer</div>
+            <div class="despacho-section-title">
+              <span>👤 1. Seleccionar Chofer</span>
+              <span id="countChoferes" style="font-size:0.9rem; color:var(--muted); font-weight:normal;"></span>
+            </div>
+            <input type="text" id="searchChofer" class="search-input" placeholder="🔎 Buscar Chofer por nombre..." oninput="renderConductoresUI()"/>
             <div class="conductor-list" id="listaChoferes"></div>
           </div>
-          <div>
-            <div class="despacho-col-title">🚛 Seleccionar Placa</div>
+
+          <!-- 2. SECCIÓN PLACA (ABAJO) -->
+          <div style="margin-top: 10px; border-top: 2px dashed var(--border); padding-top: 15px;">
+            <div class="despacho-section-title">
+              <span>🚛 2. Seleccionar Placa</span>
+              <span id="countPlacas" style="font-size:0.9rem; color:var(--muted); font-weight:normal;"></span>
+            </div>
+            <input type="text" id="searchPlaca" class="search-input" placeholder="🔎 Buscar Placa de Camión..." oninput="renderConductoresUI()"/>
             <div class="conductor-list" id="listaPlacas"></div>
           </div>
         </div>
       </div>
+
       <div id="despachoCampos" style="display:none">
         <div class="card" style="border-color: var(--blue-dark); background: #f0f9ff;">
           <div class="card-title" style="color: var(--blue-dark);">📦 Cantidad de Bolsones <span style="color:var(--red)">(Rango: 1 - 30)</span></div>
@@ -358,7 +370,6 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
     <div id="listaHistorial"></div>
   </div>
 
-  <!-- BOTTOM NAV (Reducido a la mitad) -->
   <div class="bottom-nav">
     <button class="bnav-btn active" id="bnavReg" onclick="changeTab('form')">
       <span class="bnav-icon">✏️</span>Registrar
@@ -369,7 +380,6 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
   </div>
 </div>
 
-<!-- PANTALLA LOGIN (Reintegrada para evitar pantalla blanca) -->
 <div id="loginScreen">
   <div class="login-box">
     <div class="login-brand">
@@ -387,8 +397,8 @@ html, body { min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, '
     <div class="modal-title">¿Confirmar Registro?</div>
     <div id="confirmBody"></div>
     <div class="confirm-btns">
-      <button class="btn-confirm btn-cancel" onclick="cerrarConfirmacion()">Corregir</button>
-      <button class="btn-confirm btn-ok" onclick="guardarDatosFinal()">Sí, Guardar</button>
+      <button class="btn-confirm btn-cancel" id="btnCancelModal" onclick="cerrarConfirmacion()">Corregir</button>
+      <button class="btn-confirm btn-ok" id="btnOkModal" onclick="guardarDatosFinal()">Sí, Guardar</button>
     </div>
   </div>
 </div>
@@ -404,17 +414,15 @@ let bolsonesSeleccionados = 0;
 let productosSeleccionados = [];
 let fotosList = [];
 
-// Estados del teclado tipo calculadora
 let valTT = "";
 let valBols = 0;
-
-// Heredar correlativos de viaje de forma unívoca de muelle a labarthe
 let viajeIdHeredado = "";
 
 let conductorSeleccionado = null;
 let placaSeleccionada = null;
 
-// Cargar estado inicial desde el almacenamiento local si existe
+let isSyncingPendientes = false;
+
 let dbGlobal = JSON.parse(localStorage.getItem('iqbf_cache_dbGlobal')) || { muelle: [], labarthe: [], despacho: [] };
 let listadoProductos = JSON.parse(localStorage.getItem('iqbf_cache_listadoProductos')) || [];
 let productosDisponibles = JSON.parse(localStorage.getItem('iqbf_cache_productosDisponibles')) || ["Harina", "Azúcar", "Soya", "Trigo"];
@@ -422,7 +430,6 @@ let conductoresDisponibles = JSON.parse(localStorage.getItem('iqbf_cache_conduct
 let activeSubTab = 'muelle';
 
 window.onload = () => {
-  // Verificar si la sesión actual pertenece al turno activo. Si no es así, forzar el login.
   if (verificarSesionValida()) {
     mostrarAplicativo();
   } else {
@@ -430,7 +437,6 @@ window.onload = () => {
     document.getElementById('app').style.display = 'none';
   }
   
-  // Renderizar buque desde almacenamiento local en el primer arranque
   const cachedBuque = JSON.parse(localStorage.getItem('iqbf_cache_buque'));
   if (cachedBuque) {
     renderEncabezadoBuqueMovil(cachedBuque.nombre, cachedBuque.muelle);
@@ -438,19 +444,17 @@ window.onload = () => {
   
   verificarPendientesAlmacenados();
   
-  // Comprobar periódicamente (cada 30 segundos) si hay datos pendientes y si el turno ya cambió para cerrar sesión
   setInterval(() => {
     verificarPendientesAlmacenados();
     comprobarCambioDeTurnoActivo();
   }, 30000); 
 };
 
-// CÁLCULO EXACTO DEL IDENTIFICADOR ÚNICO DEL TURNO ACTUAL (Corte exacto a las 06:50 y 18:50)
 function obtenerTurnoActual() {
   const ahora = new Date();
   const totalMins = ahora.getHours() * 60 + ahora.getMinutes();
-  const startDiurno = 6 * 60 + 50; // 06:50
-  const endDiurno = 18 * 60 + 50;  // 18:50
+  const startDiurno = 6 * 60 + 50; 
+  const endDiurno = 18 * 60 + 50;  
   
   let fechaClave = ahora.getFullYear() + '-' + String(ahora.getMonth() + 1).padStart(2, '0') + '-' + String(ahora.getDate()).padStart(2, '0');
   let tipoTurno = "";
@@ -459,7 +463,6 @@ function obtenerTurnoActual() {
     tipoTurno = "diurno";
   } else {
     tipoTurno = "nocturno";
-    // Si es antes de las 06:50 AM, pertenece técnicamente al turno nocturno que comenzó el día de ayer
     if (totalMins < startDiurno) {
       const ayer = new Date(ahora);
       ayer.setDate(ahora.getDate() - 1);
@@ -469,22 +472,17 @@ function obtenerTurnoActual() {
   return `${fechaClave}_${tipoTurno}`;
 }
 
-// VALIDADOR DE SESIÓN POR TURNO
 function verificarSesionValida() {
   const sesionGuardada = localStorage.getItem(SESSION_KEY);
   if (!sesionGuardada) return false;
-  
-  // Si tiene un valor antiguo como "true" (del sistema anterior), se limpia para forzar la clave del turno
   if (sesionGuardada === 'true') {
     localStorage.removeItem(SESSION_KEY);
     return false;
   }
-  
   const turnoActual = obtenerTurnoActual();
   return sesionGuardada === turnoActual;
 }
 
-// COMPROBACIÓN DINÁMICA DE EXPIRACIÓN EN SEGUNDO PLANO
 function comprobarCambioDeTurnoActivo() {
   if (document.getElementById('app').style.display === 'flex') {
     if (!verificarSesionValida()) {
@@ -498,7 +496,6 @@ function comprobarCambioDeTurnoActivo() {
   }
 }
 
-// MOSTRAR INDICADOR DE ESTADO EN LA PARTE SUPERIOR (Justo debajo del encabezado)
 function updateStatusIndicator(msg, type = "normal") {
   const statusInd = document.getElementById('statusIndicator');
   if (!statusInd) return;
@@ -518,7 +515,6 @@ function updateStatusIndicator(msg, type = "normal") {
   }
 }
 
-// VERIFICACIÓN DE CONTRASEÑA EN EL SERVIDOR
 async function doLogin() {
   const input = document.getElementById('pwInput').value;
   const err = document.getElementById('loginError');
@@ -535,7 +531,6 @@ async function doLogin() {
     });
     const data = await res.json();
     if (data.ok && data.valid) {
-      // Guardar el identificador del turno actual en lugar de 'true'
       localStorage.setItem(SESSION_KEY, obtenerTurnoActual());
       mostrarAplicativo();
     } else {
@@ -557,29 +552,21 @@ function initComponentes() {
   construirTecladoCalculadora('keypadBols', handleBolsKey);
   construirTecladoCalculadora('keypadBolsD', handleBolsKey);
   
-  // Renderizar la interfaz inicial con datos locales (offline) para evitar vacíos
   renderProductosUI();
   const cachedBuque = JSON.parse(localStorage.getItem('iqbf_cache_buque'));
   if (cachedBuque) {
     renderEncabezadoBuqueMovil(cachedBuque.nombre, cachedBuque.muelle);
   }
   actualizarKPIsYHistorial();
-
   sincronizarConExcel();
 }
 
-// CONSTRUCCIÓN DINÁMICA DEL TECLADO CALCULADORA
 function construirTecladoCalculadora(containerId, handlerFn) {
   const container = document.getElementById(containerId);
   if (!container) return;
   container.innerHTML = "";
 
-  const teclas = [
-    "1", "2", "3",
-    "4", "5", "6",
-    "7", "8", "9",
-    "C", "0", "⌫"
-  ];
+  const teclas = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "C", "0", "⌫"];
 
   teclas.forEach(t => {
     const btn = document.createElement('div');
@@ -592,14 +579,13 @@ function construirTecladoCalculadora(containerId, handlerFn) {
   });
 }
 
-// LÓGICA DE TECLAS PARA EL CAMIÓN (TT)
 function handleTTKey(key) {
   if (key === 'C') {
     valTT = "";
   } else if (key === '⌫') {
     valTT = valTT.slice(0, -1);
   } else {
-    if (valTT.length >= 3) return; // Máximo 3 dígitos
+    if (valTT.length >= 3) return;
     valTT += key;
   }
   actualizarTTDisplay();
@@ -620,7 +606,6 @@ function actualizarTTDisplay() {
   display.innerHTML = `TT - ${span1}${span2}${span3}`;
 }
 
-// LÓGICA DE TECLAS PARA LOS BOLSONES (Máximo 30 bolsones)
 function handleBolsKey(key) {
   let valStr = valBols === 0 ? "" : valBols.toString();
   if (key === 'C') {
@@ -629,7 +614,7 @@ function handleBolsKey(key) {
     valStr = valStr.slice(0, -1);
     valBols = valStr === "" ? 0 : parseInt(valStr, 10);
   } else {
-    if (valStr.length >= 2) return; // Máximo 2 dígitos
+    if (valStr.length >= 2) return;
     let nuevoVal = parseInt(valStr + key, 10);
     if (nuevoVal > 30) {
       showToast("⚠️ Rango máximo: 30 bolsones. Se ajustó a 30.", true);
@@ -659,15 +644,14 @@ function actualizarBolsDisplay() {
   if (displayD) displayD.innerHTML = htmlContent;
 }
 
-// CONTROL DE TURNOS MATEMÁTICAMENTE EXACTO (06:45 - 18:45)
 function perteneceAlTurnoActual(fechaHoraStr) {
   const recDate = parsearFechaExcel(fechaHoraStr);
   if (!recDate) return false;
 
   const ahora = new Date();
   const totalMinsAhora = ahora.getHours() * 60 + ahora.getMinutes();
-  const startDiurno = 6 * 60 + 45; // 06:45
-  const endDiurno = 18 * 60 + 45;  // 18:45
+  const startDiurno = 6 * 60 + 45; 
+  const endDiurno = 18 * 60 + 45;  
 
   let startShiftDate, endShiftDate;
 
@@ -686,7 +670,6 @@ function perteneceAlTurnoActual(fechaHoraStr) {
   return recDate >= startShiftDate && recDate <= endShiftDate;
 }
 
-// EXTRACTOR DE HORAS OPTIMIZADO PARA DETECTAR AM/PM Y 24 HORAS
 function parsearFechaExcel(fStr) {
   if (!fStr) return null;
   try {
@@ -733,7 +716,6 @@ async function sincronizarConExcel() {
   updateStatusIndicator("⌛ Sincronizando con el puerto...");
 
   try {
-    // 1. Obtener y guardar en caché los productos y el buque
     const pRes = await fetch(`${GAS_URL}?action=obtenerProductos`);
     const pData = await pRes.json();
     if (pData.ok) {
@@ -748,7 +730,6 @@ async function sincronizarConExcel() {
       renderProductosUI();
     }
 
-    // 2. Obtener y guardar en caché los conductores
     const cRes = await fetch(`${GAS_URL}?action=obtenerConductores`);
     const cData = await cRes.json();
     if (cData.ok) {
@@ -757,7 +738,6 @@ async function sincronizarConExcel() {
       if (puestoActual === 'despacho') renderConductoresUI();
     }
 
-    // 3. Obtener y guardar en caché el listado general del Excel
     const rRes = await fetch(`${GAS_URL}?action=obtenerFilasExcel`);
     const rData = await rRes.json();
     if (rData.ok) {
@@ -773,7 +753,6 @@ async function sincronizarConExcel() {
     updateStatusIndicator("● Puerto Conectado", "success");
   } catch (e) {
     updateStatusIndicator("⚠️ Sin conexión. Mostrando datos locales.", "error");
-    // Al fallar la red, mostramos la última información que guardamos en caché
     actualizarKPIsYHistorial();
   }
 
@@ -850,21 +829,18 @@ function renderHistorialPuesto() {
   `).join('');
 }
 
-// EXTRAE EL IDENTIFICADOR BASE DE VIAJE
 function obtenerBaseViajeId(viajeId) {
   if (!viajeId) return "";
   const partes = viajeId.split('_');
   return partes.slice(0, 2).join('_');
 }
 
-// ENTRAR AL PUESTO CON TRANSICIÓN DINÁMICA DE "UNIDADES EN TRÁNSITO" PARA LABARTHE
 function entrarPuesto(puesto) {
   puestoActual = puesto;
   resetFormulario();
   document.getElementById('screenSelector').style.display = 'none';
   document.getElementById('screenForm').style.display = 'block';
   
-  // CONFIGURACIÓN VISUAL DINÁMICA: MOSTRAR SECTORES DE ACUERDO AL ROL
   if (puesto === 'labarthe') {
     document.getElementById('muelleTTArea').style.display = 'none';
     document.getElementById('labartheTTArea').style.display = 'block';
@@ -874,7 +850,6 @@ function entrarPuesto(puesto) {
     document.getElementById('labartheTTArea').style.display = 'none';
   }
 
-  // OCULTAR TEMPORALMENTE BUQUE Y KPIs AL ENTRAR AL FORMULARIO
   document.getElementById('buqueHeaderMovil').style.display = 'none';
   document.getElementById('totalFlotante').style.display = 'none';
 
@@ -892,11 +867,12 @@ function entrarPuesto(puesto) {
   document.getElementById('formDescarga').style.display = puesto !== 'despacho' ? 'block' : 'none';
   document.getElementById('formDespacho').style.display = puesto === 'despacho' ? 'block' : 'none';
 
-  if (puesto === 'despacho') { renderConductoresUI(); }
+  if (puesto === 'despacho') { 
+    renderConductoresUI(); 
+  }
   renderFotosGrid();
 }
 
-// CARGAR LISTA CIEGA DE UNIDADES EN TRÁNSITO PARA LABARTHE
 function renderListaTransitoMovil() {
   const listDiv = document.getElementById('listaTransitoMovil');
   if (!listDiv) return;
@@ -905,14 +881,12 @@ function renderListaTransitoMovil() {
   const muelleActivos = dbGlobal.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
   const labartheActivos = dbGlobal.labarthe.filter(f => perteneceAlTurnoActual(f.fechaHora));
 
-  // Indexar arribos de Labarthe por base de viajeId para comprobación instantánea O(1)
   const labartheBases = new Set(labartheActivos.map(l => obtenerBaseViajeId(l.viajeId)));
 
   let transitoDetectado = false;
 
   muelleActivos.forEach(m => {
     const baseId = obtenerBaseViajeId(m.viajeId);
-    // Si el viaje base de Muelle no existe en Labarthe, está EN TRÁNSITO
     if (!labartheBases.has(baseId)) {
       transitoDetectado = true;
       const cleanPlate = m.tt.replace("TT-", "");
@@ -957,7 +931,6 @@ function volverSelector() {
   document.getElementById('screenForm').style.display = 'none';
   document.getElementById('screenHistorial').style.display = 'none';
   
-  // MOSTRAR BUQUE Y KPIs AL VOLVER AL SELECTOR
   document.getElementById('buqueHeaderMovil').style.display = 'block';
   document.getElementById('totalFlotante').style.display = 'flex';
 
@@ -984,7 +957,6 @@ function changeTab(tab) {
   }
 }
 
-// PRODUCTOS: LIMITAR A SELECCIÓN ÚNICA (Garantiza matemática exacta de saldos en CCTV)
 function renderProductosUI() {
   ['prodGrid', 'prodGridD'].forEach(gridId => {
     const grid = document.getElementById(gridId);
@@ -995,8 +967,11 @@ function renderProductosUI() {
       b.className = "prod-btn";
       b.textContent = prod;
       b.type = "button";
+      if (productosSeleccionados.includes(prod)) {
+        b.classList.add('sel');
+      }
       b.onclick = () => {
-        productosSeleccionados = [prod]; // Forzar selección única
+        productosSeleccionados = [prod];
         document.querySelectorAll(`#${gridId} .prod-btn`).forEach(btn => btn.classList.remove('sel'));
         b.classList.add('sel');
       };
@@ -1005,73 +980,91 @@ function renderProductosUI() {
   });
 }
 
-// DESPACHO: DOS COLUMNAS INDEPENDIENTES CON COLORES FUERTES DE SELECCIÓN DE ALTO CONTRASTE
+// RENDERING DE DESPACHO CON BUSCADORES EN TIEMPO REAL Y ASOCIACIÓN AUTOMÁTICA
 function renderConductoresUI() {
   const listChof = document.getElementById('listaChoferes');
   const listPlac = document.getElementById('listaPlacas');
   if (!listChof || !listPlac) return;
   
+  const qChof = (document.getElementById('searchChofer').value || "").trim().toLowerCase();
+  const qPlac = (document.getElementById('searchPlaca').value || "").trim().toLowerCase();
+  
   listChof.innerHTML = "";
   listPlac.innerHTML = "";
   
   if (!conductoresDisponibles || conductoresDisponibles.length === 0) {
-    listChof.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--muted)">Sin datos</div>';
-    listPlac.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--muted)">Sin datos</div>';
+    listChof.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--muted)">Sin datos de choferes</div>';
+    listPlac.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--muted)">Sin datos de placas</div>';
     return;
   }
   
-  const choferesUnicos = [...new Set(conductoresDisponibles.map(c => c.nombre.trim()))];
-  const placasUnicas = [...new Set(conductoresDisponibles.map(c => c.placa.trim().toUpperCase()))];
+  // Extraer Choferes Únicos filtrados
+  const choferesFiltrados = [...new Set(
+    conductoresDisponibles
+      .map(c => c.nombre.trim())
+      .filter(n => n.toLowerCase().includes(qChof))
+  )].sort((a,b) => a.localeCompare(b));
   
-  // Renderizar Choferes (Columna Izquierda - Se pinta con color fuerte azul al seleccionarlo)
-  choferesUnicos.forEach(nombre => {
-    const item = document.createElement('div');
-    item.className = "conductor-item";
-    item.innerHTML = `<div class="conductor-name">👤 ${nombre}</div>`;
-    if (conductorSeleccionado === nombre) {
-      item.classList.add('selected');
-      item.style.borderColor = "var(--blue-dark)";
-      item.style.backgroundColor = "var(--blue-light)";
-    }
-    item.onclick = () => {
-      conductorSeleccionado = nombre;
-      document.querySelectorAll('#listaChoferes .conductor-item').forEach(el => {
-        el.classList.remove('selected');
-        el.style.borderColor = "";
-        el.style.backgroundColor = "";
-      });
-      item.classList.add('selected');
-      item.style.borderColor = "var(--blue-dark)";
-      item.style.backgroundColor = "var(--blue-light)";
-      verificarDespachoFormVisibilidad();
-    };
-    listChof.appendChild(item);
-  });
+  // Extraer Placas Únicas filtradas
+  const placasFiltradas = [...new Set(
+    conductoresDisponibles
+      .map(c => c.placa.trim().toUpperCase())
+      .filter(p => p.toLowerCase().includes(qPlac))
+  )].sort((a,b) => a.localeCompare(b));
+
+  document.getElementById('countChoferes').textContent = `(${choferesFiltrados.length})`;
+  document.getElementById('countPlacas').textContent = `(${placasFiltradas.length})`;
   
-  // Renderizar Placas (Columna Derecha - Se pinta con color fuerte naranja al seleccionarlo)
-  placasUnicas.forEach(placa => {
-    const item = document.createElement('div');
-    item.className = "conductor-item";
-    item.innerHTML = `<div class="conductor-name">🚛 ${placa}</div>`;
-    if (placaSeleccionada === placa) {
-      item.classList.add('selected');
-      item.style.borderColor = "#ea580c";
-      item.style.backgroundColor = "#ffedd5";
-    }
-    item.onclick = () => {
-      placaSeleccionada = placa;
-      document.querySelectorAll('#listaPlacas .conductor-item').forEach(el => {
-        el.classList.remove('selected');
-        el.style.borderColor = "";
-        el.style.backgroundColor = "";
-      });
-      item.classList.add('selected');
-      item.style.borderColor = "#ea580c";
-      item.style.backgroundColor = "#ffedd5";
-      verificarDespachoFormVisibilidad();
-    };
-    listPlac.appendChild(item);
-  });
+  // Renderizar Lista de Choferes
+  if (choferesFiltrados.length === 0) {
+    listChof.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--muted);font-weight:bold">No encontrado</div>';
+  } else {
+    choferesFiltrados.forEach(nombre => {
+      const item = document.createElement('div');
+      item.className = "conductor-item";
+      item.innerHTML = `<div class="conductor-name">👤 ${nombre}</div>`;
+      if (conductorSeleccionado === nombre) {
+        item.classList.add('selected');
+        item.style.borderColor = "var(--blue-dark)";
+        item.style.backgroundColor = "var(--blue-light)";
+      }
+      item.onclick = () => {
+        conductorSeleccionado = nombre;
+        
+        // AUTO-ASOCIACIÓN INTELIGENTE: Si el chofer tiene una placa asociada en la BD, la autoselecciona
+        const match = conductoresDisponibles.find(c => c.nombre.trim() === nombre);
+        if (match && match.placa) {
+          placaSeleccionada = match.placa.trim().toUpperCase();
+        }
+        
+        renderConductoresUI();
+        verificarDespachoFormVisibilidad();
+      };
+      listChof.appendChild(item);
+    });
+  }
+  
+  // Renderizar Lista de Placas
+  if (placasFiltradas.length === 0) {
+    listPlac.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--muted);font-weight:bold">No encontrada</div>';
+  } else {
+    placasFiltradas.forEach(placa => {
+      const item = document.createElement('div');
+      item.className = "conductor-item";
+      item.innerHTML = `<div class="conductor-name">🚛 ${placa}</div>`;
+      if (placaSeleccionada === placa) {
+        item.classList.add('selected');
+        item.style.borderColor = "#ea580c";
+        item.style.backgroundColor = "#ffedd5";
+      }
+      item.onclick = () => {
+        placaSeleccionada = placa;
+        renderConductoresUI();
+        verificarDespachoFormVisibilidad();
+      };
+      listPlac.appendChild(item);
+    });
+  }
 }
 
 function verificarDespachoFormVisibilidad() {
@@ -1154,8 +1147,18 @@ function eliminarFoto(idx) {
 function abrirConfirmacion() {
   const isD = puestoActual === 'despacho';
   
-  if (!isD && !valTT) { showToast('⚠️ Seleccione o digite el número de TT', true); return; }
-  if (isD && (!conductorSeleccionado || !placaSeleccionada)) { showToast('⚠️ Seleccione Chofer y Placa', true); return; }
+  if (isD) {
+    if (!conductorSeleccionado || !placaSeleccionada) { 
+      showToast('⚠️ Seleccione Chofer y Placa', true); 
+      return; 
+    }
+  } else {
+    if (!valTT) { 
+      showToast('⚠️ Seleccione o digite el número de TT', true); 
+      return; 
+    }
+  }
+
   if (bolsonesSeleccionados === 0) { showToast('⚠️ Seleccione los bolsones', true); return; }
   if (productosSeleccionados.length === 0) { showToast('⚠️ Seleccione el producto', true); return; }
   
@@ -1166,7 +1169,7 @@ function abrirConfirmacion() {
   }
 
   const rows = [
-    ['PUESTO', puestoActual.toUpperCase()]
+    ['PUESTO', (puestoActual || '—').toUpperCase()]
   ];
 
   if (isD) {
@@ -1186,6 +1189,7 @@ function abrirConfirmacion() {
     <div class="confirm-row"><span class="lbl">${l}</span><span class="val">${v}</span></div>
   `).join('');
 
+  document.getElementById('btnOkModal').disabled = false;
   document.getElementById('modalConfirm').classList.add('open');
 }
 
@@ -1193,10 +1197,14 @@ function cerrarConfirmacion() {
   document.getElementById('modalConfirm').classList.remove('open');
 }
 
-// PROTOCOLO DE SUBIDA RESILIENTE DE DOS FASES CON RETORNO DE PANTALLA INMEDIATO Y HEREDADO DE ID
 async function guardarDatosFinal() {
+  const btnOk = document.getElementById('btnOkModal');
+  if (btnOk) btnOk.disabled = true;
+  
   cerrarConfirmacion();
-  const isD = puestoActual === 'despacho';
+  
+  const puestoGuardar = puestoActual;
+  const isD = puestoGuardar === 'despacho';
   
   const btn = document.getElementById(isD ? 'btnGuardarD' : 'btnGuardar');
   if (btn) {
@@ -1210,18 +1218,22 @@ async function guardarDatosFinal() {
   const textPayload = {
     action: isD ? 'registroDespacho' : 'registroDescarga',
     data: {
-      puesto: puestoActual,
+      puesto: puestoGuardar,
       tt: isD ? placaSeleccionada : `TT-${valTT}`,
       bolsones: bolsonesSeleccionados,
       conductor: isD ? conductorSeleccionado : '—',
       productos: productosSeleccionados.join(', '),
       fechaHora: fechaHora,
-      viajeId: puestoActual === 'labarthe' ? viajeIdHeredado : "" // Enviar el viajeId original de Muelle si es Labarthe
+      viajeId: puestoGuardar === 'labarthe' ? viajeIdHeredado : ""
     }
   };
 
+  const fotosParaSubir = [...fotosList]; 
+
+  volverSelector();
+  showToast('✅ Guardando en Excel...');
+
   try {
-    // FASE 1: Registro Textual Inmediato (Poco peso, ideal para red inestable)
     const res = await fetch(GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -1231,31 +1243,15 @@ async function guardarDatosFinal() {
 
     if (result.ok) {
       const viajeIdGenerado = result.viajeId;
-      
-      // AGILIDAD EXTREMA: Retornar inmediatamente a la pantalla de registros principal 
-      const fotosParaSubir = [...fotosList]; 
-      const puestoParaSubir = puestoActual;
-      
-      volverSelector(); // El usuario puede iniciar un nuevo registro ya mismo
       showToast('✅ Registro Migrado a Excel. Subiendo evidencias...');
-
-      // FASE 2: Subida de fotos en background sin bloquear la interfaz de usuario
-      subirFotosEnSegundoPlano(viajeIdGenerado, puestoParaSubir, fotosParaSubir);
-
+      subirFotosEnSegundoPlano(viajeIdGenerado, puestoGuardar, fotosParaSubir);
     } else {
-      showToast('❌ Error al subir: ' + result.error, true);
+      guardarEnLocalBackup(textPayload, fotosParaSubir);
+      showToast('⚠️ Error en servidor. Guardado en dispositivo.', true);
     }
   } catch(e) {
-    // ERROR EN FASE 1: Guardamos localmente en localStorage para reintento automático
-    const backupKey = "iqbf_pending_" + Date.now();
-    const backupObject = {
-      payload: textPayload,
-      fotos: [...fotosList]
-    };
-    localStorage.setItem(backupKey, JSON.stringify(backupObject));
-    
+    guardarEnLocalBackup(textPayload, fotosParaSubir);
     showToast('⚠️ Red débil. Guardado en dispositivo. Se enviará automáticamente.', true);
-    volverSelector();
   }
 
   if (btn) {
@@ -1264,9 +1260,14 @@ async function guardarDatosFinal() {
   }
 }
 
-// ENVIAR FOTOS DE FORMA INDIVIDUAL EN SEGUNDO PLANO ACTUALIZANDO EL ENCABEZADO
+function guardarEnLocalBackup(payload, fotos) {
+  const backupKey = "iqbf_pending_" + Date.now() + "_" + Math.floor(Math.random()*1000);
+  const backupObject = { payload: payload, fotos: fotos };
+  localStorage.setItem(backupKey, JSON.stringify(backupObject));
+}
+
 async function subirFotosEnSegundoPlano(viajeId, puesto, listaFotos) {
-  updateStatusIndicator(`📸 Subiendo foto 1/${listaFotos.length}...`);
+  updateStatusIndicator(`📸 Subiendo fotos (0/${listaFotos.length})...`);
 
   for (let i = 0; i < listaFotos.length; i++) {
     updateStatusIndicator(`📸 Subiendo foto ${i+1}/${listaFotos.length}...`);
@@ -1285,7 +1286,6 @@ async function subirFotosEnSegundoPlano(viajeId, puesto, listaFotos) {
         })
       });
     } catch (err) {
-      // Si la foto falla, la guardamos de respaldo específico en segundo plano
       guardarFotoParaReintentar(viajeId, puesto, listaFotos[i], i);
     }
   }
@@ -1295,21 +1295,32 @@ async function subirFotosEnSegundoPlano(viajeId, puesto, listaFotos) {
 }
 
 function guardarFotoParaReintentar(viajeId, puesto, fotoB64, index) {
-  const failKey = "iqbf_fail_photo_" + Date.now();
+  const failKey = "iqbf_fail_photo_" + Date.now() + "_" + Math.floor(Math.random()*1000);
   const failObj = { viajeId, puesto, fotoB64, index };
   localStorage.setItem(failKey, JSON.stringify(failObj));
 }
 
-// PROCESADOR EN SEGUNDO PLANO DE ENVÍO AUTOMÁTICO DE REGISTROS PENDIENTES
 async function verificarPendientesAlmacenados() {
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    
-    // 1. Reintentar registros completos que fallaron desde la Fase 1
-    if (key && key.startsWith("iqbf_pending_")) {
-      try {
-        const backup = JSON.parse(localStorage.getItem(key));
-        if (backup && backup.payload) {
+  if (isSyncingPendientes) return;
+  isSyncingPendientes = true;
+
+  try {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith("iqbf_pending_") || k.startsWith("iqbf_fail_photo_"))) {
+        keys.push(k);
+      }
+    }
+
+    for (const key of keys) {
+      const rawData = localStorage.getItem(key);
+      if (!rawData) continue;
+
+      if (key.startsWith("iqbf_pending_")) {
+        const backup = JSON.parse(rawData);
+        localStorage.removeItem(key);
+        try {
           const res = await fetch(GAS_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -1318,34 +1329,20 @@ async function verificarPendientesAlmacenados() {
           const result = await res.json();
           if (result.ok) {
             const viajeId = result.viajeId;
-            for (let fIdx = 0; fIdx < backup.fotos.length; fIdx++) {
-              await fetch(GAS_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({
-                  action: 'subirFotoIndividual',
-                  data: {
-                    viajeId: viajeId,
-                    puesto: backup.payload.data.puesto,
-                    fotoBase64: backup.fotos[fIdx],
-                    index: fIdx
-                  }
-                })
-              });
-            }
-            localStorage.removeItem(key);
+            subirFotosEnSegundoPlano(viajeId, backup.payload.data.puesto, backup.fotos);
             showToast('✅ Registro pendiente sincronizado automáticamente.');
-            sincronizarConExcel();
+          } else {
+            localStorage.setItem(key, rawData);
           }
+        } catch(e) {
+          localStorage.setItem(key, rawData);
         }
-      } catch(e) {}
-    }
+      }
 
-    // 2. Reintentar fotos individuales que fallaron en la Fase 2
-    if (key && key.startsWith("iqbf_fail_photo_")) {
-      try {
-        const failObj = JSON.parse(localStorage.getItem(key));
-        if (failObj) {
+      if (key.startsWith("iqbf_fail_photo_")) {
+        const failObj = JSON.parse(rawData);
+        localStorage.removeItem(key);
+        try {
           const res = await fetch(GAS_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -1360,13 +1357,16 @@ async function verificarPendientesAlmacenados() {
             })
           });
           const result = await res.json();
-          if (result.ok) {
-            localStorage.removeItem(key);
-            showToast('✅ Foto reintentada y subida con éxito.');
+          if (!result.ok) {
+            localStorage.setItem(key, rawData);
           }
+        } catch(e) {
+          localStorage.setItem(key, rawData);
         }
-      } catch(e) {}
+      }
     }
+  } finally {
+    isSyncingPendientes = false;
   }
 }
 
@@ -1379,6 +1379,11 @@ function resetFormulario() {
   conductorSeleccionado = null;
   placaSeleccionada = null;
   viajeIdHeredado = "";
+
+  const sChof = document.getElementById('searchChofer');
+  const sPlac = document.getElementById('searchPlaca');
+  if (sChof) sChof.value = "";
+  if (sPlac) sPlac.value = "";
 
   actualizarTTDisplay();
   actualizarBolsDisplay();
