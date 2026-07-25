@@ -481,10 +481,9 @@ window.onload = () => {
     actualizarRelojFinDeTurno();
   }, 1000);
 
-  // BUCLE DE AUTO-SINCRONIZACIÓN EN SEGUNDO PLANO (CADA 12 SEGUNDOS SI ESTÁ EN LABARTHE O REGISTRANDO)
   setInterval(() => {
     if (puestoActual === 'labarthe') {
-      sincronizarConExcel(true); // Silencioso
+      sincronizarConExcel(true);
     }
     verificarPendientesAlmacenados();
   }, 12000); 
@@ -791,27 +790,28 @@ function actualizarBolsDisplay() {
   if (displayD) displayD.innerHTML = htmlContent;
 }
 
+// CORRECCIÓN CLAVE: ALINEACIÓN ESTRICTA DEL CORTE A LAS 06:50 / 18:50
 function perteneceAlTurnoActual(fechaHoraStr) {
   const recDate = parsearFechaExcel(fechaHoraStr);
   if (!recDate) return false;
 
   const ahora = new Date();
   const totalMinsAhora = ahora.getHours() * 60 + ahora.getMinutes();
-  const startDiurno = 6 * 60 + 45; 
-  const endDiurno = 18 * 60 + 45;  
+  const startDiurno = 6 * 60 + 50;  // 06:50
+  const endDiurno = 18 * 60 + 50;   // 18:50
 
   let startShiftDate, endShiftDate;
 
-  if (totalMinsAhora >= startDiurno && totalMinsAhora <= endDiurno) {
-    startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 6, 45, 0);
-    endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 18, 45, 0);
+  if (totalMinsAhora >= startDiurno && totalMinsAhora < endDiurno) {
+    startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 6, 50, 0);
+    endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 18, 49, 59);
   } else {
-    if (totalMinsAhora >= endDiurno + 1) { 
-      startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 18, 46, 0);
-      endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1, 6, 44, 59);
+    if (totalMinsAhora >= endDiurno) { 
+      startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 18, 50, 0);
+      endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1, 6, 49, 59);
     } else { 
-      startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - 1, 18, 46, 0);
-      endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 6, 44, 59);
+      startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - 1, 18, 50, 0);
+      endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 6, 49, 59);
     }
   }
   return recDate >= startShiftDate && recDate <= endShiftDate;
@@ -854,7 +854,6 @@ function parsearFechaExcel(fStr) {
   }
 }
 
-// SINCRONIZACIÓN ULTRA RÁPIDA CON RE-DIBUJADO AUTOMÁTICO DE LABARTHE Y DESPACHO
 async function sincronizarConExcel(silencioso = false) {
   const btnSync = document.getElementById('btnSyncHeader');
   if (btnSync && !silencioso) {
@@ -901,7 +900,6 @@ async function sincronizarConExcel(silencioso = false) {
       localStorage.setItem('iqbf_cache_dbGlobal', JSON.stringify(dbGlobal));
       actualizarKPIsYHistorial();
 
-      // CORRECCIÓN CLAVE: DIBUJAR LISTA DE TRÁNSITO DE LABARTHE SI ESTÁ EN ESA PANTALLA
       if (puestoActual === 'labarthe') {
         renderListaTransitoMovil();
       }
@@ -1001,7 +999,7 @@ function entrarPuesto(puesto) {
     document.getElementById('muelleTTArea').style.display = 'none';
     document.getElementById('labartheTTArea').style.display = 'block';
     renderListaTransitoMovil();
-    sincronizarConExcel(true); // Carga inmediata al entrar a Labarthe
+    sincronizarConExcel(true);
   } else {
     document.getElementById('muelleTTArea').style.display = 'block';
     document.getElementById('labartheTTArea').style.display = 'none';
@@ -1407,6 +1405,7 @@ function guardarEnLocalBackup(payload, fotos) {
   actualizarContadorOutbox();
 }
 
+// SUBIDA DE FOTOS CON VALIDACIÓN DE RESPUESTA REAL DE GOOGLE DRIVE
 async function subirFotosEnSegundoPlano(viajeId, puesto, listaFotos) {
   isSubiendoFotosActivo = true;
   updateStatusIndicator(`📸 Subiendo fotos (0/${listaFotos.length})...`);
@@ -1414,7 +1413,7 @@ async function subirFotosEnSegundoPlano(viajeId, puesto, listaFotos) {
   for (let i = 0; i < listaFotos.length; i++) {
     updateStatusIndicator(`📸 Subiendo foto ${i+1}/${listaFotos.length}...`);
     try {
-      await fetch(GAS_URL, {
+      const res = await fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
@@ -1427,6 +1426,10 @@ async function subirFotosEnSegundoPlano(viajeId, puesto, listaFotos) {
           }
         })
       });
+      const result = await res.json();
+      if (!result.ok) {
+        guardarFotoParaReintentar(viajeId, puesto, listaFotos[i], i);
+      }
     } catch (err) {
       guardarFotoParaReintentar(viajeId, puesto, listaFotos[i], i);
     }
