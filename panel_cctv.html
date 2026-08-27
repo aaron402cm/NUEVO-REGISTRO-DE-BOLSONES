@@ -825,21 +825,22 @@
 
         const ahora = new Date();
         const totalMinsAhora = ahora.getHours() * 60 + ahora.getMinutes();
-        const startDiurno = 6 * 60 + 45; 
-        const endDiurno = 18 * 60 + 45;  
+        // Sincronizado a las 06:50 y 18:50 (igual que la app móvil)
+        const startDiurno = 6 * 60 + 50; 
+        const endDiurno = 18 * 60 + 50;  
 
         let startShiftDate, endShiftDate;
 
-        if (totalMinsAhora >= startDiurno && totalMinsAhora <= endDiurno) {
-            startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 6, 45, 0);
-            endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 18, 45, 0);
+        if (totalMinsAhora >= startDiurno && totalMinsAhora < endDiurno) {
+            startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 6, 50, 0);
+            endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 18, 49, 59);
         } else {
-            if (totalMinsAhora >= endDiurno + 1) { 
-                startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 18, 46, 0);
-                endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1, 6, 44, 59);
+            if (totalMinsAhora >= endDiurno) { 
+                startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 18, 50, 0);
+                endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1, 6, 49, 59);
             } else { 
-                startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - 1, 18, 46, 0);
-                endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 6, 44, 59);
+                startShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - 1, 18, 50, 0);
+                endShiftDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 6, 49, 59);
             }
         }
         return recDate >= startShiftDate && recDate <= endShiftDate;
@@ -1230,40 +1231,56 @@
     function renderTablasYDashboard() {
         const ahora = new Date();
         const mins = ahora.getHours() * 60 + ahora.getMinutes();
-        const strTurno = (mins >= 405 && mins <= 1125) ? "TURNO DIURNO (06:45 - 18:45)" : "TURNO NOCTURNO (18:46 - 06:44)";
+        const strTurno = (mins >= 410 && mins < 1130) ? "TURNO DIURNO (06:50 - 18:50)" : "TURNO NOCTURNO (18:50 - 06:50)";
         document.getElementById('turnoActualLabel').textContent = "TURNO ACTIVO: " + strTurno;
 
+        // 1. Muelle del turno actual
         const muelleTurno = db.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
-        const labartheTurno = db.labarthe.filter(f => perteneceAlTurnoActual(f.fechaHora));
         const despachoTurno = db.despacho.filter(f => perteneceAlTurnoActual(f.fechaHora));
 
-        const totalMuelle = muelleTurno.reduce((a, b) => a + b.bolsones, 0);
-        const totalLabarthe = labartheTurno.reduce((a, b) => a + b.bolsones, 0);
-        const totalDespacho = despachoTurno.reduce((a, b) => a + b.bolsones, 0);
+        // 2. Mapa de viajes salidos de muelle en este turno
+        let muelleTurnoMap = new Map();
+        muelleTurno.forEach(m => {
+            muelleTurnoMap.set(obtenerBaseViajeId(m.viajeId), m);
+        });
 
-        document.getElementById('kpiMuelle').textContent = totalMuelle;
-        document.getElementById('kpiLabarthe').textContent = totalLabarthe;
-        document.getElementById('kpiDespacho').textContent = totalDespacho;
+        // 3. Labarthe asociado a los despachos de este turno (Cero descuadres por cambio de guardia)
+        const labartheTurno = db.labarthe.filter(l => {
+            const baseId = obtenerBaseViajeId(l.viajeId);
+            // Si el viaje salió de muelle en este turno o su hora corresponde a este turno
+            return muelleTurnoMap.has(baseId) || perteneceAlTurnoActual(l.fechaHora);
+        });
 
         let labartheTurnoMap = new Map();
         labartheTurno.forEach(l => {
             labartheTurnoMap.set(obtenerBaseViajeId(l.viajeId), l);
         });
 
+        const totalMuelle = muelleTurno.reduce((a, b) => a + b.bolsones, 0);
+        
+        // Sumar solo los recibidos de los viajes originados en el turno
+        let totalLabarthe = 0;
         let difs = 0;
         let trans = 0;
+
         muelleTurno.forEach(m => {
             const baseId = obtenerBaseViajeId(m.viajeId);
             const l = labartheTurnoMap.get(baseId);
             if (l) {
+                totalLabarthe += l.bolsones;
                 const difBolsones = parseInt(l.bolsones) !== parseInt(m.bolsones);
-                const difProductos = l.productos.trim().toLowerCase() !== m.productos.trim().toLowerCase();
+                const difProductos = (l.productos || "").trim().toLowerCase() !== (m.productos || "").trim().toLowerCase();
                 if (difBolsones || difProductos) difs++;
             } else {
                 trans++;
             }
         });
 
+        const totalDespacho = despachoTurno.reduce((a, b) => a + b.bolsones, 0);
+
+        document.getElementById('kpiMuelle').textContent = totalMuelle;
+        document.getElementById('kpiLabarthe').textContent = totalLabarthe;
+        document.getElementById('kpiDespacho').textContent = totalDespacho;
         document.getElementById('kpiDiferencias').textContent = difs;
         document.getElementById('kpiTransito').textContent = trans;
 
