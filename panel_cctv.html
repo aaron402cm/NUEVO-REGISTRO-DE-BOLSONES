@@ -1384,6 +1384,8 @@
 
         const ahora = new Date();
         const muelleTurno = db.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
+        const labartheTurno = db.labarthe.filter(f => perteneceAlTurnoActual(f.fechaHora));
+        const despachoTurno = db.despacho.filter(f => perteneceAlTurnoActual(f.fechaHora));
         
         let minTiempoShift = ahora;
         muelleTurno.forEach(m => {
@@ -1401,11 +1403,19 @@
                 return sum;
             }, 0);
 
+            // Bolsones descargados en este turno para cálculo realista de PPH
+            const descargadoTurno = labartheTurno.reduce((sum, r) => {
+                if (r.productos && r.productos.toLowerCase().includes(p.producto.toLowerCase())) {
+                    return sum + r.bolsones;
+                }
+                return sum;
+            }, 0);
+
             const saldoDescarga = p.cantidadBuque - totalDescargadoLabarthe;
             const pctDescarga = p.cantidadBuque > 0 ? Math.min(100, Math.round((totalDescargadoLabarthe / p.cantidadBuque) * 100)) : 0;
             const esCompleto = pctDescarga >= 100;
 
-            const pph = Math.round(totalDescargadoLabarthe / horasTranscurridas);
+            const pph = Math.round(descargadoTurno / horasTranscurridas);
             let etaText = "—";
             if (esCompleto) {
                 etaText = "🏁 Completado";
@@ -1415,16 +1425,6 @@
                 etaText = "ETA: " + etaDate.toLocaleTimeString('es-PE', {hour: '2-digit', minute: '2-digit'});
             } else {
                 etaText = "Calculando...";
-            }
-
-            const key = `descarga_${p.producto}`;
-            if (esCompleto) {
-                if (!productosCompletadosSet.has(key)) {
-                    productosCompletadosSet.add(key);
-                    if (!isFirstLoad) {
-                        dispararCelebracion('Descarga', p.producto);
-                    }
-                }
             }
 
             return `
@@ -1446,6 +1446,58 @@
                 </tr>
             `;
         }).join('');
+
+        tbDespacho.innerHTML = listadoProductos.map(p => {
+            const totalDespachado = db.despacho.reduce((sum, r) => {
+                if (r.productos && r.productos.toLowerCase().includes(p.producto.toLowerCase())) {
+                    return sum + r.bolsones;
+                }
+                return sum;
+            }, 0);
+
+            const despachadoTurno = despachoTurno.reduce((sum, r) => {
+                if (r.productos && r.productos.toLowerCase().includes(p.producto.toLowerCase())) {
+                    return sum + r.bolsones;
+                }
+                return sum;
+            }, 0);
+
+            const saldoDespacho = p.cantidadBuque - totalDespachado;
+            const pctDespacho = p.cantidadBuque > 0 ? Math.min(100, Math.round((totalDespachado / p.cantidadBuque) * 100)) : 0;
+            const esCompleto = pctDespacho >= 100;
+
+            const pphDesp = Math.round(despachadoTurno / horasTranscurridas);
+            let etaDespText = "—";
+            if (esCompleto) {
+                etaDespText = "🏁 Completado";
+            } else if (pphDesp > 0 && saldoDespacho > 0) {
+                const hrsRestantes = saldoDespacho / pphDesp;
+                const etaDate = new Date(ahora.getTime() + hrsRestantes * 3600000);
+                etaDespText = "ETA: " + etaDate.toLocaleTimeString('es-PE', {hour: '2-digit', minute: '2-digit'});
+            } else {
+                etaDespText = "Calculando...";
+            }
+
+            return `
+                <tr>
+                    <td style="font-weight:bold;">🧴 ${p.producto}</td>
+                    <td>${p.cantidadBuque}</td>
+                    <td style="color:var(--amber); font-weight:bold;">${totalDespachado}</td>
+                    <td style="font-weight:bold; color:${saldoDespacho > 0 ? 'var(--blue)' : 'var(--green)'}">${saldoDespacho <= 0 ? '0 (Completado)' : saldoDespacho}</td>
+                    <td style="min-width:150px;">
+                        <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:bold;">
+                            <span>${pctDespacho}%</span>
+                            <span style="color:#b45309;">${pphDesp} bol/hr</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill despacho ${esCompleto ? 'complete' : ''}" style="width: ${pctDespacho}%;"></div>
+                        </div>
+                        <div style="font-size:10px; font-weight:bold; color:var(--muted); margin-top:2px;">${etaDespText}</div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
 
         tbDespacho.innerHTML = listadoProductos.map(p => {
             const totalDespachado = db.despacho.reduce((sum, r) => {
