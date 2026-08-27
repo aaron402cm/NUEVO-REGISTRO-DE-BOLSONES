@@ -1276,6 +1276,12 @@
         renderPestañaDespachos();
     }
 
+    function obtenerBaseViajeId(viajeId) {
+        if (!viajeId) return "";
+        const partes = viajeId.toString().split('_');
+        return partes.slice(0, 2).join('_');
+    }
+
     function filtrarTablaDash() {
         const query = (document.getElementById('dashFilter').value || "").toLowerCase().trim();
         const totalRegistros = [...db.muelle, ...db.labarthe, ...db.despacho];
@@ -1287,12 +1293,13 @@
         let globalMuelleMap = new Map();
         db.muelle.forEach(m => globalMuelleMap.set(obtenerBaseViajeId(m.viajeId), m));
 
-        const filtrados = totalRegistros.filter(r => 
-            r.viajeId.toLowerCase().includes(query) ||
-            r.tt.toLowerCase().includes(query) ||
-            r.productos.toLowerCase().includes(query) ||
-            r.puesto.toLowerCase().includes(query)
-        );
+        const filtrados = totalRegistros.filter(r => {
+            const vId = (r.viajeId || "").toString().toLowerCase();
+            const ttStr = (r.tt || "").toString().toLowerCase();
+            const prodStr = (r.productos || "").toString().toLowerCase();
+            const puestoStr = (r.puesto || "").toString().toLowerCase();
+            return vId.includes(query) || ttStr.includes(query) || prodStr.includes(query) || puestoStr.includes(query);
+        });
 
         const tbDash = document.getElementById('tbDash');
         if (filtrados.length === 0) {
@@ -1306,6 +1313,9 @@
             let estado = '<span class="badge badge-ok">CONFIRMADO</span>';
             let tieneError = false;
 
+            const rProd = (r.productos || "").toString().trim().toLowerCase();
+            const rBolsones = parseInt(r.bolsones) || 0;
+
             if (r.puesto === 'muelle') {
                 const baseId = obtenerBaseViajeId(r.viajeId);
                 const l = globalLabartheMap.get(baseId);
@@ -1314,8 +1324,10 @@
                     const retrasado = trTime && (ahora - trTime) > 600000;
                     estado = `<span class="badge badge-transit">${retrasado ? '🚨 RETRASO TRANSITO' : 'EN TRÁNSITO'}</span>`;
                 } else {
-                    const difBolsones = parseInt(l.bolsones) !== parseInt(r.bolsones);
-                    const difProductos = l.productos.trim().toLowerCase() !== m.productos.trim().toLowerCase();
+                    const lProd = (l.productos || "").toString().trim().toLowerCase();
+                    const lBolsones = parseInt(l.bolsones) || 0;
+                    const difBolsones = lBolsones !== rBolsones;
+                    const difProductos = lProd !== rProd;
                     if (difBolsones) {
                         estado = '<span class="badge badge-alert">⚠️ DISC. CANTIDAD</span>';
                         tieneError = true;
@@ -1328,8 +1340,10 @@
                 const baseId = obtenerBaseViajeId(r.viajeId);
                 const m = globalMuelleMap.get(baseId);
                 if (m) {
-                    const difBolsones = parseInt(m.bolsones) !== parseInt(r.bolsones);
-                    const difProductos = m.productos.trim().toLowerCase() !== r.productos.trim().toLowerCase();
+                    const mProd = (m.productos || "").toString().trim().toLowerCase();
+                    const mBolsones = parseInt(m.bolsones) || 0;
+                    const difBolsones = mBolsones !== rBolsones;
+                    const difProductos = mProd !== rProd;
                     if (difBolsones) {
                         estado = '<span class="badge badge-alert">⚠️ DISC. CANTIDAD</span>';
                         tieneError = true;
@@ -1341,17 +1355,17 @@
             }
 
             const btnEditarHTML = tieneError 
-                ? `<button class="btn-sm" style="background:#fef3c7; color:#78350f; border:1px solid #f59e0b;" onclick="abrirModalEditar('${r.viajeId}','${r.puesto}',${r.bolsones},'${r.productos}')">✏️ Corregir</button>`
+                ? `<button class="btn-sm" style="background:#fef3c7; color:#78350f; border:1px solid #f59e0b;" onclick="abrirModalEditar('${r.viajeId}','${r.puesto}',${rBolsones},'${r.productos || ''}')">✏️ Corregir</button>`
                 : '';
 
             return `
                 <tr>
                     <td style="font-weight:bold;">${r.viajeId}</td>
-                    <td><span class="badge ${badgeCls}">${r.puesto.toUpperCase()}</span></td>
+                    <td><span class="badge ${badgeCls}">${(r.puesto || '').toUpperCase()}</span></td>
                     <td><span class="tt-link" onclick="verFichaTT('${r.tt}')">${r.tt}</span></td>
-                    <td style="font-size:15px; font-weight:bold;">${r.bolsones}</td>
-                    <td>${r.productos}</td>
-                    <td>${r.fechaHora}</td>
+                    <td style="font-size:15px; font-weight:bold;">${rBolsones}</td>
+                    <td>${r.productos || '—'}</td>
+                    <td>${r.fechaHora || '—'}</td>
                     <td>${estado}</td>
                     <td>
                         <div style="display:flex; gap:6px;">
