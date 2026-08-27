@@ -409,7 +409,7 @@
                 </div>
             </div>
 
-            <!-- NUEVA PESTAÑA: DIAGNÓSTICO Y SOPORTE EN VIVO PARA EL CCTV -->
+            <!-- DIAGNÓSTICO Y SOPORTE EN VIVO PARA EL CCTV -->
             <div id="pageSoporte" class="page-container" style="display:none;">
                 <div class="card" style="margin-bottom:20px;">
                     <div class="card-head"><h3>🛠️ Monitor de Estado de Dispositivos de Inspectores (En Vivo)</h3></div>
@@ -804,14 +804,11 @@
         setInterval(updateClock, 1000);
         
         sincronizarServidor();
-        cargarTelemetriaServidor(); // Carga inicial inmediata
+        cargarTelemetriaServidor();
         
         backgroundWorker.postMessage('start');
         
-        // RELEO INDEPENDIENTE CADA 10 SEGUNDOS PARA CONSULTAR SEÑAL AL SERVIDOR
         setInterval(cargarTelemetriaServidor, 10000);
-
-        // RELEO VIVO CADA 1 SEGUNDO PARA ACTUALIZAR CONTADORES EN PANTALLA (hace 1s, hace 2s...)
         setInterval(renderMonitorHeartbeatsLive, 1000);
 
         setTimeout(verificarEstadoDeAudio, 1000);
@@ -924,9 +921,6 @@
             });
     }
 
-    // ============================================================
-    // MÓDULO DE TELEMETRÍA Y SOPORTE GUIADO (TRADUCTOR DE ERRORES)
-    // ============================================================
     function cargarTelemetriaServidor() {
         if (!gasUrl) return;
         fetch(`${gasUrl}?action=obtenerTelemetriaSoporte`)
@@ -942,7 +936,6 @@
             .catch(() => {});
     }
 
-    // CONTADOR VIVO SEGUNDO A SEGUNDO EN PANTALLA
     function renderMonitorHeartbeatsLive() {
         const container = document.getElementById('containerHeartbeats');
         if (!container) return;
@@ -1322,7 +1315,7 @@
                     estado = `<span class="badge badge-transit">${retrasado ? '🚨 RETRASO TRANSITO' : 'EN TRÁNSITO'}</span>`;
                 } else {
                     const difBolsones = parseInt(l.bolsones) !== parseInt(r.bolsones);
-                    const difProductos = l.productos.trim().toLowerCase() !== r.productos.trim().toLowerCase();
+                    const difProductos = l.productos.trim().toLowerCase() !== m.productos.trim().toLowerCase();
                     if (difBolsones) {
                         estado = '<span class="badge badge-alert">⚠️ DISC. CANTIDAD</span>';
                         tieneError = true;
@@ -1403,7 +1396,6 @@
                 return sum;
             }, 0);
 
-            // Bolsones descargados en este turno para cálculo realista de PPH
             const descargadoTurno = labartheTurno.reduce((sum, r) => {
                 if (r.productos && r.productos.toLowerCase().includes(p.producto.toLowerCase())) {
                     return sum + r.bolsones;
@@ -1427,6 +1419,16 @@
                 etaText = "Calculando...";
             }
 
+            const key = `descarga_${p.producto}`;
+            if (esCompleto) {
+                if (!productosCompletadosSet.has(key)) {
+                    productosCompletadosSet.add(key);
+                    if (!isFirstLoad) {
+                        dispararCelebracion('Descarga', p.producto);
+                    }
+                }
+            }
+
             return `
                 <tr>
                     <td style="font-weight:bold;">🧴 ${p.producto}</td>
@@ -1446,7 +1448,7 @@
                 </tr>
             `;
         }).join('');
-    }   
+
         tbDespacho.innerHTML = listadoProductos.map(p => {
             const totalDespachado = db.despacho.reduce((sum, r) => {
                 if (r.productos && r.productos.toLowerCase().includes(p.producto.toLowerCase())) {
@@ -1467,51 +1469,6 @@
             const esCompleto = pctDespacho >= 100;
 
             const pphDesp = Math.round(despachadoTurno / horasTranscurridas);
-            let etaDespText = "—";
-            if (esCompleto) {
-                etaDespText = "🏁 Completado";
-            } else if (pphDesp > 0 && saldoDespacho > 0) {
-                const hrsRestantes = saldoDespacho / pphDesp;
-                const etaDate = new Date(ahora.getTime() + hrsRestantes * 3600000);
-                etaDespText = "ETA: " + etaDate.toLocaleTimeString('es-PE', {hour: '2-digit', minute: '2-digit'});
-            } else {
-                etaDespText = "Calculando...";
-            }
-
-            return `
-                <tr>
-                    <td style="font-weight:bold;">🧴 ${p.producto}</td>
-                    <td>${p.cantidadBuque}</td>
-                    <td style="color:var(--amber); font-weight:bold;">${totalDespachado}</td>
-                    <td style="font-weight:bold; color:${saldoDespacho > 0 ? 'var(--blue)' : 'var(--green)'}">${saldoDespacho <= 0 ? '0 (Completado)' : saldoDespacho}</td>
-                    <td style="min-width:150px;">
-                        <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:bold;">
-                            <span>${pctDespacho}%</span>
-                            <span style="color:#b45309;">${pphDesp} bol/hr</span>
-                        </div>
-                        <div class="progress-bar-bg">
-                            <div class="progress-bar-fill despacho ${esCompleto ? 'complete' : ''}" style="width: ${pctDespacho}%;"></div>
-                        </div>
-                        <div style="font-size:10px; font-weight:bold; color:var(--muted); margin-top:2px;">${etaDespText}</div>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-    }
-
-        tbDespacho.innerHTML = listadoProductos.map(p => {
-            const totalDespachado = db.despacho.reduce((sum, r) => {
-                if (r.productos && r.productos.toLowerCase().includes(p.producto.toLowerCase())) {
-                    return sum + r.bolsones;
-                }
-                return sum;
-            }, 0);
-
-            const saldoDespacho = p.cantidadBuque - totalDespachado;
-            const pctDespacho = p.cantidadBuque > 0 ? Math.min(100, Math.round((totalDespachado / p.cantidadBuque) * 100)) : 0;
-            const esCompleto = pctDespacho >= 100;
-
-            const pphDesp = Math.round(totalDespachado / horasTranscurridas);
             let etaDespText = "—";
             if (esCompleto) {
                 etaDespText = "🏁 Completado";
@@ -1553,7 +1510,6 @@
             `;
         }).join('');
     }
-
     function renderKpisPage() {
         const ahora = new Date();
         const muelleTurno = db.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
@@ -1903,11 +1859,9 @@
         let muelleMap = new Map();
         db.muelle.forEach(m => muelleMap.set(obtenerBaseViajeId(m.viajeId), m));
 
-        // ORDENAR MÁS NUEVOS PRIMERO (DESCENTENTE)
         const muelleOrdenado = [...db.muelle].sort((a,b) => parsearFechaExcel(b.fechaHora) - parsearFechaExcel(a.fechaHora));
         const labartheOrdenado = [...db.labarthe].sort((a,b) => parsearFechaExcel(b.fechaHora) - parsearFechaExcel(a.fechaHora));
 
-        // 1. REGISTROS MUELLE (ORDENADO)
         document.getElementById('tbMuelle').innerHTML = muelleOrdenado.map(r => {
             const baseId = obtenerBaseViajeId(r.viajeId);
             const l = labartheMap.get(baseId);
@@ -1932,7 +1886,6 @@
             `;
         }).join('');
 
-        // 2. REGISTROS LABARTHE (ORDENADO)
         document.getElementById('tbLabarthe').innerHTML = labartheOrdenado.map(r => {
             const baseId = obtenerBaseViajeId(r.viajeId);
             const m = muelleMap.get(baseId);
@@ -1957,7 +1910,6 @@
             `;
         }).join('');
 
-        // 3. TABLA COMPARATIVA (ORDENADO)
         document.getElementById('tbComparativo').innerHTML = muelleOrdenado.map(m => {
             const baseId = obtenerBaseViajeId(m.viajeId);
             const l = labartheMap.get(baseId);
