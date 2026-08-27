@@ -1446,7 +1446,7 @@
                 </tr>
             `;
         }).join('');
-
+    }   
         tbDespacho.innerHTML = listadoProductos.map(p => {
             const totalDespachado = db.despacho.reduce((sum, r) => {
                 if (r.productos && r.productos.toLowerCase().includes(p.producto.toLowerCase())) {
