@@ -1051,36 +1051,41 @@
         });
     }
 
-    // --- CARGAR VOZ COLOMBIANA PARA CHROME / EDGE ---
-let vozFemeninaColombiana = null;
+    // --- CARGADOR INTELIGENTE DE VOZ FEMENINA ---
+let vozFemeninaSeleccionada = null;
 
 function cargarVozPC() {
     if (!('speechSynthesis' in window)) return;
     const voces = window.speechSynthesis.getVoices();
     if (!voces || voces.length === 0) return;
 
-    // 1. Prioridad Edge: Microsoft Salomé (Colombiana natural)
-    vozFemeninaColombiana = voces.find(v => 
-        /salome|salomé/i.test(v.name) && /colombia|es-co/i.test(v.lang + v.name)
+    // Lista de nombres masculinos para NUNCA seleccionarlos
+    const esHombre = (nombre) => /raul|raúl|gonzalo|david|jorge|pablo|alvaro|álvaro|carlos|diego|male|hombre/i.test(nombre);
+
+    // 1. Prioridad Máxima: Mujer Colombiana (Microsoft Salomé en Edge)
+    vozFemeninaSeleccionada = voces.find(v => 
+        /salome|salomé/i.test(v.name) && !esHombre(v.name)
     );
 
-    // 2. Prioridad Chrome: Google español de Colombia
-    if (!vozFemeninaColombiana) {
-        vozFemeninaColombiana = voces.find(v => 
-            v.lang === 'es-CO' || v.lang === 'es_CO' || (v.name.toLowerCase().includes('colombia') && v.name.toLowerCase().includes('google'))
+    // 2. Si no está Salomé, buscar cualquier voz colombiana que NO sea de hombre
+    if (!vozFemeninaSeleccionada) {
+        vozFemeninaSeleccionada = voces.find(v => 
+            (v.lang === 'es-CO' || v.lang === 'es_CO' || v.name.toLowerCase().includes('colombia')) && !esHombre(v.name)
         );
     }
 
-    // 3. Respaldo general: Cualquier voz de Colombia
-    if (!vozFemeninaColombiana) {
-        vozFemeninaColombiana = voces.find(v => v.lang === 'es-CO' || v.name.toLowerCase().includes('colombia'));
+    // 3. Si estás en Chrome y no hay colombiana: Buscar cualquier mujer en español (Sabina, Dalia, Elena, Paulina, etc.)
+    if (!vozFemeninaSeleccionada) {
+        vozFemeninaSeleccionada = voces.find(v => 
+            v.lang.startsWith('es') && 
+            /sabina|dalia|elena|paulina|paloma|monica|mónica|sofia|sofía|female|mujer|natural/i.test(v.name) &&
+            !esHombre(v.name)
+        );
     }
 
-    // 4. Respaldo si no hay voz colombiana instalada: Voz femenina en español
-    if (!vozFemeninaColombiana) {
-        vozFemeninaColombiana = voces.find(v => 
-            v.lang.startsWith('es') && /dalia|sabina|paulina|female|mujer/i.test(v.name)
-        );
+    // 4. Último recurso: La primera voz en español que NO sea hombre
+    if (!vozFemeninaSeleccionada) {
+        vozFemeninaSeleccionada = voces.find(v => v.lang.startsWith('es') && !esHombre(v.name));
     }
 }
 
@@ -1089,7 +1094,6 @@ if ('speechSynthesis' in window) {
     window.speechSynthesis.onvoiceschanged = cargarVozPC;
 }
 
-// --- NUEVA FUNCIÓN ANUNCIAR POR VOZ ---
 function anunciarPorVoz(reg) {
     try {
         if (!('speechSynthesis' in window)) return;
@@ -1104,20 +1108,20 @@ function anunciarPorVoz(reg) {
         } else if (reg.puesto === 'labarthe') {
             mensaje = `Registro exitoso de Labarthe, ${ttLimpio}, con ${bols} bolsones.`;
         } else if (reg.puesto === 'despacho') {
-            mensaje = `Atento papacito!, se hizo un despacho de la unidad ${ttLimpio}, con ${bols} bolsones.`;
+            mensaje = `Se hizo un despacho de la unidad ${ttLimpio}, con ${bols} bolsones.`;
         }
 
         if (mensaje) {
             const utterance = new SpeechSynthesisUtterance(mensaje);
             utterance.lang = 'es-CO';
 
-            if (!vozFemeninaColombiana) cargarVozPC();
-            if (vozFemeninaColombiana) {
-                utterance.voice = vozFemeninaColombiana;
+            if (!vozFemeninaSeleccionada) cargarVozPC();
+            if (vozFemeninaSeleccionada) {
+                utterance.voice = vozFemeninaSeleccionada;
             }
 
             utterance.rate = 1.0;
-            utterance.pitch = 1.1;
+            utterance.pitch = 1.2; // Tono más agudo para asegurar timbre femenino
             window.speechSynthesis.speak(utterance);
         }
     } catch(e) {}
