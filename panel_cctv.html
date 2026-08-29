@@ -1051,31 +1051,77 @@
         });
     }
 
-    function anunciarPorVoz(reg) {
-        try {
-            if (!('speechSynthesis' in window)) return;
-            window.speechSynthesis.cancel();
+    // --- CARGAR VOZ COLOMBIANA PARA CHROME / EDGE ---
+let vozFemeninaColombiana = null;
 
-            let ttLimpio = reg.tt ? reg.tt.toString().replace("TT-", "T T ").replace("-", " ") : "sin placa";
-            let bols = reg.bolsones || 0;
-            let mensaje = "";
+function cargarVozPC() {
+    if (!('speechSynthesis' in window)) return;
+    const voces = window.speechSynthesis.getVoices();
+    if (!voces || voces.length === 0) return;
 
-            if (reg.puesto === 'muelle') {
-                mensaje = `Se realizó un registro en Muelle, ${ttLimpio}, con ${bols} bolsones.`;
-            } else if (reg.puesto === 'labarthe') {
-                mensaje = `Registro exitoso de Labarthe, ${ttLimpio}, con ${bols} bolsones.`;
-            } else if (reg.puesto === 'despacho') {
-                mensaje = `Se hizo un despacho de la unidad ${ttLimpio}, con ${bols} bolsones.`;
-            }
+    // 1. Prioridad Edge: Microsoft Salomé (Colombiana natural)
+    vozFemeninaColombiana = voces.find(v => 
+        /salome|salomé/i.test(v.name) && /colombia|es-co/i.test(v.lang + v.name)
+    );
 
-            if (mensaje) {
-                const utterance = new SpeechSynthesisUtterance(mensaje);
-                utterance.lang = 'es-PE'; 
-                utterance.rate = 1.0;
-                window.speechSynthesis.speak(utterance);
-            }
-        } catch(e) {}
+    // 2. Prioridad Chrome: Google español de Colombia
+    if (!vozFemeninaColombiana) {
+        vozFemeninaColombiana = voces.find(v => 
+            v.lang === 'es-CO' || v.lang === 'es_CO' || (v.name.toLowerCase().includes('colombia') && v.name.toLowerCase().includes('google'))
+        );
     }
+
+    // 3. Respaldo general: Cualquier voz de Colombia
+    if (!vozFemeninaColombiana) {
+        vozFemeninaColombiana = voces.find(v => v.lang === 'es-CO' || v.name.toLowerCase().includes('colombia'));
+    }
+
+    // 4. Respaldo si no hay voz colombiana instalada: Voz femenina en español
+    if (!vozFemeninaColombiana) {
+        vozFemeninaColombiana = voces.find(v => 
+            v.lang.startsWith('es') && /dalia|sabina|paulina|female|mujer/i.test(v.name)
+        );
+    }
+}
+
+if ('speechSynthesis' in window) {
+    cargarVozPC();
+    window.speechSynthesis.onvoiceschanged = cargarVozPC;
+}
+
+// --- NUEVA FUNCIÓN ANUNCIAR POR VOZ ---
+function anunciarPorVoz(reg) {
+    try {
+        if (!('speechSynthesis' in window)) return;
+        window.speechSynthesis.cancel();
+
+        let ttLimpio = reg.tt ? reg.tt.toString().replace("TT-", "T T ").replace("-", " ") : "sin placa";
+        let bols = reg.bolsones || 0;
+        let mensaje = "";
+
+        if (reg.puesto === 'muelle') {
+            mensaje = `Se realizó un registro en Muelle, ${ttLimpio}, con ${bols} bolsones.`;
+        } else if (reg.puesto === 'labarthe') {
+            mensaje = `Registro exitoso de Labarthe, ${ttLimpio}, con ${bols} bolsones.`;
+        } else if (reg.puesto === 'despacho') {
+            mensaje = `Se hizo un despacho de la unidad ${ttLimpio}, con ${bols} bolsones.`;
+        }
+
+        if (mensaje) {
+            const utterance = new SpeechSynthesisUtterance(mensaje);
+            utterance.lang = 'es-CO';
+
+            if (!vozFemeninaColombiana) cargarVozPC();
+            if (vozFemeninaColombiana) {
+                utterance.voice = vozFemeninaColombiana;
+            }
+
+            utterance.rate = 1.0;
+            utterance.pitch = 1.1;
+            window.speechSynthesis.speak(utterance);
+        }
+    } catch(e) {}
+}
 
     function obtenerBaseViajeId(viajeId) {
         if (!viajeId) return "";
