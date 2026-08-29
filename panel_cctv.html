@@ -1051,7 +1051,7 @@
         });
     }
 
-    // --- CARGADOR INTELIGENTE DE VOZ FEMENINA ---
+// --- CARGADOR CORREGIDO DE VOZ FEMENINA (COMPATIBLE CHROME / EDGE / WINDOWS) ---
 let vozFemeninaSeleccionada = null;
 
 function cargarVozPC() {
@@ -1059,33 +1059,35 @@ function cargarVozPC() {
     const voces = window.speechSynthesis.getVoices();
     if (!voces || voces.length === 0) return;
 
-    // Lista de nombres masculinos para NUNCA seleccionarlos
-    const esHombre = (nombre) => /raul|raúl|gonzalo|david|jorge|pablo|alvaro|álvaro|carlos|diego|male|hombre/i.test(nombre);
+    // 1. Lista de nombres estrictamente femeninos en Windows, Edge y Chrome
+    const patronMujer = /salome|salomé|sabina|helena|elena|dalia|laura|paulina|soledad|paloma|elvira|monica|mónica|sofia|sofía|camila|paola|luisa|female|mujer|natural/i;
+    
+    // Lista de hombres para bloquearlos 100%
+    const patronHombre = /raul|raúl|gonzalo|david|jorge|pablo|alvaro|álvaro|carlos|diego|manuel|pedro|julio|andres|andrés|male|hombre|google español$/i;
 
-    // 1. Prioridad Máxima: Mujer Colombiana (Microsoft Salomé en Edge)
+    // A. Prioridad 1: Mujer Colombiana (Microsoft Salomé en Edge o Windows)
     vozFemeninaSeleccionada = voces.find(v => 
-        /salome|salomé/i.test(v.name) && !esHombre(v.name)
+        /salome|salomé/i.test(v.name) && !patronHombre.test(v.name)
     );
 
-    // 2. Si no está Salomé, buscar cualquier voz colombiana que NO sea de hombre
+    // B. Prioridad 2: Cualquier voz de Colombia femenina
     if (!vozFemeninaSeleccionada) {
         vozFemeninaSeleccionada = voces.find(v => 
-            (v.lang === 'es-CO' || v.lang === 'es_CO' || v.name.toLowerCase().includes('colombia')) && !esHombre(v.name)
+            (v.lang === 'es-CO' || v.lang === 'es_CO' || v.name.toLowerCase().includes('colombia')) &&
+            patronMujer.test(v.name) && !patronHombre.test(v.name)
         );
     }
 
-    // 3. Si estás en Chrome y no hay colombiana: Buscar cualquier mujer en español (Sabina, Dalia, Elena, Paulina, etc.)
+    // C. Prioridad 3: Cualquier mujer en español (Sabina, Helena, Dalia, etc.)
     if (!vozFemeninaSeleccionada) {
         vozFemeninaSeleccionada = voces.find(v => 
-            v.lang.startsWith('es') && 
-            /sabina|dalia|elena|paulina|paloma|monica|mónica|sofia|sofía|female|mujer|natural/i.test(v.name) &&
-            !esHombre(v.name)
+            v.lang.startsWith('es') && patronMujer.test(v.name) && !patronHombre.test(v.name)
         );
     }
 
-    // 4. Último recurso: La primera voz en español que NO sea hombre
+    // D. Si no hay nombre reconocido, tomar la primera voz que NO sea de hombre
     if (!vozFemeninaSeleccionada) {
-        vozFemeninaSeleccionada = voces.find(v => v.lang.startsWith('es') && !esHombre(v.name));
+        vozFemeninaSeleccionada = voces.find(v => v.lang.startsWith('es') && !patronHombre.test(v.name));
     }
 }
 
@@ -1097,8 +1099,7 @@ if ('speechSynthesis' in window) {
 function anunciarPorVoz(reg) {
     try {
         if (!('speechSynthesis' in window)) return;
-        window.speechSynthesis.cancel();
-
+        
         let ttLimpio = reg.tt ? reg.tt.toString().replace("TT-", "T T ").replace("-", " ") : "sin placa";
         let bols = reg.bolsones || 0;
         let mensaje = "";
@@ -1112,16 +1113,22 @@ function anunciarPorVoz(reg) {
         }
 
         if (mensaje) {
+            window.speechSynthesis.cancel(); // Detener cualquier audio anterior
+            
             const utterance = new SpeechSynthesisUtterance(mensaje);
-            utterance.lang = 'es-CO';
 
             if (!vozFemeninaSeleccionada) cargarVozPC();
+            
             if (vozFemeninaSeleccionada) {
                 utterance.voice = vozFemeninaSeleccionada;
+                // CORRECCIÓN CLAVE: El lang debe ser EXACTAMENTE el mismo de la voz para que Windows no la descarte
+                utterance.lang = vozFemeninaSeleccionada.lang;
+            } else {
+                utterance.lang = 'es-ES';
             }
 
             utterance.rate = 1.0;
-            utterance.pitch = 1.2; // Tono más agudo para asegurar timbre femenino
+            utterance.pitch = 1.25; // Forzar tono agudo femenino
             window.speechSynthesis.speak(utterance);
         }
     } catch(e) {}
