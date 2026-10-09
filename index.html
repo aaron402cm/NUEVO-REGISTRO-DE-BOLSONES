@@ -2,68 +2,206 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IQBF — Sistema de Control de Bolsones</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>IQBF Control — Portal Portuario Multi-Nave</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
     background: #0f172a;
-    padding: 2rem;
+    padding: 1.5rem;
+    color: #f8fafc;
   }
-  .container { text-align: center; max-width: 420px; width: 100%; }
-  .logo { font-size: 5rem; margin-bottom: 1rem; }
-  h1 { color: white; font-size: 2rem; font-weight: 900; margin-bottom: 0.5rem; }
-  p { color: #94a3b8; font-size: 1.1rem; margin-bottom: 2.5rem; font-weight: bold; }
-  .btn {
+  .container {
+    text-align: center;
+    max-width: 440px;
+    width: 100%;
+  }
+  .logo-box {
+    margin-bottom: 1.2rem;
+    display: inline-block;
+    background: rgba(2, 132, 199, 0.15);
+    border: 2px solid #0284c7;
+    border-radius: 24px;
+    padding: 1.2rem;
+    box-shadow: 0 10px 25px rgba(2, 132, 199, 0.2);
+  }
+  .logo-icon { font-size: 3.8rem; display: block; line-height: 1; }
+  
+  h1 {
+    font-size: 2.1rem;
+    font-weight: 900;
+    margin-bottom: 0.4rem;
+    letter-spacing: -0.5px;
+    color: #ffffff;
+  }
+  .subtitle {
+    color: #94a3b8;
+    font-size: 1.05rem;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+  }
+
+  /* Badge de Conectividad en Vivo */
+  .net-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid #334155;
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    margin-bottom: 2rem;
+  }
+  .dot-status {
+    width: 10px;
+    height: 10px;
+    background: #22c55e;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 8px #22c55e;
+  }
+
+  /* Botones de Navegación */
+  .btn-portal {
     display: block;
     width: 100%;
-    padding: 1.5rem;
-    border-radius: 16px;
-    border: none;
-    font-size: 1.3rem;
-    font-weight: bold;
-    cursor: pointer;
+    padding: 1.3rem 1.2rem;
+    border-radius: 18px;
     text-decoration: none;
     margin-bottom: 1.2rem;
-    transition: transform 0.2s;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
   }
-  .btn:active { transform: scale(0.97); }
-  .btn-registro { 
-    background: white; 
-    color: #0f172a; 
+  .btn-portal:active { transform: scale(0.98); }
+  
+  .btn-registros {
+    background: #ffffff;
+    color: #0f172a;
     border: 3px solid #cbd5e1;
+    box-shadow: 0 6px 0 #94a3b8;
   }
-  .btn-cctv { 
-    background: #0284c7; 
-    color: white; 
-    border-bottom: 5px solid #0369a1;
+  .btn-registros:active { box-shadow: 0 2px 0 #94a3b8; transform: translateY(4px); }
+
+  .btn-cctv {
+    background: linear-gradient(135deg, #0284c7, #0369a1);
+    color: #ffffff;
+    border: 3px solid #38bdf8;
+    box-shadow: 0 6px 0 #075985;
   }
-  .sub { font-size: 0.95rem; opacity: 0.8; margin-top: 0.3rem; font-weight: bold; }
-  .footer { color: #475569; font-size: 0.85rem; margin-top: 3rem; font-weight: bold; }
+  .btn-cctv:active { box-shadow: 0 2px 0 #075985; transform: translateY(4px); }
+
+  .btn-title {
+    font-size: 1.3rem;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .btn-sub {
+    font-size: 0.9rem;
+    font-weight: 700;
+    opacity: 0.85;
+  }
+  .tag-feature {
+    display: inline-block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    font-weight: 900;
+    padding: 2px 8px;
+    border-radius: 6px;
+    margin-top: 8px;
+    background: rgba(0,0,0,0.08);
+  }
+  .btn-cctv .tag-feature { background: rgba(255,255,255,0.2); color: #f0f9ff; }
+
+  .footer {
+    color: #475569;
+    font-size: 0.85rem;
+    margin-top: 2.5rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+  }
+  .footer-sub {
+    font-size: 0.75rem;
+    color: #334155;
+    margin-top: 4px;
+  }
 </style>
 </head>
 <body>
+
 <div class="container">
-  <div class="logo">📦</div>
+  <div class="logo-box">
+    <span class="logo-icon">📦</span>
+  </div>
+
   <h1>Control IQBF</h1>
-  <p>Monitoreo de Bolsones en Tiempo Real</p>
+  <p class="subtitle">Monitoreo de Bolsones en Tiempo Real</p>
 
-  <a class="btn btn-registro" href="registro.html">
-    📱 Aplicación de Registro
-    <div class="sub">Muelle · Labarthe · Despacho</div>
+  <div class="net-badge" id="netBadge">
+    <span class="dot-status" id="netDot"></span>
+    <span id="netStatusText">Dispositivo En Línea</span>
+  </div>
+
+  <!-- Botón 1: Aplicación de Inspectores en Campo -->
+  <a class="btn-portal btn-registros" href="registros.html">
+    <div class="btn-title">
+      <span>📱</span> Aplicación de Registro
+    </div>
+    <div class="btn-sub">Muelle · Labarthe · Despacho</div>
+    <div class="tag-feature">⚡ Bi-Nave · Carga Doble · Modo Offline</div>
   </a>
 
-  <a class="btn btn-cctv" href="panel_cctv.html">
-    🎛️ Panel CCTV Monitoreo
-    <div class="sub">Control de Seguridad y Alertas</div>
+  <!-- Botón 2: Centro de Mando CCTV -->
+  <a class="btn-portal btn-cctv" href="panel_cctv.html">
+    <div class="btn-title">
+      <span>🎛️</span> Panel CCTV Monitoreo
+    </div>
+    <div class="btn-sub">Command Deck & Control de Seguridad</div>
+    <div class="tag-feature">🚨 Radar Autovía · Alarmas Vocal / Sirena</div>
   </a>
 
-  <div class="footer">APM 2026 · Puerto de Operaciones</div>
+  <div class="footer">
+    APM 2026 · PUERTO DE OPERACIONES
+    <div class="footer-sub">Arquitectura v7.0 Multi-Nave Resiliente</div>
+  </div>
 </div>
+
+<script>
+  // Monitor de estado de conectividad en el portal
+  function actualizarEstadoRed() {
+    const dot = document.getElementById('netDot');
+    const txt = document.getElementById('netStatusText');
+    if (navigator.onLine) {
+      dot.style.background = "#22c55e";
+      dot.style.boxShadow = "0 0 8px #22c55e";
+      txt.textContent = "Dispositivo En Línea";
+      txt.style.color = "#f8fafc";
+    } else {
+      dot.style.background = "#ea580c";
+      dot.style.boxShadow = "0 0 8px #ea580c";
+      txt.textContent = "Sin Conexión (Modo Offline Disponible)";
+      txt.style.color = "#f97316";
+    }
+  }
+
+  window.addEventListener('online', actualizarEstadoRed);
+  window.addEventListener('offline', actualizarEstadoRed);
+  actualizarEstadoRed();
+</script>
+
 </body>
 </html>
