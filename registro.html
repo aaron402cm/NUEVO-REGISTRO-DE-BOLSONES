@@ -1117,51 +1117,76 @@ async function ejecutarGuardadoFinalDebounced() {
   showToast("🟠 Guardado en Celular (Sin señal). Se enviará solo.", true);
 }
 
+// ============================================================
+// SUBIDA DE FOTOS RESILIENTE (NUNCA PIERDE FOTOS SI SE CAE LA RED)
+// ============================================================
 async function subirFotosEnColaSegundoPlano(viajeId, puesto, nave, listaFotos) {
-  if (!viajeId) return;
+  if (!viajeId || !listaFotos || listaFotos.length === 0) return;
+
   for (let i = 0; i < listaFotos.length; i++) {
+    const fotoPayload = {
+      action: 'subirFotoIndividual',
+      data: { viajeId, puesto, nave, fotoBase64: listaFotos[i], index: i }
+    };
+
     try {
-      await fetchConTimeout(GAS_URL, {
+      const res = await fetchConTimeout(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          action: 'subirFotoIndividual',
-          data: { viajeId, puesto, nave, fotoBase64: listaFotos[i], index: i }
-        })
-      }, 10000);
-    } catch(e) {}
+        body: JSON.stringify(fotoPayload)
+      }, 10000); // 10s de tolerancia por foto
+
+      const resJson = await res.json();
+      if (!resJson.ok) {
+        // Si el servidor rechazó, la guarda en IndexedDB para reintentar
+        await encolarFotoFallida(viajeId, puesto, nave, listaFotos[i], i);
+      }
+    } catch (err) {
+      // Si la grúa cortó la señal a mitad de subida, la foto se asegura en el celular
+      await encolarFotoFallida(viajeId, puesto, nave, listaFotos[i], i);
+    }
   }
 }
 
-// SINCRONIZACIÓN AUTOMÁTICA UNION-MERGE
-function configurarEventosRed() {
-  window.addEventListener('online', () => { actualizarBadgeRed(true); sincronizarColaOfflineSilencioso(); });
-  window.addEventListener('offline', () => { actualizarBadgeRed(false); });
-  actualizarBadgeRed(navigator.onLine);
+async function encolarFotoFallida(viajeId, puesto, nave, fotoB64, index) {
+  const fotoObj = {
+    idempotencyKey: `FOTO_${viajeId}_${index}`,
+    esSoloFoto: true,
+    payload: {
+      action: 'subirFotoIndividual',
+      data: { viajeId, puesto, nave, fotoBase64: fotoB64, index: index }
+    }
+  };
+  await guardarEnIndexedDB(fotoObj);
 }
 
-function actualizarBadgeRed(isOnline) {
-  document.getElementById('netDot').style.background = isOnline ? "#22c55e" : "#ea580c";
-  document.getElementById('netText').textContent = isOnline ? "En Línea" : "Sin Red";
-}
-
-async function actualizarBadgeColaOffline() {
-  const p = await obtenerTodosDeIndexedDB();
-  const b = document.getElementById('offlineBanner');
-  if (p.length > 0) {
-    b.style.display = 'block';
-    document.getElementById('countOffline').textContent = p.length;
-  } else {
-    b.style.display = 'none';
-  }
-}
-
+// ============================================================
+// SINCRONIZACIÓN AUTOMÁTICA UNION-MERGE (TEXTOS + FOTOS)
+// ============================================================
 async function sincronizarColaOfflineSilencioso() {
   if (isSyncingOfflineQueue || !navigator.onLine) return;
   isSyncingOfflineQueue = true;
+
   try {
     const pend = await obtenerTodosDeIndexedDB();
     for (const item of pend) {
+      // 1. Si es una foto que se quedó a mitad de camino
+      if (item.esSoloFoto) {
+        try {
+          const resFoto = await fetchConTimeout(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(item.payload)
+          }, 10000);
+          const resFotoJson = await resFoto.json();
+          if (resFotoJson.ok) {
+            await eliminarDeIndexedDB(item.idempotencyKey);
+          }
+        } catch(e) {}
+        continue;
+      }
+
+      // 2. Si es un registro completo de viaje
       try {
         const res = await fetchConTimeout(GAS_URL, {
           method: 'POST',
