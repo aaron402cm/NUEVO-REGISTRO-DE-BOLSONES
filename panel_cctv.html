@@ -1276,42 +1276,101 @@
         if (alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; }
     }
 
+    // ========================================================================
+    // MOTOR DE VOZ FEMENINA CÁLIDA / COLOMBIANA (EDGE, CHROME, WINDOWS)
+    // ========================================================================
     function cargarVoces() {
         if (!('speechSynthesis' in window)) return;
         const voces = window.speechSynthesis.getVoices();
         if (!voces || voces.length === 0) return;
 
-        const patronMujer = /salome|salomé|sabina|helena|elena|dalia|laura|paulina|soledad|paloma|elvira|monica|mónica|sofia|sofía|camila|paola|luisa|female|mujer|natural/i;
-        const patronHombre = /raul|raúl|gonzalo|david|jorge|pablo|alvaro|álvaro|carlos|diego|manuel|pedro|julio|andres|andrés|male|hombre/i;
+        // Lista estricta de nombres femeninos (priorizando Colombia y Latinoamérica)
+        const patronMujerSensual = /salome|salomé|paulina|dalia|sabina|elena|helena|sofia|sofía|monica|mónica|camila|laura|paloma|zira|female|mujer|natural/i;
+        
+        // Bloqueo estricto de cualquier voz de hombre
+        const patronHombre = /raul|raúl|david|jorge|pablo|alvaro|álvaro|carlos|diego|manuel|pedro|julio|andres|andrés|male|hombre|male|miguel|enrique/i;
 
-        vozFemeninaSeleccionada = voces.find(v => /salome|salomé/i.test(v.name) && !patronHombre.test(v.name)) ||
-                                  voces.find(v => v.lang.startsWith('es') && patronMujer.test(v.name) && !patronHombre.test(v.name)) ||
-                                  voces.find(v => v.lang.startsWith('es') && !patronHombre.test(v.name));
+        // 1. Prioridad Máxima: Salomé (Colombia - es-CO)
+        let candidata = voces.find(v => 
+            /salome|salomé/i.test(v.name) && 
+            !patronHombre.test(v.name)
+        );
+
+        // 2. Segunda opción: Cualquier voz femenina de Colombia o Latinoamérica
+        if (!candidata) {
+            candidata = voces.find(v => 
+                (v.lang === 'es-CO' || v.lang === 'es_CO' || v.name.toLowerCase().includes('colombia')) &&
+                patronMujerSensual.test(v.name) && 
+                !patronHombre.test(v.name)
+            );
+        }
+
+        // 3. Tercera opción: Cualquier voz femenina latina cálida (Paulina, Dalia, Sabina)
+        if (!candidata) {
+            candidata = voces.find(v => 
+                v.lang.startsWith('es') && 
+                patronMujerSensual.test(v.name) && 
+                !patronHombre.test(v.name)
+            );
+        }
+
+        // 4. Si ninguna coincide por nombre, tomar la primera en español que NO sea hombre
+        if (!candidata) {
+            candidata = voces.find(v => 
+                v.lang.startsWith('es') && 
+                !patronHombre.test(v.name) &&
+                !v.name.toLowerCase().includes('español') // Evita Google español default (suele sonar varonil)
+            );
+        }
+
+        if (candidata) {
+            vozFemeninaSeleccionada = candidata;
+        }
     }
-    if ('speechSynthesis' in window) window.speechSynthesis.onvoiceschanged = cargarVoces;
 
-    function procesarNuevosRegistrosVoz(filas) {
-        filas.forEach(f => {
-            if (f.viajeId && !knownTransactionIds.has(f.viajeId)) {
-                knownTransactionIds.add(f.viajeId);
-                anunciarMovimientoPorVoz(f);
-            }
-        });
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = cargarVoces;
     }
 
+    // ========================================================================
+    // ANUNCIO VOCAL CON NAVE, TT Y BOLSONES (VOZ DULCE Y PAUSADA)
+    // ========================================================================
     function anunciarMovimientoPorVoz(reg) {
         if (!('speechSynthesis' in window) || avisoVozSilenciado) return;
-        const tt = (reg.tt || 'unidad').replace('TT-', 'T T ');
-        let msj = "";
-        if (reg.puesto === 'muelle') msj = `Descarga en Muelle, unidad ${tt}, con ${reg.bolsones} bolsones.`;
-        else if (reg.puesto === 'labarthe') msj = `Recepción en Balanza, ${tt}, confirmada con ${reg.bolsones} bolsones.`;
-        else if (reg.puesto === 'despacho') msj = `Despacho de salida, unidad ${tt}, con ${reg.bolsones} bolsones.`;
 
-        if (msj) {
-            const u = new SpeechSynthesisUtterance(msj);
-            if (vozFemeninaSeleccionada) { u.voice = vozFemeninaSeleccionada; u.lang = vozFemeninaSeleccionada.lang; }
-            u.rate = 1.0;
-            window.speechSynthesis.speak(u);
+        // Si la voz aún no cargó, forzar carga
+        if (!vozFemeninaSeleccionada) cargarVoces();
+
+        const ttLimpio = (reg.tt || 'unidad').toString().replace('TT-', 'T T ').replace('-', ' ');
+        const bols = reg.bolsones || 0;
+        
+        // Obtener el nombre real del buque activo
+        const buqueActivo = (buquesInfo[reg.nave || naveActivaCCTV]?.nombre || 'la nave activa').toUpperCase();
+
+        let mensaje = "";
+        if (reg.puesto === 'muelle') {
+            mensaje = `Atención. Registro en Muelle del buque ${buqueActivo}. Unidad ${ttLimpio}, con ${bols} bolsones descargados.`;
+        } else if (reg.puesto === 'labarthe') {
+            mensaje = `Recepción confirmada en Balanza del buque ${buqueActivo}. Unidad ${ttLimpio}, con ${bols} bolsones.`;
+        } else if (reg.puesto === 'despacho') {
+            mensaje = `Despacho de salida del buque ${buqueActivo}. Unidad ${ttLimpio}, con ${bols} bolsones.`;
+        }
+
+        if (mensaje) {
+            window.speechSynthesis.cancel(); // Evita que se amontonen audios
+
+            const utterance = new SpeechSynthesisUtterance(mensaje);
+            if (vozFemeninaSeleccionada) {
+                utterance.voice = vozFemeninaSeleccionada;
+                utterance.lang = vozFemeninaSeleccionada.lang;
+            } else {
+                utterance.lang = 'es-CO';
+            }
+
+            // Configuración acústica para tono femenino, dulce y relajado
+            utterance.pitch = 1.20; // Tono más agudo, cálido y femenino
+            utterance.rate = 0.93;  // Ritmo ligeramente pausado (voz suave y natural)
+            window.speechSynthesis.speak(utterance);
         }
     }
 
