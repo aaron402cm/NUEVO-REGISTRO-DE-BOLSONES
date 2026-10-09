@@ -7,100 +7,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        /* ESTILOS DEL SONAR MILITAR CIRCULAR 360° */
-        .sonar-scope {
-            width: 220px;
-            height: 220px;
-            border-radius: 50%;
-            background: radial-gradient(circle, #022c22 0%, #064e3b 40%, #021f17 80%, #01140f 100%);
-            border: 3px solid #10b981;
-            box-shadow: 0 0 25px rgba(16, 185, 129, 0.3), inset 0 0 20px rgba(0,0,0,0.8);
-            position: relative;
-            overflow: hidden;
-        }
-        .sonar-sweep {
-            position: absolute;
-            inset: 0;
-            border-radius: 50%;
-            background: conic-gradient(from 0deg, rgba(16, 185, 129, 0.45) 0deg, rgba(16, 185, 129, 0) 65deg);
-            animation: sonarSweepAnim 3.8s linear infinite;
-            pointer-events: none;
-            z-index: 2;
-        }
-        @keyframes sonarSweepAnim {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .sonar-ring {
-            position: absolute;
-            border-radius: 50%;
-            border: 1px dashed rgba(52, 211, 153, 0.35);
-            pointer-events: none;
-        }
-        .ring-1 { inset: 20px; }
-        .ring-2 { inset: 50px; }
-        .ring-3 { inset: 80px; }
-        .sonar-cross-h {
-            position: absolute; top: 50%; left: 0; right: 0; height: 1px;
-            background: rgba(52, 211, 153, 0.25); pointer-events: none;
-        }
-        .sonar-cross-v {
-            position: absolute; left: 50%; top: 0; bottom: 0; width: 1px;
-            background: rgba(52, 211, 153, 0.25); pointer-events: none;
-        }
-        .sonar-cardinal {
-            position: absolute; font-size: 9px; font-weight: 900; color: #34d399; font-family: monospace;
-        }
-        .sonar-cardinal.n { top: 3px; left: 50%; transform: translateX(-50%); }
-        .sonar-cardinal.e { right: 4px; top: 50%; transform: translateY(-50%); }
-        .sonar-cardinal.s { bottom: 3px; left: 50%; transform: translateX(-50%); }
-        .sonar-cardinal.w { left: 4px; top: 50%; transform: translateY(-50%); }
-
-        /* PUNTOS DE CALOR TÁCTICOS (BLIPS) */
-        .sonar-blip {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 5;
-            cursor: pointer;
-            transition: all 0.5s ease;
-        }
-        .sonar-blip.normal {
-            background: #38bdf8;
-            box-shadow: 0 0 10px #38bdf8, 0 0 20px #0284c7;
-            animation: blipGlow 1.2s infinite alternate;
-        }
-        .sonar-blip.warn {
-            background: #f59e0b;
-            box-shadow: 0 0 12px #f59e0b, 0 0 22px #d97706;
-            animation: blipGlow 0.8s infinite alternate;
-        }
-        .sonar-blip.danger {
-            background: #ef4444;
-            box-shadow: 0 0 15px #ef4444, 0 0 28px #dc2626;
-            animation: blipGlow 0.5s infinite alternate;
-        }
-        @keyframes blipGlow {
-            from { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
-            to { transform: translate(-50%, -50%) scale(1.4); opacity: 1; }
-        }
-        .sonar-blip-label {
-            position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
-            font-size: 8px; font-weight: 900; color: #f8fafc; background: rgba(15, 23, 42, 0.85);
-            padding: 1px 4px; border-radius: 3px; white-space: nowrap; pointer-events: none; border: 1px solid rgba(255,255,255,0.2);
-        }
-
-        /* MODAL DE PERMISO DE AUDIO */
-        #modalPermisoAudioInicial {
-            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.88);
-            display: none; align-items: center; justify-content: center; z-index: 30000;
-        }
-        .audio-splash-box {
-            background: #ffffff; border-radius: 20px; padding: 35px; max-width: 460px; width: 90%;
-            text-align: center; border: 4px solid #0284c7; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-        }
         :root {
             --navy: #0f172a;
             --blue: #1e3a8a;
@@ -121,17 +27,54 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
         body, html { width: 100%; height: 100%; background: var(--bg-gray); overflow: hidden; font-size: 14px; }
 
-        #audioUnlockBanner {
-            position: fixed; bottom: 20px; right: 20px; background: #ca8a04; color: white;
-            padding: 14px 22px; border-radius: 10px; font-weight: bold; font-size: 13px; z-index: 10005;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: none; cursor: pointer; border: 2px solid #b45309;
-            animation: pulseWarnAudio 1.5s infinite alternate;
+        /* MODAL DE PERMISO DE AUDIO */
+        #modalPermisoAudioInicial {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.90);
+            display: none; align-items: center; justify-content: center; z-index: 30000;
         }
-        @keyframes pulseWarnAudio {
-            from { transform: scale(1); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-            to { transform: scale(1.03); box-shadow: 0 6px 20px rgba(180,83,9,0.6); }
+        .audio-splash-box {
+            background: #ffffff; border-radius: 20px; padding: 35px; max-width: 460px; width: 90%;
+            text-align: center; border: 4px solid #0284c7; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
         }
 
+        /* SONAR MILITAR CIRCULAR 360° */
+        .sonar-scope {
+            width: 220px; height: 220px; border-radius: 50%;
+            background: radial-gradient(circle, #022c22 0%, #064e3b 40%, #021f17 80%, #01140f 100%);
+            border: 3px solid #10b981; box-shadow: 0 0 25px rgba(16, 185, 129, 0.3), inset 0 0 20px rgba(0,0,0,0.8);
+            position: relative; overflow: hidden;
+        }
+        .sonar-sweep {
+            position: absolute; inset: 0; border-radius: 50%;
+            background: conic-gradient(from 0deg, rgba(16, 185, 129, 0.45) 0deg, rgba(16, 185, 129, 0) 65deg);
+            animation: sonarSweepAnim 3.8s linear infinite; pointer-events: none; z-index: 2;
+        }
+        @keyframes sonarSweepAnim { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .sonar-ring { position: absolute; border-radius: 50%; border: 1px dashed rgba(52, 211, 153, 0.35); pointer-events: none; }
+        .ring-1 { inset: 20px; } .ring-2 { inset: 50px; } .ring-3 { inset: 80px; }
+        .sonar-cross-h { position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(52, 211, 153, 0.25); pointer-events: none; }
+        .sonar-cross-v { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(52, 211, 153, 0.25); pointer-events: none; }
+        .sonar-cardinal { position: absolute; font-size: 9px; font-weight: 900; color: #34d399; font-family: monospace; }
+        .sonar-cardinal.n { top: 3px; left: 50%; transform: translateX(-50%); }
+        .sonar-cardinal.e { right: 4px; top: 50%; transform: translateY(-50%); }
+        .sonar-cardinal.s { bottom: 3px; left: 50%; transform: translateX(-50%); }
+        .sonar-cardinal.w { left: 4px; top: 50%; transform: translateY(-50%); }
+
+        .sonar-blip {
+            position: absolute; width: 10px; height: 10px; border-radius: 50%;
+            transform: translate(-50%, -50%); z-index: 5; cursor: pointer; transition: all 0.5s ease;
+        }
+        .sonar-blip.normal { background: #38bdf8; box-shadow: 0 0 10px #38bdf8, 0 0 20px #0284c7; animation: blipGlow 1.2s infinite alternate; }
+        .sonar-blip.warn { background: #f59e0b; box-shadow: 0 0 12px #f59e0b, 0 0 22px #d97706; animation: blipGlow 0.8s infinite alternate; }
+        .sonar-blip.danger { background: #ef4444; box-shadow: 0 0 15px #ef4444, 0 0 28px #dc2626; animation: blipGlow 0.5s infinite alternate; }
+        @keyframes blipGlow { from { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; } to { transform: translate(-50%, -50%) scale(1.4); opacity: 1; } }
+        .sonar-blip-label {
+            position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
+            font-size: 8px; font-weight: 900; color: #f8fafc; background: rgba(15, 23, 42, 0.85);
+            padding: 1px 4px; border-radius: 3px; white-space: nowrap; pointer-events: none; border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        /* CELEBRACIÓN Y LOGIN */
         #celebrationOverlay {
             position: fixed; inset: 0; background: rgba(15, 23, 42, 0.92); display: none;
             flex-direction: column; align-items: center; justify-content: center; z-index: 20000;
@@ -151,6 +94,7 @@
         .login-input { width: 100%; padding: 14px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 18px; text-align: center; outline: none; margin-bottom: 15px; }
         .login-btn { width: 100%; padding: 14px; background: var(--blue-btn); color: var(--white); border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
 
+        /* LAYOUT GENERAL */
         #appLayout { display: none; width: 100%; height: 100%; flex-direction: row; }
         .sidebar { width: 250px; background: var(--navy); color: white; display: flex; flex-direction: column; flex-shrink: 0; }
         .sidebar-brand { padding: 20px; font-weight: 900; font-size: 18px; border-bottom: 2px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
@@ -164,6 +108,7 @@
         .topbar-header { display: flex; justify-content: space-between; align-items: center; }
         .scroll-area { padding: 20px; flex: 1; overflow-y: auto; }
 
+        /* COMMAND DECK BI-NAVE */
         .command-deck { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 5px; }
         .deck-card {
             background: #ffffff; border: 3px solid var(--border); border-radius: 12px; padding: 14px 18px;
@@ -184,6 +129,7 @@
         .deck-kpi-lbl { font-size: 10px; font-weight: bold; color: var(--muted); text-transform: uppercase; }
         .deck-kpi-val { font-size: 17px; font-weight: 900; color: var(--navy); }
 
+        /* RADAR DE AUTOVÍA */
         .radar-card {
             background: #0f172a; border-radius: 14px; border: 3px solid #1e293b; padding: 18px;
             color: white; margin-bottom: 22px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
@@ -244,8 +190,28 @@
         .modal-box { background: white; padding: 25px; border-radius: 14px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; }
     </style>
 </head>
-<body onclick="desbloquearAudioPorClic()">
+<body>
 
+<!-- VENTANA DE AUTORIZACIÓN DE AUDIO Y VOZ TÁCTICA -->
+<div id="modalPermisoAudioInicial">
+    <div class="audio-splash-box">
+        <div style="font-size: 3.5rem; margin-bottom: 12px; animation: truckBounce 1s infinite alternate;">🔊</div>
+        <h2 style="color: var(--navy); font-size: 20px; font-weight: 900; margin-bottom: 8px;">
+            CENTRO DE CONTROL CCTV
+        </h2>
+        <div style="font-size: 13px; font-weight: bold; color: #0284c7; margin-bottom: 15px;">
+            ACTIVACIÓN DEL SISTEMA DE VOZ Y SIRENA TÁCTICA
+        </div>
+        <p style="font-size: 13px; line-height: 1.5; color: var(--muted); margin-bottom: 22px;">
+            Para autorizar a Microsoft Edge o Google Chrome la reproducción en tiempo real de los <strong>anuncios vocales de camiones</strong>, el <strong>sonar militar</strong> y las <strong>alarmas acústicas</strong>, presione el siguiente botón:
+        </p>
+        <button class="btn-sm" style="background:#16a34a; color:white; width:100%; padding:15px; font-size:15px; justify-content:center; border-radius:12px; box-shadow: 0 4px 15px rgba(22, 163, 74, 0.4);" onclick="confirmarYDesbloquearAudioTotal()">
+            🔊 ACTIVAR AUDIO Y ENTRAR AL RADAR
+        </button>
+    </div>
+</div>
+
+<!-- OVERLAY DE CELEBRACIÓN 100% -->
 <div id="celebrationOverlay">
     <canvas id="confettiCanvas"></canvas>
     <div class="celebration-box">
@@ -256,6 +222,7 @@
     </div>
 </div>
 
+<!-- MODAL MIGRACIÓN SELECTIVA -->
 <div class="modal-overlay" id="modalMigracion">
     <div class="modal-box" style="border: 4px solid var(--red);">
         <h3 style="color: var(--red); font-size: 20px; font-weight: 900; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
@@ -284,6 +251,7 @@
     </div>
 </div>
 
+<!-- PANTALLA LOGIN CCTV -->
 <div id="loginScreen">
     <div class="login-card">
         <h2>🎛️ CCTV Control — Acceso</h2>
@@ -293,8 +261,8 @@
         <div id="loginErr" style="color:var(--red); font-weight:bold; margin-top:10px;"></div>
     </div>
 </div>
-
 <div id="appLayout">
+    <!-- BARRA LATERAL -->
     <aside class="sidebar">
         <div class="sidebar-brand">
             <span>🎛️ CCTV RADAR</span>
@@ -319,7 +287,9 @@
         <div class="nav-item" id="nav-turnos" onclick="changePage('turnos')">⏱️ Horarios de Turno</div>
     </aside>
 
+    <!-- ÁREA DE CONTENIDO PRINCIPAL -->
     <main class="main-content">
+        <!-- TOPBAR CON COMMAND DECK BI-NAVE -->
         <div class="topbar">
             <div class="topbar-header">
                 <div>
@@ -335,6 +305,7 @@
                 </div>
             </div>
 
+            <!-- TARJETAS DEL COMMAND DECK -->
             <div class="command-deck">
                 <div class="deck-card active nave1" id="cardDeckNave1" onclick="seleccionarNaveCCTV('nave1')">
                     <div class="deck-card-head">
@@ -381,6 +352,7 @@
         </div>
 
         <div class="scroll-area">
+            <!-- BANNERS DE ALERTA -->
             <div id="bannerAlertaDiff" class="alert-banner danger" style="display:none; justify-content:space-between; align-items:center;">
                 <div>🚨 SIRENA ACÚSTICA ACTIVA — DISCREPANCIA DETECTADA: Diferencia de bolsones o productos entre Muelle y Balanza.</div>
                 <div style="display:flex; gap:10px; align-items:center;">
@@ -405,6 +377,7 @@
                     </div>
                 </div>
 
+                <!-- KPIS DEL TURNO -->
                 <div class="kpi-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-bottom:20px;">
                     <div class="card" style="padding:16px; text-align:center; margin-bottom:0;">
                         <div class="lbl" style="font-size:11px; font-weight:bold; color:#0284c7; text-transform:uppercase;">Descarga Muelle (Turno)</div>
@@ -448,7 +421,7 @@
                     </div>
 
                     <div style="display:grid; grid-template-columns: 1fr 280px; gap:20px; align-items:center;">
-                        <!-- LADO IZQUIERDO: AUTOVÍA LINEAL CON CRONÓMETROS -->
+                        <!-- LADO IZQUIERDO: AUTOVÍA LINEAL -->
                         <div>
                             <div style="font-size:11px; font-weight:900; color:#38bdf8; text-transform:uppercase; margin-bottom:8px; letter-spacing:1px;">
                                 🛣️ RUTA TERRESTRE EN TIEMPO REAL:
@@ -460,14 +433,13 @@
                             </div>
                         </div>
 
-                        <!-- LADO DERECHO: SONAR CIRCULAR MILITAR CON BARRIDO 360° -->
+                        <!-- LADO DERECHO: SONAR CIRCULAR 360° -->
                         <div style="display:flex; flex-direction:column; align-items:center; background:#090d16; padding:15px; border-radius:14px; border:2px solid #1e293b; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);">
                             <div style="width:100%; display:flex; justify-content:space-between; font-size:10px; font-weight:900; color:#00f0ff; letter-spacing:1px; margin-bottom:6px; font-family:monospace;">
                                 <span>SONAR SCANNER</span>
                                 <span id="radarTargetsCount">TARGETS: 0</span>
                             </div>
 
-                            <!-- ESFERA DE SONAR CIRCULAR CON AGUJA GIRATORIA -->
                             <div class="sonar-scope" id="sonarScopeScreen">
                                 <div class="sonar-sweep"></div>
                                 <div class="sonar-ring ring-1"></div>
@@ -479,7 +451,6 @@
                                 <span class="sonar-cardinal e">E</span>
                                 <span class="sonar-cardinal s">S</span>
                                 <span class="sonar-cardinal w">W</span>
-                                <!-- PUNTOS DE CALOR (BLIPS) DINÁMICOS -->
                                 <div id="sonarBlipsContainer"></div>
                             </div>
 
@@ -490,6 +461,7 @@
                     </div>
                 </div>
 
+                <!-- CONTROL DE SALDOS -->
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px; margin-bottom:22px;">
                     <div class="card" style="margin-bottom:0;">
                         <div class="card-head"><h3>📋 Control de Saldos de Descarga (Avance + Ritmo PPH)</h3></div>
@@ -511,6 +483,7 @@
                     </div>
                 </div>
 
+                <!-- ÚLTIMOS MOVIMIENTOS -->
                 <div class="card">
                     <div class="card-head">
                         <h3>Últimos Movimientos Registrados</h3>
@@ -612,7 +585,7 @@
                     <div class="card-head"><h3>🛠️ Monitor de Estado de Dispositivos de Inspectores (En Vivo)</h3></div>
                     <div style="padding:20px;">
                         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:15px; margin-bottom:25px;" id="containerHeartbeats">
-                            <!-- Latidos generados dinámicamente -->
+                            <!-- Latidos dinámicos -->
                         </div>
 
                         <div class="card" style="margin-bottom:0;">
@@ -755,7 +728,7 @@
                 </div>
             </div>
 
-            <!-- PÁGINA 8: EDITOR MAESTRO DE BUQUES Y PRODUCTOS (SIN DNI, LIBRE) -->
+            <!-- PÁGINA 8: EDITOR MAESTRO DE BUQUES Y PRODUCTOS -->
             <div id="pageProductos" class="page-container" style="display:none;">
                 <div class="card" style="max-width: 700px;">
                     <div class="card-head">
@@ -825,17 +798,19 @@
                 </div>
             </div>
 
-        </div>
+        </div> <!-- scroll-area -->
     </main>
-</div>
+</div> <!-- appLayout -->
+
 <!-- VENTANA EMERGENTE DE CARGA RÁPIDA -->
 <div id="loadingOverlayCCTV" style="position:fixed; inset:0; background:rgba(15,23,42,0.65); display:none; align-items:center; justify-content:center; z-index:20005;">
     <div style="background:white; padding:25px 35px; border-radius:16px; text-align:center; box-shadow:0 15px 35px rgba(0,0,0,0.5); border:3px solid #0284c7; max-width:380px; width:85%;">
-        <div style="font-size:2.8rem; margin-bottom:10px; animation: pulseWarnAudio 1s infinite alternate;">⏳</div>
+        <div style="font-size:2.8rem; margin-bottom:10px; animation: truckBounce 1s infinite alternate;">⏳</div>
         <div style="font-weight:900; font-size:16px; color:#0f172a;" id="loadingOverlayTitle">Cargando Conductores...</div>
         <div style="font-size:12px; color:#64748b; font-weight:bold; margin-top:5px;" id="loadingOverlaySub">Sincronizando relación de conductores con la nave...</div>
     </div>
 </div>
+
 <!-- MODAL VISUALIZADOR DE FOTOS -->
 <div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)cerrarModal()">
     <div class="modal-box">
@@ -905,25 +880,10 @@
         </div>
     </div>
 </div>
-  <!-- VENTANA DE AUTORIZACIÓN DE AUDIO Y VOZ (ELIMINA EL BLOQUEO DEL NAVEGADOR) -->
-<div id="modalPermisoAudioInicial">
-    <div class="audio-splash-box">
-        <div style="font-size: 3.5rem; margin-bottom: 12px; animation: truckBounce 1s infinite alternate;">🔊</div>
-        <h2 style="color: var(--navy); font-size: 20px; font-weight: 900; margin-bottom: 8px;">
-            CENTRO DE CONTROL CCTV
-        </h2>
-        <div style="font-size: 13px; font-weight: bold; color: #0284c7; margin-bottom: 15px;">
-            ACTIVACIÓN DEL SISTEMA DE VOZ Y SIRENA TÁCTICA
-        </div>
-        <p style="font-size: 13px; line-height: 1.5; color: var(--muted); margin-bottom: 22px;">
-            Para autorizar a Microsoft Edge o Google Chrome la reproducción en tiempo real de los <strong>anuncios vocales de camiones</strong>, el <strong>radar de autovía</strong> y las <strong>alarmas acústicas</strong>, presione el siguiente botón:
-        </p>
-        <button class="btn-sm" style="background:#16a34a; color:white; width:100%; padding:15px; font-size:15px; justify-content:center; border-radius:12px; box-shadow: 0 4px 15px rgba(22, 163, 74, 0.4);" onclick="confirmarYDesbloquearAudioTotal()">
-            🔊 ACTIVAR AUDIO Y ENTRAR AL RADAR
-        </button>
-    </div>
-</div>
 <script>
+    // ========================================================================
+    // CONSTANTES Y ESTADO GLOBAL MULTI-NAVE
+    // ========================================================================
     const SESSION_KEY = "iqbf_cctv_persistent_session_v7";
     let gasUrl = localStorage.getItem("iqbf_gas_url") || "https://script.google.com/macros/s/AKfycbxZ4qwyvvuWd_IfedsWR1R65niSwlYPKtgcDU_e5f0H4P1cCbOvIGDICksXe3tIdDrfrw/exec";
 
@@ -937,8 +897,8 @@
 
     let catalogoProductos = { nave1: [], nave2: [] };
     let buquesInfo = {
-    nave1: { nombre: 'Nave 1', muelle: 'Muelle 1A' },
-    nave2: { nombre: 'Nave 2', muelle: 'Muelle 2B' } 
+        nave1: { nombre: 'Nave 1', muelle: 'Muelle 1A' },
+        nave2: { nombre: 'Nave 2', muelle: 'Muelle 2B' }
     };
 
     let horaCorteDiurnoStr = "06:50";
@@ -955,11 +915,12 @@
     let incidenciasHistoricasSet = new Set(JSON.parse(localStorage.getItem('iqbf_incidencias_historicas_v7') || '[]'));
     let camionesSimulados = [];
 
-    // Rastrear qué alertas vocales ya se emitieron (id -> fase: 1 o 2)
     let alertasVocalesEmitidasMap = new Map();
+    let globalUtteranceInstance = null;
+    let audioDesbloqueadoPorUsuario = false;
 
     // ========================================================================
-    // PARSEADOR DE FECHA UNIVERSAL (SOLUCIONA EL ERROR GMT Y CADENAS LARGAS)
+    // PARSEADOR DE FECHA UNIVERSAL (GMT, SISTEMA Y LATINO CON AM/PM)
     // ========================================================================
     function parsearFechaFlexible(fStr) {
         if (!fStr) return null;
@@ -970,23 +931,23 @@
         const dNative = new Date(fStr);
         if (!isNaN(dNative.getTime())) return dNative;
 
-        // 2. Probar formato latino DD/MM/YYYY con soporte estricto a.m. / p.m.
-    const match = fStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?(?:\s*([ap]\.?\s*m\.?))?/i);
-    if (match) {
-    const d = parseInt(match[1], 10);
-    const m = parseInt(match[2], 10) - 1;
-    const y = parseInt(match[3], 10);
-    let hh = parseInt(match[4] || 0, 10);
-    const mm = parseInt(match[5] || 0, 10);
-    const ss = parseInt(match[6] || 0, 10);
-    const ampm = match[7] ? match[7].toLowerCase().replace(/\./g, '').trim() : '';
+        // 2. Probar formato latino DD/MM/YYYY con soporte a. m. / p. m.
+        const match = fStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?(?:\s*([ap]\.?\s*m\.?))?/i);
+        if (match) {
+            const d = parseInt(match[1], 10);
+            const m = parseInt(match[2], 10) - 1;
+            const y = parseInt(match[3], 10);
+            let hh = parseInt(match[4] || 0, 10);
+            const mm = parseInt(match[5] || 0, 10);
+            const ss = parseInt(match[6] || 0, 10);
+            const ampm = match[7] ? match[7].toLowerCase().replace(/\./g, '').trim() : '';
 
-    if (ampm.includes('p') && hh < 12) hh += 12;
-    if (ampm.includes('a') && hh === 12) hh = 0;
+            if (ampm.includes('p') && hh < 12) hh += 12;
+            if (ampm.includes('a') && hh === 12) hh = 0;
 
-    const dObj = new Date(y, m, d, hh, mm, ss);
-    if (!isNaN(dObj.getTime())) return dObj;
-    }
+            const dObj = new Date(y, m, d, hh, mm, ss);
+            if (!isNaN(dObj.getTime())) return dObj;
+        }
         return null;
     }
 
@@ -1015,6 +976,12 @@
         if (localStorage.getItem(SESSION_KEY) === 'true') {
             mostrarDashboard();
         }
+        if (!sessionStorage.getItem('iqbf_audio_unlocked')) {
+            document.getElementById('modalPermisoAudioInicial').style.display = 'flex';
+        } else {
+            audioDesbloqueadoPorUsuario = true;
+        }
+
         setInterval(actualizarReloj, 1000);
         setInterval(actualizarCronometrosRadar, 1000);
         setInterval(cargarTelemetriaServidor, 12000);
@@ -1067,10 +1034,11 @@
         document.getElementById('clock').textContent = d.toLocaleDateString('es-PE') + ' ' + d.toLocaleTimeString('es-PE');
     }
 
-    // 1. Memoria rápida en caché para que al cambiar de nave cargue de inmediato
+    // ========================================================================
+    // COMMAND DECK BI-NAVE INTERACTIVO
+    // ========================================================================
     let conductoresCachePorNave = { nave1: null, nave2: null };
 
-    // 2. Al hacer clic en Nave 1 o Nave 2 arriba, sincroniza la pestaña si estás en Conductores
     function seleccionarNaveCCTV(naveKey) {
         naveActivaCCTV = naveKey;
         localStorage.setItem("iqbf_cctv_nave_activa", naveKey);
@@ -1084,18 +1052,14 @@
 
         renderizarTodoDashboard();
         if (document.getElementById('pageKpis').style.display === 'block') renderKpisPage();
-        
-        // SI ESTÁS EN LA PESTAÑA CONDUCTORES, MUESTRA LA CARGA Y ACTUALIZA DE INMEDIATO
-        if (document.getElementById('pageConductores').style.display === 'block') {
-            syncConductoresUI();
-        }
+        if (document.getElementById('pageConductores').style.display === 'block') syncConductoresUI();
     }
 
+    // SINCRONIZACIÓN AISLADA PARA EVITAR ERRORES DE CONEXIÓN PARALELOS
     async function sincronizarServidor(silencioso = false) {
         if (!silencioso) document.getElementById('syncStatus').textContent = "Sincronizando...";
 
         try {
-            // Sincronización aislada para que un barco no bloquee al otro
             const resP1 = await fetch(`${gasUrl}?action=obtenerProductos&nave=nave1`).then(r => r.json()).catch(() => ({ ok: false }));
             const resP2 = await fetch(`${gasUrl}?action=obtenerProductos&nave=nave2`).then(r => r.json()).catch(() => ({ ok: false }));
             const resF1 = await fetch(`${gasUrl}?action=obtenerFilasExcel&nave=nave1`).then(r => r.json()).catch(() => ({ ok: false }));
@@ -1199,54 +1163,73 @@
         renderTablaDespacho();
     }
 
-    // VARIABLE GLOBAL PARA QUE CHROME NUNCA DESTRUYA EL AUDIO
-    let globalUtteranceInstance = null;
-    let audioDesbloqueadoPorUsuario = false;
-
-    // AL ABRIR LA PÁGINA: SI NO HA DADO PERMISO EN ESTA SESIÓN, MUESTRA EL MODAL
-    window.addEventListener('load', () => {
-        if (!sessionStorage.getItem('iqbf_audio_unlocked')) {
-            document.getElementById('modalPermisoAudioInicial').style.display = 'flex';
-        } else {
-            audioDesbloqueadoPorUsuario = true;
-        }
-    });
-
-    // FUNCIÓN QUE SE EJECUTA AL HACER CLIC EN EL BOTÓN VERDE DEL MODAL
+    // ========================================================================
+    // PERMISO DE AUDIO Y MOTOR DE VOZ FEMENINA
+    // ========================================================================
     function confirmarYDesbloquearAudioTotal() {
         document.getElementById('modalPermisoAudioInicial').style.display = 'none';
         sessionStorage.setItem('iqbf_audio_unlocked', 'true');
         audioDesbloqueadoPorUsuario = true;
 
-        // Desbloquear AudioContext nativo
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
 
-        // Cargar voces del sistema operativo
         cargarVoces();
 
-        // Confirmación inmediata por voz femenina
         setTimeout(() => {
             const msj = "Sistema de audio y voz táctica activado. Centro de control en línea.";
             emitirLocucionFemeninaPausada(msj);
         }, 400);
     }
 
-    // BOTÓN DE PRUEBA MANUAL EN LA BARRA SUPERIOR
     function probarVozFemeninaEnVivo() {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
         cargarVoces();
 
-        const nom = (buquesInfo[naveActivaCCTV]?.nombre || 'LILY GLORY').toUpperCase();
+        const nom = (buquesInfo[naveActivaCCTV]?.nombre || 'BUQUE ACTIVO').toUpperCase();
         const testTexto = `Prueba de audio correcta. Centro de control monitoreando el buque ${nom}. Registro en Muelle, unidad T T 14, con 20 bolsones.`;
         emitirLocucionFemeninaPausada(testTexto);
     }
 
-    // LOCUTOR VOCAL ESTRICTO (PROTEGIDO CONTRA ERRORES DE CHROME / EDGE)
+    function cargarVoces() {
+        if (!('speechSynthesis' in window)) return;
+        const voces = window.speechSynthesis.getVoices();
+        if (!voces || voces.length === 0) return;
+
+        const patronMujer = /salome|salomé|paulina|dalia|sabina|elena|helena|sofia|sofía|monica|mónica|camila|laura|paloma|zira|female|mujer|natural/i;
+        const patronHombre = /raul|raúl|david|jorge|pablo|alvaro|álvaro|carlos|diego|manuel|pedro|julio|andres|andrés|male|hombre|male|miguel|enrique/i;
+
+        // 1. Prioridad: Salomé (Colombia - Edge Online Natural)
+        let candidata = voces.find(v => /salome|salomé/i.test(v.name) && !patronHombre.test(v.name));
+
+        // 2. Prioridad: Voces femeninas de Colombia / Latinoamérica
+        if (!candidata) {
+            candidata = voces.find(v => 
+                (v.lang === 'es-CO' || v.lang === 'es_CO' || v.name.toLowerCase().includes('colombia')) &&
+                patronMujer.test(v.name) && !patronHombre.test(v.name)
+            );
+        }
+
+        // 3. Prioridad: Voces femeninas latinas conocidas (Paulina, Sabina, Dalia, Elena)
+        if (!candidata) {
+            candidata = voces.find(v => v.lang.startsWith('es') && patronMujer.test(v.name) && !patronHombre.test(v.name));
+        }
+
+        // 4. Si está en Chrome y solo hay voces genéricas, tomar español que no tenga nombre de hombre
+        if (!candidata) {
+            candidata = voces.find(v => v.lang.startsWith('es') && !patronHombre.test(v.name));
+        }
+
+        if (candidata) {
+            vozFemeninaSeleccionada = candidata;
+        }
+    }
+    if ('speechSynthesis' in window) window.speechSynthesis.onvoiceschanged = cargarVoces;
+
     function emitirLocucionFemeninaPausada(texto) {
         if (!('speechSynthesis' in window)) return;
-        window.speechSynthesis.cancel(); // Detener audios anteriores
+        window.speechSynthesis.cancel();
 
         if (!vozFemeninaSeleccionada) cargarVoces();
 
@@ -1258,14 +1241,38 @@
             globalUtteranceInstance.lang = 'es-CO';
         }
 
-        // Tono cálido, femenino, pausado y sensual
-        globalUtteranceInstance.pitch = 1.22;
+        // Modulación para asegurar timbre femenino dulce
+        globalUtteranceInstance.pitch = 1.25;
         globalUtteranceInstance.rate = 0.92;
 
         window.speechSynthesis.speak(globalUtteranceInstance);
     }
 
-    // RENDERIZADO DEL RADAR (ACTUALIZA AUTOVÍA Y SONAR 360° SIMULTÁNEAMENTE)
+    function anunciarMovimientoPorVoz(reg) {
+        if (!('speechSynthesis' in window) || avisoVozSilenciado) return;
+        if (!vozFemeninaSeleccionada) cargarVoces();
+
+        const ttLimpio = (reg.tt || 'unidad').toString().replace('TT-', 'T T ').replace('-', ' ');
+        const bols = reg.bolsones || 0;
+        const buqueActivo = (buquesInfo[reg.nave || naveActivaCCTV]?.nombre || 'el buque activo').toUpperCase();
+
+        let mensaje = "";
+        if (reg.puesto === 'muelle') {
+            mensaje = `Atención. Registro en Muelle del buque ${buqueActivo}. Unidad ${ttLimpio}, con ${bols} bolsones descargados.`;
+        } else if (reg.puesto === 'labarthe') {
+            mensaje = `Recepción confirmada en Balanza del buque ${buqueActivo}. Unidad ${ttLimpio}, con ${bols} bolsones.`;
+        } else if (reg.puesto === 'despacho') {
+            mensaje = `Despacho de salida del buque ${buqueActivo}. Unidad ${ttLimpio}, con ${bols} bolsones.`;
+        }
+
+        if (mensaje) {
+            emitirLocucionFemeninaPausada(mensaje);
+        }
+    }
+
+    // ========================================================================
+    // RADAR Y ESCALAMIENTO EN 3 FASES (RESTAURADA COMPLETAMENTE)
+    // ========================================================================
     function renderRadarAutovia() {
         const pista = document.getElementById('radarAutoviaPista');
         const blipsContainer = document.getElementById('sonarBlipsContainer');
@@ -1323,10 +1330,9 @@
 
             evaluarEscalamientoVozYSirena(c.id, c.tt, mins);
 
-            // CÁLCULO DE COORDENADAS POLARES PARA EL SONAR MILITAR 360°
-            // El camión avanza desde el borde exterior (Muelle) hacia el centro (Balanza)
-            const radioMax = 95; // Radio en px dentro del sonar
-            const pctAvance = Math.min(1, segs / 600); // 10 min representa el trayecto estándar
+            // Coordenadas polares del sonar circular 360°
+            const radioMax = 95;
+            const pctAvance = Math.min(1, segs / 600);
             const distRadio = Math.max(15, radioMax * (1 - pctAvance * 0.75));
             const anguloRad = ((index * 68 + mins * 20) % 360) * (Math.PI / 180);
 
@@ -1362,41 +1368,68 @@
         blipsContainer.innerHTML = blipsHtml;
     }
 
-    // AVISOS DE DEMORA ESCALONADA (REPETIDOS EXACTAMENTE 4 VECES)
-    function emitirVozRepetida4Veces(texto, bannerTexto) {
-    if (avisoVozSilenciado) return;
+    // FUNCIÓN DE ESCALAMIENTO RESTAURADA
+    function evaluarEscalamientoVozYSirena(uid, ttNom, mins) {
+        const faseActual = alertasVocalesEmitidasMap.get(uid) || 0;
 
-    const bannerTrans = document.getElementById('bannerAlertaTransito');
-    if (bannerTrans) {
-        bannerTrans.style.display = 'flex';
-        bannerTrans.className = 'alert-banner warning';
-        document.getElementById('txtMsgRetrasoTransito').textContent = `⏰ ${bannerTexto}`;
-    }
-
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-
-    let repeticiones = 0;
-    function reproducirSiguiente() {
-        if (repeticiones >= 4 || avisoVozSilenciado) return;
-        repeticiones++;
-
-        globalUtteranceInstance = new SpeechSynthesisUtterance(texto);
-        if (vozFemeninaSeleccionada) {
-            globalUtteranceInstance.voice = vozFemeninaSeleccionada;
-            globalUtteranceInstance.lang = vozFemeninaSeleccionada.lang;
-        } else {
-            globalUtteranceInstance.lang = 'es-CO';
+        if (mins >= 10 && mins < 20 && faseActual < 1) {
+            alertasVocalesEmitidasMap.set(uid, 1);
+            const msg = `Atento Centro de control tenemos la ${limpiarNombreTT(ttNom)} que aún no llega a Labarthe, ya tiene más de 10 minutos.`;
+            emitirVozRepetida4Veces(msg, `Unidad ${ttNom} supera los 10 minutos en autovía`);
         }
-        globalUtteranceInstance.rate = 0.93;
-        globalUtteranceInstance.pitch = 1.22;
-        globalUtteranceInstance.onend = () => {
-            setTimeout(reproducirSiguiente, 800); // Pausa de 0.8s entre llamada y llamada
-        };
-        window.speechSynthesis.speak(globalUtteranceInstance);
+        else if (mins >= 20 && mins < 25 && faseActual < 2) {
+            alertasVocalesEmitidasMap.set(uid, 2);
+            const msg = `Alerta urgente Centro de control, la ${limpiarNombreTT(ttNom)} ya tiene más de 20 minutos en tránsito sin ingresar a Labarthe.`;
+            emitirVozRepetida4Veces(msg, `URGENTE: Unidad ${ttNom} supera los 20 minutos en ruta`);
+        }
+        else if (mins >= 25) {
+            alertasVocalesEmitidasMap.set(uid, 3);
+            if (!sirenaSilenciada) {
+                activarSirenaAcusticaEmergencia();
+            }
+            const bannerTrans = document.getElementById('bannerAlertaTransito');
+            if (bannerTrans) {
+                bannerTrans.style.display = 'flex';
+                bannerTrans.className = 'alert-banner danger';
+                document.getElementById('txtMsgRetrasoTransito').textContent = `🚨 ALARMA CRÍTICA: Unidad ${ttNom} lleva más de 25 minutos sin ingresar a Balanza.`;
+            }
+        }
     }
-    reproducirSiguiente();
-}
+
+    function emitirVozRepetida4Veces(texto, bannerTexto) {
+        if (avisoVozSilenciado) return;
+
+        const bannerTrans = document.getElementById('bannerAlertaTransito');
+        if (bannerTrans) {
+            bannerTrans.style.display = 'flex';
+            bannerTrans.className = 'alert-banner warning';
+            document.getElementById('txtMsgRetrasoTransito').textContent = `⏰ ${bannerTexto}`;
+        }
+
+        if (!('speechSynthesis' in window)) return;
+        window.speechSynthesis.cancel();
+
+        let repeticiones = 0;
+        function reproducirSiguiente() {
+            if (repeticiones >= 4 || avisoVozSilenciado) return;
+            repeticiones++;
+
+            globalUtteranceInstance = new SpeechSynthesisUtterance(texto);
+            if (vozFemeninaSeleccionada) {
+                globalUtteranceInstance.voice = vozFemeninaSeleccionada;
+                globalUtteranceInstance.lang = vozFemeninaSeleccionada.lang;
+            } else {
+                globalUtteranceInstance.lang = 'es-CO';
+            }
+            globalUtteranceInstance.rate = 0.92;
+            globalUtteranceInstance.pitch = 1.25;
+            globalUtteranceInstance.onend = () => {
+                setTimeout(reproducirSiguiente, 800);
+            };
+            window.speechSynthesis.speak(globalUtteranceInstance);
+        }
+        reproducirSiguiente();
+    }
 
     function limpiarNombreTT(tt) {
         return (tt || '').replace('TT-', 'T T ').replace('-', ' ');
@@ -1460,9 +1493,6 @@
         renderRadarAutovia();
     }
 
-    // ========================================================================
-    // SIRENA ACÚSTICA (PARA DISCREPANCIAS Y FASE 3 > 25 MIN)
-    // ========================================================================
     function activarSirenaAcusticaEmergencia() {
         if (alarmInterval) return;
         alarmInterval = setInterval(() => {
@@ -1496,104 +1526,6 @@
         if (alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; }
     }
 
-    // ========================================================================
-    // MOTOR DE VOZ FEMENINA CÁLIDA / COLOMBIANA (EDGE, CHROME, WINDOWS)
-    // ========================================================================
-    function cargarVoces() {
-        if (!('speechSynthesis' in window)) return;
-        const voces = window.speechSynthesis.getVoices();
-        if (!voces || voces.length === 0) return;
-
-        // Lista estricta de nombres femeninos (priorizando Colombia y Latinoamérica)
-        const patronMujerSensual = /salome|salomé|paulina|dalia|sabina|elena|helena|sofia|sofía|monica|mónica|camila|laura|paloma|zira|female|mujer|natural/i;
-        
-        // Bloqueo estricto de cualquier voz de hombre
-        const patronHombre = /raul|raúl|david|jorge|pablo|alvaro|álvaro|carlos|diego|manuel|pedro|julio|andres|andrés|male|hombre|male|miguel|enrique/i;
-
-        // 1. Prioridad Máxima: Salomé (Colombia - es-CO)
-        let candidata = voces.find(v => 
-            /salome|salomé/i.test(v.name) && 
-            !patronHombre.test(v.name)
-        );
-
-        // 2. Segunda opción: Cualquier voz femenina de Colombia o Latinoamérica
-        if (!candidata) {
-            candidata = voces.find(v => 
-                (v.lang === 'es-CO' || v.lang === 'es_CO' || v.name.toLowerCase().includes('colombia')) &&
-                patronMujerSensual.test(v.name) && 
-                !patronHombre.test(v.name)
-            );
-        }
-
-        // 3. Tercera opción: Cualquier voz femenina latina cálida (Paulina, Dalia, Sabina)
-        if (!candidata) {
-            candidata = voces.find(v => 
-                v.lang.startsWith('es') && 
-                patronMujerSensual.test(v.name) && 
-                !patronHombre.test(v.name)
-            );
-        }
-
-        // 4. Si ninguna coincide por nombre, tomar la primera en español que NO sea hombre
-        if (!candidata) {
-            candidata = voces.find(v => 
-                v.lang.startsWith('es') && 
-                !patronHombre.test(v.name) &&
-                !v.name.toLowerCase().includes('español') // Evita Google español default (suele sonar varonil)
-            );
-        }
-
-        if (candidata) {
-            vozFemeninaSeleccionada = candidata;
-        }
-    }
-
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.onvoiceschanged = cargarVoces;
-    }
-
-    // ========================================================================
-    // ANUNCIO VOCAL CON NAVE, TT Y BOLSONES (VOZ DULCE Y PAUSADA)
-    // ========================================================================
-    function anunciarMovimientoPorVoz(reg) {
-        if (!('speechSynthesis' in window) || avisoVozSilenciado) return;
-
-        // Si la voz aún no cargó, forzar carga
-        if (!vozFemeninaSeleccionada) cargarVoces();
-
-        const ttLimpio = (reg.tt || 'unidad').toString().replace('TT-', 'T T ').replace('-', ' ');
-        const bols = reg.bolsones || 0;
-        
-        // Obtener el nombre real del buque activo
-        const buqueActivo = (buquesInfo[reg.nave || naveActivaCCTV]?.nombre || 'la nave activa').toUpperCase();
-
-        let mensaje = "";
-        if (reg.puesto === 'muelle') {
-            mensaje = `Atención. Registro en Muelle del buque ${buqueActivo}. Unidad ${ttLimpio}, con ${bols} bolsones descargados.`;
-        } else if (reg.puesto === 'labarthe') {
-            mensaje = `Recepción confirmada en Balanza del buque ${buqueActivo}. Unidad ${ttLimpio}, con ${bols} bolsones.`;
-        } else if (reg.puesto === 'despacho') {
-            mensaje = `Despacho de salida del buque ${buqueActivo}. Unidad ${ttLimpio}, con ${bols} bolsones.`;
-        }
-
-        if (mensaje) {
-            window.speechSynthesis.cancel(); // Evita que se amontonen audios
-
-            const utterance = new SpeechSynthesisUtterance(mensaje);
-            if (vozFemeninaSeleccionada) {
-                utterance.voice = vozFemeninaSeleccionada;
-                utterance.lang = vozFemeninaSeleccionada.lang;
-            } else {
-                utterance.lang = 'es-CO';
-            }
-
-            // Configuración acústica para tono femenino, dulce y relajado
-            utterance.pitch = 1.20; // Tono más agudo, cálido y femenino
-            utterance.rate = 0.93;  // Ritmo ligeramente pausado (voz suave y natural)
-            window.speechSynthesis.speak(utterance);
-        }
-    }
-
     function analizarAlertasDiscrepanciasYDemoras() {
         let hayDiscrepancia = false;
         const dbActiva = dbNaves[naveActivaCCTV];
@@ -1619,7 +1551,6 @@
         if (hayDiscrepancia && !sirenaSilenciada) {
             activarSirenaAcusticaEmergencia();
         } else {
-            // Si no hay discrepancia y ningún camión está en fase 3 (>25m), apagar sirena
             const hayDemoraCritica = Array.from(alertasVocalesEmitidasMap.values()).some(f => f >= 3);
             if (!hayDemoraCritica) desactivarSirena();
         }
@@ -1629,9 +1560,7 @@
         if (e) e.stopPropagation();
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') {
-            audioCtx.resume().then(() => {
-                document.getElementById('audioUnlockBanner').style.display = "none";
-            });
+            audioCtx.resume();
         }
     }
 
@@ -1666,7 +1595,7 @@
     }
 
     // ========================================================================
-    // CONTROL DE SALDOS, RENDIMIENTO PPH Y PROYECCIÓN ETA
+    // SALDOS, RENDIMIENTO PPH Y ESTIMACIÓN ETA
     // ========================================================================
     function renderControlSaldos() {
         const prods = catalogoProductos[naveActivaCCTV] || [];
@@ -1772,7 +1701,7 @@
     }
 
     // ========================================================================
-    // TABLA DASHBOARD Y CORRECCIÓN AUDITABLE
+    // TABLA DE MOVIMIENTOS Y EDICIÓN AUDITABLE
     // ========================================================================
     function filtrarTablaDash() {
         const query = (document.getElementById('dashFilter')?.value || "").toLowerCase().trim();
@@ -1813,7 +1742,7 @@
 
             return `
                 <tr>
-                    <td style="font-weight:bold;">${r.viajeId}</td>
+                    <td><strong>${r.viajeId}</strong></td>
                     <td><span class="badge badge-${r.puesto}">${r.puesto.toUpperCase()}</span></td>
                     <td><span class="tt-link" onclick="verFichaTT('${r.tt}')">${r.tt}</span></td>
                     <td style="font-weight:bold; font-size:14px;">${r.bolsones}</td>
@@ -1892,7 +1821,7 @@
     }
 
     // ========================================================================
-    // PÁGINA: KPIS Y RENDIMIENTO COMPLETO
+    // PÁGINA: KPIS & RENDIMIENTO COMPLETO (REAL)
     // ========================================================================
     function renderKpisPage() {
         const dbActiva = dbNaves[naveActivaCCTV];
@@ -1935,11 +1864,8 @@
         const efectividad = muelleT.length > 0 ? Math.round(((muelleT.length - errores) / muelleT.length) * 100) : 100;
         document.getElementById('kpiEfectividadPct').textContent = `${efectividad}%`;
 
-        // ====================================================================
-        // GRÁFICO Y TABLA COMPARATIVA CON DATOS 100% REALES (SIN NÚMEROS FALSOS)
-        // ====================================================================
+        // Historial real de turnos
         const turnosMap = {};
-
         function agruparPorTurnoReal(r, esDescarga) {
             const f = parsearFechaFlexible(r.fechaHora);
             if (!f) return;
@@ -1970,11 +1896,8 @@
             }
 
             const bols = Number(r.bolsones) || 0;
-            if (esDescarga) {
-                turnosMap[claveTurno].descarga += bols;
-            } else {
-                turnosMap[claveTurno].despacho += bols;
-            }
+            if (esDescarga) turnosMap[claveTurno].descarga += bols;
+            else turnosMap[claveTurno].despacho += bols;
         }
 
         dbActiva.muelle.forEach(r => {
@@ -1996,17 +1919,14 @@
         dbActiva.labarthe.forEach(r => agruparPorTurnoReal(r, true));
         dbActiva.despacho.forEach(r => agruparPorTurnoReal(r, false));
 
-        // Ordenar cronológicamente
         const turnosOrdenados = Object.values(turnosMap).sort((a, b) => a.timestamp - b.timestamp);
 
-        // Si aún no hay turnos anteriores, grafica el turno actual real
         const labels = turnosOrdenados.length > 0 ? turnosOrdenados.map(t => t.etiqueta) : ['Turno Actual'];
         const dataDesc = turnosOrdenados.length > 0 ? turnosOrdenados.map(t => t.descarga) : [totalBolsL];
         const dataDesp = turnosOrdenados.length > 0 ? turnosOrdenados.map(t => t.despacho) : [despT.reduce((a,b)=>a+(Number(b.bolsones)||0),0)];
 
         renderizarGraficoTurnos(labels, dataDesc, dataDesp);
 
-        // LLENAR LA TABLA INFERIOR DE HISTORIAL CON DATOS REALES (YA NO QUEDARÁ VACÍA)
         const tbHist = document.getElementById('tbHistorialTurnos');
         if (tbHist) {
             tbHist.innerHTML = turnosOrdenados.slice().reverse().map(t => `
@@ -2020,6 +1940,35 @@
                 </tr>
             `).join('') || '<tr><td colspan="6" style="text-align:center; padding:15px; color:var(--muted);">Sin historial de turnos previos</td></tr>';
         }
+
+        // Ranking TTs
+        const ttCount = {};
+        muelleT.forEach(m => { ttCount[m.tt] = (ttCount[m.tt] || 0) + 1; });
+        const sortedTTs = Object.keys(ttCount).sort((a,b) => ttCount[b] - ttCount[a]);
+        document.getElementById('tbRankingTTs').innerHTML = sortedTTs.slice(0, 5).map(tt => `
+            <tr>
+                <td><strong>${tt}</strong></td>
+                <td>${ttCount[tt]} viajes</td>
+                <td>${ttCount[tt] * 20} bols</td>
+                <td>${promCiclo} min</td>
+            </tr>
+        `).join('') || '<tr><td colspan="4" style="text-align:center;">Sin datos en el turno</td></tr>';
+
+        // Avance por producto
+        const prods = catalogoProductos[naveActivaCCTV] || [];
+        document.getElementById('tbResumenCargaKPI').innerHTML = prods.map(p => {
+            const tDesc = dbActiva.labarthe.reduce((s, r) => s + sumarBolsonesProd(r, p.producto), 0);
+            const tDesp = dbActiva.despacho.reduce((s, r) => s + sumarBolsonesProd(r, p.producto), 0);
+            const pct = p.cantidadBuque > 0 ? Math.min(100, Math.round((tDesc / p.cantidadBuque) * 100)) : 0;
+            return `
+                <tr>
+                    <td><strong>${p.producto}</strong></td>
+                    <td style="color:var(--green); font-weight:bold;">${tDesc}</td>
+                    <td style="color:var(--amber); font-weight:bold;">${tDesp}</td>
+                    <td><strong>${pct}%</strong></td>
+                </tr>
+            `;
+        }).join('') || '<tr><td colspan="4" style="text-align:center;">Sin productos configurados</td></tr>';
     }
 
     function renderizarGraficoTurnos(labels, dataDesc, dataDesp) {
@@ -2045,7 +1994,7 @@
     }
 
     // ========================================================================
-    // TELEMETRÍA Y DISPOSITIVOS EN VIVO
+    // TELEMETRÍA Y MONITOR DE DISPOSITIVOS
     // ========================================================================
     function cargarTelemetriaServidor() {
         fetch(`${gasUrl}?action=obtenerTelemetriaSoporte&nave=${naveActivaCCTV}`)
@@ -2109,7 +2058,7 @@
     }
 
     // ========================================================================
-    // BUSCADOR DE AUDITORÍA (CON PARSEO FLEXIBLE)
+    // BUSCADOR DE AUDITORÍA
     // ========================================================================
     function ejecutarBusquedaRango() {
         const ini = document.getElementById('searchStart').value;
@@ -2145,9 +2094,8 @@
     }
 
     // ========================================================================
-    // GESTIÓN DE CONDUCTORES Y PLACAS
+    // CONDUCTORES Y PLACAS
     // ========================================================================
-   // 3. Sincronizador con ventana emergente de carga y protección de confusión
     function syncConductoresUI(forzarRecarga = false) {
         const contenedor = document.getElementById('divListaConductores');
         const badge = document.getElementById('badgeNaveConductores');
@@ -2156,7 +2104,6 @@
 
         if (badge) badge.textContent = `Viendo: ${nomBuque.toUpperCase()}`;
 
-        // Limpia la lista previa de inmediato para no confundir al operador con datos del otro buque
         if (contenedor) {
             contenedor.innerHTML = `
                 <div style="text-align:center; padding:35px 20px; color:#0284c7; background:#f0f9ff; border-radius:10px; border:2px dashed #bae6fd;">
@@ -2167,7 +2114,6 @@
             `;
         }
 
-        // Muestra la ventana emergente modal
         if (overlay) {
             document.getElementById('loadingOverlayTitle').textContent = `Cargando Conductores de ${nomBuque}`;
             document.getElementById('loadingOverlaySub').textContent = `Sincronizando con el archivo Excel correspondiente...`;
@@ -2189,10 +2135,10 @@
             if (contenedor) contenedor.innerHTML = `<div style="color:var(--red); padding:15px; text-align:center;">⚠️ Error de conexión con el servidor.</div>`;
         })
         .finally(() => {
-            // Oculta la ventana emergente apenas terminan de llegar los datos
             if (overlay) overlay.style.display = 'none';
         });
     }
+
     function renderListaConductoresUI(lista, nomBuque) {
         const contenedor = document.getElementById('divListaConductores');
         if (!contenedor) return;
@@ -2216,6 +2162,7 @@
             </div>
         `).join('');
     }
+
     function registrarConductor() {
         const nom = document.getElementById('addCondNombre').value.trim();
         const pla = document.getElementById('addCondPlaca').value.trim().toUpperCase();
@@ -2241,7 +2188,7 @@
     }
 
     // ========================================================================
-    // NUEVO EDITOR MAESTRO DE BUQUES Y CATÁLOGO (SIN DNI, LIBRE)
+    // EDITOR MAESTRO DE BUQUES Y CATÁLOGO
     // ========================================================================
     function seleccionarNaveParaEditar(nKey) {
         naveSiendoEditada = nKey;
@@ -2264,8 +2211,8 @@
         const pList = catalogoProductos[naveSiendoEditada] || [];
         document.getElementById('tagListProductos').innerHTML = pList.map((p, idx) => `
             <div style="display:grid; grid-template-columns: 1fr 1fr auto; gap:10px; padding:6px 0; border-bottom:1px solid #e2e8f0; align-items:center;">
-                <div style="font-weight:bold;">🧴 ${p.producto}</div>
-                <div style="color:#0284c7; font-weight:bold;">${p.cantidadBuque} bolsones</div>
+                <div>🧴 ${p.producto}</div>
+                <div>${p.cantidadBuque} bolsones</div>
                 <button class="btn-sm" style="color:#b91c1c;" onclick="eliminarProdEdit(${idx})">✕</button>
             </div>
         `).join('') || '<div style="color:var(--muted); padding:10px;">Sin productos en catálogo.</div>';
@@ -2312,7 +2259,7 @@
     }
 
     // ========================================================================
-    // MODALES Y UTILIDADES DE VISTA
+    // MODALES Y UTILIDADES
     // ========================================================================
     function verEvidencias(viajeId, puesto) {
         document.getElementById('modalTitle').textContent = `Evidencias — ${viajeId}`;
