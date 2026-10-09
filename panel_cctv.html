@@ -27,7 +27,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
         body, html { width: 100%; height: 100%; background: var(--bg-gray); overflow: hidden; font-size: 14px; }
 
-        /* Banner de Desbloqueo de Audio */
         #audioUnlockBanner {
             position: fixed; bottom: 20px; right: 20px; background: #ca8a04; color: white;
             padding: 14px 22px; border-radius: 10px; font-weight: bold; font-size: 13px; z-index: 10005;
@@ -39,7 +38,6 @@
             to { transform: scale(1.03); box-shadow: 0 6px 20px rgba(180,83,9,0.6); }
         }
 
-        /* Pantalla de Celebración 100% */
         #celebrationOverlay {
             position: fixed; inset: 0; background: rgba(15, 23, 42, 0.92); display: none;
             flex-direction: column; align-items: center; justify-content: center; z-index: 20000;
@@ -53,14 +51,12 @@
         @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         #confettiCanvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20001; }
 
-        /* Login */
         #loginScreen { position: fixed; inset: 0; background: var(--navy); display: flex; align-items: center; justify-content: center; z-index: 9999; }
         .login-card { background: var(--white); padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 400px; text-align: center; }
         .login-card h2 { color: var(--navy); margin-bottom: 8px; font-size: 24px; font-weight: 800; }
         .login-input { width: 100%; padding: 14px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 18px; text-align: center; outline: none; margin-bottom: 15px; }
         .login-btn { width: 100%; padding: 14px; background: var(--blue-btn); color: var(--white); border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
 
-        /* Layout Principal */
         #appLayout { display: none; width: 100%; height: 100%; flex-direction: row; }
         .sidebar { width: 250px; background: var(--navy); color: white; display: flex; flex-direction: column; flex-shrink: 0; }
         .sidebar-brand { padding: 20px; font-weight: 900; font-size: 18px; border-bottom: 2px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
@@ -74,7 +70,6 @@
         .topbar-header { display: flex; justify-content: space-between; align-items: center; }
         .scroll-area { padding: 20px; flex: 1; overflow-y: auto; }
 
-        /* COMMAND DECK DE 2 NAVES */
         .command-deck { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 5px; }
         .deck-card {
             background: #ffffff; border: 3px solid var(--border); border-radius: 12px; padding: 14px 18px;
@@ -95,7 +90,6 @@
         .deck-kpi-lbl { font-size: 10px; font-weight: bold; color: var(--muted); text-transform: uppercase; }
         .deck-kpi-val { font-size: 17px; font-weight: 900; color: var(--navy); }
 
-        /* RADAR DE AUTOVÍA EN TIEMPO REAL */
         .radar-card {
             background: #0f172a; border-radius: 14px; border: 3px solid #1e293b; padding: 18px;
             color: white; margin-bottom: 22px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
@@ -107,32 +101,29 @@
         }
         .radar-truck {
             background: #1e293b; border: 2px solid #38bdf8; border-radius: 10px; padding: 10px 14px;
-            display: flex; flex-direction: column; align-items: center; min-width: 130px; position: relative;
+            display: flex; flex-direction: column; align-items: center; min-width: 135px; position: relative;
             box-shadow: 0 4px 10px rgba(56, 189, 248, 0.2); transition: all 0.3s;
         }
-        .radar-truck.delay-danger {
-            border-color: #ef4444; background: #450a0a; box-shadow: 0 0 18px rgba(239, 68, 68, 0.8);
-            animation: truckPulse 0.8s infinite alternate;
-        }
-        @keyframes truckPulse { from { transform: scale(1); } to { transform: scale(1.04); } }
+        .radar-truck.fase-1 { border-color: #f59e0b; background: #451a03; box-shadow: 0 0 14px rgba(245, 158, 11, 0.6); }
+        .radar-truck.fase-2 { border-color: #ea580c; background: #431407; animation: truckPulse 0.9s infinite alternate; }
+        .radar-truck.fase-3 { border-color: #ef4444; background: #450a0a; box-shadow: 0 0 22px rgba(239, 68, 68, 0.9); animation: truckPulse 0.6s infinite alternate; }
+        @keyframes truckPulse { from { transform: scale(1); } to { transform: scale(1.05); } }
         
         .truck-plate-badge {
             background: #0284c7; color: white; padding: 4px 10px; border-radius: 6px;
             font-size: 12px; font-weight: 900; margin-bottom: 6px; display: inline-flex; align-items: center; gap: 4px;
         }
-        .radar-truck.delay-danger .truck-plate-badge {
-            background: #dc2626; animation: truckBounce 0.6s infinite alternate;
-        }
+        .radar-truck.fase-1 .truck-plate-badge { background: #d97706; }
+        .radar-truck.fase-2 .truck-plate-badge { background: #ea580c; }
+        .radar-truck.fase-3 .truck-plate-badge { background: #dc2626; animation: truckBounce 0.5s infinite alternate; }
         @keyframes truckBounce { from { transform: translateY(0); } to { transform: translateY(-4px); } }
 
         .truck-timer { font-family: monospace, monospace; font-size: 15px; font-weight: 900; color: #fef08a; }
 
-        /* Banners de Alerta */
         .alert-banner { display: none; border-radius: 10px; padding: 14px 20px; margin-bottom: 18px; font-weight: bold; font-size: 14px; border-left: 6px solid; }
         .alert-banner.danger { background: var(--red-bg); border-color: var(--red); color: #7f1d1d; }
         .alert-banner.warning { background: var(--amber-bg); border-color: var(--amber); color: #78350f; }
 
-        /* Tablas y Badges */
         .card { background: white; border-radius: 12px; border: 2px solid #e2e8f0; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.04); margin-bottom: 22px; }
         .card-head { background: #f8fafc; padding: 14px 18px; border-bottom: 2px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
         .card-head h3 { font-size: 15px; font-weight: 800; color: var(--navy); }
@@ -154,7 +145,6 @@
         .btn-sm:hover { background: #cbd5e1; }
         .tt-link { color: var(--blue-btn); font-weight: 900; text-decoration: underline; cursor: pointer; }
 
-        /* Modales */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: none; align-items: center; justify-content: center; z-index: 10000; }
         .modal-overlay.open { display: flex; }
         .modal-box { background: white; padding: 25px; border-radius: 14px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; }
@@ -162,12 +152,10 @@
 </head>
 <body onclick="desbloquearAudioPorClic()">
 
-<!-- BANNER DESBLOQUEO DE AUDIO -->
 <div id="audioUnlockBanner" onclick="desbloquearAudioPorClic(event)">
     🔊 CLIC AQUÍ para habilitar las Alertas Acústicas y de Voz
 </div>
 
-<!-- OVERLAY DE CELEBRACIÓN 100% -->
 <div id="celebrationOverlay">
     <canvas id="confettiCanvas"></canvas>
     <div class="celebration-box">
@@ -178,16 +166,12 @@
     </div>
 </div>
 
-<!-- MODAL MIGRACIÓN SELECTIVA DE NAVES -->
 <div class="modal-overlay" id="modalMigracion">
     <div class="modal-box" style="border: 4px solid var(--red);">
         <h3 style="color: var(--red); font-size: 20px; font-weight: 900; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
             ⚠️ CIERRE Y MIGRACIÓN DE OPERACIONES
         </h3>
-        <p style="font-size: 13px; color: var(--navy); margin-bottom: 12px;">
-            Selecciona la nave que deseas archivar y reiniciar a cero:
-        </p>
-        
+        <p style="font-size: 13px; color: var(--navy); margin-bottom: 12px;">Selecciona la nave a archivar y reiniciar a cero:</p>
         <div style="background:#f8fafc; border:2px solid var(--border); border-radius:8px; padding:12px; margin-bottom:15px;">
             <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; font-weight:bold; cursor:pointer;">
                 <input type="radio" name="radioMigrarNave" value="nave1" checked> 🚢 Solo Nave 1 (<span id="txtMigrarNave1Nom">Nave 1</span>)
@@ -196,15 +180,11 @@
                 <input type="radio" name="radioMigrarNave" value="nave2"> ⚓ Solo Nave 2 (<span id="txtMigrarNave2Nom">Nave 2</span>)
             </label>
             <label style="display:flex; align-items:center; gap:8px; font-weight:bold; color:var(--red); cursor:pointer;">
-                <input type="radio" name="radioMigrarNave" value="ambas"> 🌐 AMBAS NAVES SIMULTÁNEAMENTE (Cierre Total)
+                <input type="radio" name="radioMigrarNave" value="ambas"> 🌐 AMBAS NAVES SIMULTÁNEAMENTE
             </label>
         </div>
-
-        <p style="font-size: 12px; color: var(--muted); margin-bottom: 15px;">
-            Se creará un libro Excel histórico independiente en Drive, se trasladarán todas las fotografías a carpetas de archivo y la base de datos seleccionada quedará en cero.
-        </p>
         <p style="font-size: 13px; font-weight: bold; color: var(--red); margin-bottom: 10px;">
-            Escribe la palabra <strong style="text-decoration:underline;">MIGRAR</strong> para confirmar:
+            Escribe <strong style="text-decoration:underline;">MIGRAR</strong> para confirmar:
         </p>
         <input type="text" id="confirmMigrarInput" placeholder="Escribe MIGRAR..." style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; font-size: 16px; font-weight: bold; text-align: center; margin-bottom: 18px;" oninput="validarTextoMigrar()">
         <div style="display: flex; gap: 10px;">
@@ -214,7 +194,6 @@
     </div>
 </div>
 
-<!-- PANTALLA LOGIN CCTV -->
 <div id="loginScreen">
     <div class="login-card">
         <h2>🎛️ CCTV Control — Acceso</h2>
@@ -225,9 +204,7 @@
     </div>
 </div>
 
-<!-- ESTRUCTURA PRINCIPAL DEL PANEL CCTV -->
 <div id="appLayout">
-    <!-- BARRA LATERAL -->
     <aside class="sidebar">
         <div class="sidebar-brand">
             <span>🎛️ CCTV RADAR</span>
@@ -248,13 +225,11 @@
         
         <div class="nav-section">Configuración</div>
         <div class="nav-item" id="nav-conductores" onclick="changePage('conductores')">👤 Conductores y Placas</div>
-        <div class="nav-item" id="nav-productos" onclick="changePage('productos')">🧴 Catálogo de Buques</div>
+        <div class="nav-item" id="nav-productos" onclick="changePage('productos')">🚢 Catálogo de Buques (Editor)</div>
         <div class="nav-item" id="nav-turnos" onclick="changePage('turnos')">⏱️ Horarios de Turno</div>
     </aside>
 
-    <!-- ÁREA DE CONTENIDO -->
     <main class="main-content">
-        <!-- TOPBAR Y COMMAND DECK BI-NAVE -->
         <div class="topbar">
             <div class="topbar-header">
                 <div>
@@ -269,9 +244,7 @@
                 </div>
             </div>
 
-            <!-- COMMAND DECK INTERACTIVO DE 2 NAVES -->
             <div class="command-deck">
-                <!-- TARJETA NAVE 1 -->
                 <div class="deck-card active nave1" id="cardDeckNave1" onclick="seleccionarNaveCCTV('nave1')">
                     <div class="deck-card-head">
                         <span class="deck-ship-name" id="deckNomNave1">🚢 NAVE 1 (Muelle 1A)</span>
@@ -293,7 +266,6 @@
                     </div>
                 </div>
 
-                <!-- TARJETA NAVE 2 -->
                 <div class="deck-card nave2" id="cardDeckNave2" onclick="seleccionarNaveCCTV('nave2')">
                     <div class="deck-card-head">
                         <span class="deck-ship-name" id="deckNomNave2">⚓ NAVE 2 (Muelle 2B)</span>
@@ -318,7 +290,6 @@
         </div>
 
         <div class="scroll-area">
-            <!-- BANNER ALERTA SIRENA DISCREPANCIA -->
             <div id="bannerAlertaDiff" class="alert-banner danger" style="display:none; justify-content:space-between; align-items:center;">
                 <div>🚨 SIRENA ACÚSTICA ACTIVA — DISCREPANCIA DETECTADA: Diferencia de bolsones o productos entre Muelle y Balanza.</div>
                 <div style="display:flex; gap:10px; align-items:center;">
@@ -327,16 +298,14 @@
                 </div>
             </div>
 
-            <!-- BANNER ALERTA VOZ RETRASO AUTOVÍA (>10 MIN) -->
             <div id="bannerAlertaTransito" class="alert-banner warning" style="display:none; justify-content:space-between; align-items:center;">
-                <div id="txtMsgRetrasoTransito">⏰ ALERTA VOCAL EN CURSO: Unidad en autovía supera los 10 minutos de trayecto.</div>
+                <div id="txtMsgRetrasoTransito">⏰ ALERTA EN CURSO: Unidad en autovía con retraso en trayecto.</div>
                 <div style="display:flex; gap:10px; align-items:center;">
-                    <input type="password" id="muteInputTransito" placeholder="DNI Coordinador..." style="padding: 6px 10px; border: 1px solid var(--amber); border-radius: 6px; font-size:12px; outline:none; display:none;" onkeypress="if(event.key === 'Enter') ejecutarSilenciado('Transito')">
-                    <button class="btn-sm" style="background:#d97706; color:white;" onclick="mostrarInputMute('Transito')">🔕 Silenciar Aviso</button>
+                    <button class="btn-sm" style="background:#d97706; color:white;" onclick="silenciarAvisosVocalManual()">🔕 Silenciar Aviso</button>
                 </div>
             </div>
 
-<!-- PÁGINA 1: CUADRO DE MANDO & RADAR DE AUTOVÍA -->
+            <!-- PÁGINA 1: DASHBOARD & RADAR -->
             <div id="pageDash" class="page-container">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                     <div style="font-weight:900; color:var(--muted); font-size:13px;" id="turnoActualLabel">TURNO ACTIVO: —</div>
@@ -345,7 +314,6 @@
                     </div>
                 </div>
 
-                <!-- KPIS DEL TURNO PARA LA NAVE SELECCIONADA -->
                 <div class="kpi-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-bottom:20px;">
                     <div class="card" style="padding:16px; text-align:center; margin-bottom:0;">
                         <div class="lbl" style="font-size:11px; font-weight:bold; color:#0284c7; text-transform:uppercase;">Descarga Muelle (Turno)</div>
@@ -369,7 +337,6 @@
                     </div>
                 </div>
 
-                <!-- RADAR DE AUTOVÍA EN TIEMPO REAL -->
                 <div class="radar-card">
                     <div class="radar-header">
                         <div>
@@ -377,12 +344,13 @@
                                 🚛 Radar de Autovía en Tiempo Real (Muelle ➔ Balanza Labarthe)
                             </h3>
                             <div style="font-size:12px; color:#94a3b8; margin-top:2px;">
-                                Trayecto estándar: 4 a 8 min · Tolerancia máxima: 10 min · Unidad &gt; 10m activa aviso vocal repetitivo (x4)
+                                10m: 1er aviso (x4) · 20m: 2do aviso urgente (x4) · 25m: Sirena acústica continua
                             </div>
                         </div>
                         <div style="display:flex; gap:8px;">
-                            <button class="btn-sm" style="background:#0284c7; color:white;" onclick="simularCamionEnRuta(false)">➕ Simular TT</button>
-                            <button class="btn-sm" style="background:#dc2626; color:white;" onclick="simularCamionEnRuta(true)">🚨 Probar Excedido (&gt;10m)</button>
+                            <button class="btn-sm" style="background:#0284c7; color:white;" onclick="simularCamionEnRuta(3)">➕ Simular TT (3m)</button>
+                            <button class="btn-sm" style="background:#d97706; color:white;" onclick="simularCamionEnRuta(11)">⚠️ Probar Fase 1 (11m)</button>
+                            <button class="btn-sm" style="background:#dc2626; color:white;" onclick="simularCamionEnRuta(26)">🚨 Probar Sirena (26m)</button>
                             <button class="btn-sm" style="background:#334155; color:white;" onclick="limpiarSimulaciones()">🧹 Limpiar</button>
                         </div>
                     </div>
@@ -393,7 +361,6 @@
                     </div>
                 </div>
 
-                <!-- BALANCE DE BODEGAS (DESCARGA VS DESPACHO CON PPH & ETA) -->
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px; margin-bottom:22px;">
                     <div class="card" style="margin-bottom:0;">
                         <div class="card-head"><h3>📋 Control de Saldos de Descarga (Avance + Ritmo PPH)</h3></div>
@@ -401,9 +368,7 @@
                             <thead>
                                 <tr><th>Producto</th><th>Total Buque</th><th>Descargado</th><th>Saldo</th><th>Rendimiento & ETA</th></tr>
                             </thead>
-                            <tbody id="tbSaldosDescarga">
-                                <tr><td colspan="5" style="text-align:center; padding:20px; color:var(--muted);">Cargando catálogo...</td></tr>
-                            </tbody>
+                            <tbody id="tbSaldosDescarga"></tbody>
                         </table>
                     </div>
                     <div class="card" style="margin-bottom:0;">
@@ -412,14 +377,11 @@
                             <thead>
                                 <tr><th>Producto</th><th>Total Buque</th><th>Despachado</th><th>Saldo</th><th>Rendimiento & ETA</th></tr>
                             </thead>
-                            <tbody id="tbSaldosDespacho">
-                                <tr><td colspan="5" style="text-align:center; padding:20px; color:var(--muted);">Cargando catálogo...</td></tr>
-                            </tbody>
+                            <tbody id="tbSaldosDespacho"></tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- ÚLTIMOS MOVIMIENTOS REGISTRADOS -->
                 <div class="card">
                     <div class="card-head">
                         <h3>Últimos Movimientos Registrados</h3>
@@ -448,7 +410,7 @@
                 </div>
             </div>
 
-            <!-- PÁGINA 2: KPIS & ANALÍTICA -->
+            <!-- PÁGINA 2: KPIS & RENDIMIENTO COMPLETO -->
             <div id="pageKpis" class="page-container" style="display:none;">
                 <div class="card" style="margin-bottom:20px;">
                     <div class="card-head"><h3>📈 Indicadores Clave de Rendimiento y Operatividad</h3></div>
@@ -515,24 +477,13 @@
                 </div>
             </div>
 
-            <!-- PÁGINA 3: DIAGNÓSTICO Y TELEMETRÍA EN VIVO -->
+            <!-- PÁGINA 3: TELEMETRÍA Y MONITOR DE INSPECTORES -->
             <div id="pageSoporte" class="page-container" style="display:none;">
                 <div class="card">
                     <div class="card-head"><h3>🛠️ Monitor de Estado de Dispositivos de Inspectores (En Vivo)</h3></div>
                     <div style="padding:20px;">
                         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:15px; margin-bottom:25px;" id="containerHeartbeats">
-                            <div style="background:#f1f5f9; padding:15px; border-radius:10px; border:2px solid #cbd5e1;">
-                                <strong>🚢 Inspector de Muelle</strong><br>
-                                <span class="badge badge-transit" style="margin-top:6px;">Esperando señal...</span>
-                            </div>
-                            <div style="background:#f1f5f9; padding:15px; border-radius:10px; border:2px solid #cbd5e1;">
-                                <strong>🏭 Inspector de Labarthe</strong><br>
-                                <span class="badge badge-transit" style="margin-top:6px;">Esperando señal...</span>
-                            </div>
-                            <div style="background:#f1f5f9; padding:15px; border-radius:10px; border:2px solid #cbd5e1;">
-                                <strong>🚛 Inspector de Despacho</strong><br>
-                                <span class="badge badge-transit" style="margin-top:6px;">Esperando señal...</span>
-                            </div>
+                            <!-- Latidos generados dinámicamente -->
                         </div>
 
                         <div class="card" style="margin-bottom:0;">
@@ -558,12 +509,12 @@
                 </div>
             </div>
 
-            <!-- PÁGINA 4: DESCARGAS (MUELLE VS LABARTHE COMPARATIVO) -->
+            <!-- PÁGINA 4: DESCARGAS -->
             <div id="pageDescarga" class="page-container" style="display:none;">
                 <div style="display:flex; gap:10px; margin-bottom:15px;">
                     <button class="btn-sm" id="tabDescMuelleBtn" style="background:var(--blue); color:white;" onclick="verSubTabDescarga('M')">🚢 Registros Muelle</button>
                     <button class="btn-sm" id="tabDescLabartheBtn" onclick="verSubTabDescarga('L')">🏭 Registros Labarthe</button>
-                    <button class="btn-sm" id="tabDescCompBtn" onclick="verSubTabDescarga('Comp')">⚖️ Tabla Comparativa (Historial de Incidencias)</button>
+                    <button class="btn-sm" id="tabDescCompBtn" onclick="verSubTabDescarga('Comp')">⚖️ Tabla Comparativa</button>
                 </div>
 
                 <div id="divDescargaMuelle" class="card">
@@ -664,43 +615,53 @@
                 </div>
             </div>
 
-            <!-- PÁGINA 8: CATÁLOGO DE BUQUES Y PRODUCTOS -->
+            <!-- PÁGINA 8: EDITOR MAESTRO DE BUQUES Y PRODUCTOS (SIN DNI, LIBRE) -->
             <div id="pageProductos" class="page-container" style="display:none;">
-                <div class="card" style="max-width: 650px;">
-                    <div class="card-head"><h3>Catálogo de Productos y Carga de Buque</h3></div>
-                    <div style="padding:20px;">
-                        <div style="margin-bottom:15px;">
-                            <label style="font-weight:bold; display:block; margin-bottom:4px;">Nombre del Buque Activo</label>
-                            <input type="text" id="inputBuqueNombreEdit" style="width:100%; padding:10px; border:2px solid var(--border); border-radius:6px; font-weight:bold;">
+                <div class="card" style="max-width: 700px;">
+                    <div class="card-head">
+                        <h3>🚢 Editor de Buque, Muelle y Catálogo de Productos</h3>
+                        <div style="display:flex; gap:8px;">
+                            <button class="btn-sm" id="btnEditNave1" style="background:#0284c7; color:white;" onclick="seleccionarNaveParaEditar('nave1')">Editar Nave 1</button>
+                            <button class="btn-sm" id="btnEditNave2" onclick="seleccionarNaveParaEditar('nave2')">Editar Nave 2</button>
                         </div>
-                        <div style="margin-bottom:20px;">
-                            <label style="font-weight:bold; display:block; margin-bottom:4px;">Amarradero / Muelle Asignado</label>
-                            <input type="text" id="inputBuqueMuelleEdit" style="width:100%; padding:10px; border:2px solid var(--border); border-radius:6px; font-weight:bold;">
+                    </div>
+                    <div style="padding:20px;">
+                        <div style="background:#f0f9ff; border:2px solid #bae6fd; padding:10px 14px; border-radius:8px; margin-bottom:15px; font-weight:bold; color:#0369a1;">
+                            ✏️ Editando datos para: <span id="lblNaveSiendoEditada">NAVE 1</span> (Se reflejará en tiempo real en los celulares y CCTV)
+                        </div>
+                        <div style="margin-bottom:14px;">
+                            <label style="font-weight:bold; display:block; margin-bottom:4px;">NOMBRE DEL BUQUE:</label>
+                            <input type="text" id="inputBuqueNombreEdit" style="width:100%; padding:10px; border:2px solid var(--border); border-radius:6px; font-weight:bold; font-size:15px;">
+                        </div>
+                        <div style="margin-bottom:18px;">
+                            <label style="font-weight:bold; display:block; margin-bottom:4px;">MUELLE / AMARRADERO:</label>
+                            <input type="text" id="inputBuqueMuelleEdit" style="width:100%; padding:10px; border:2px solid var(--border); border-radius:6px; font-weight:bold; font-size:15px;">
                         </div>
 
-                        <div style="font-weight:bold; display:grid; grid-template-columns: 1fr 1fr auto; gap:10px; margin-bottom:6px;">
-                            <div>Producto</div>
-                            <div>Cantidad Buque (Bolsones)</div>
+                        <div style="font-weight:bold; display:grid; grid-template-columns: 1fr 1fr auto; gap:10px; margin-bottom:8px; border-bottom:2px solid #e2e8f0; padding-bottom:6px;">
+                            <div>PRODUCTOS</div>
+                            <div>CANTIDAD QUE TRAE EL BUQUE (bolsones)</div>
                             <div></div>
                         </div>
                         <div id="tagListProductos"></div>
 
                         <div style="display:flex; gap:10px; align-items:flex-end; margin-top:15px;">
                             <div style="flex:1;">
-                                <label style="font-weight:bold; display:block; margin-bottom:4px; font-size:12px;">Nuevo Producto</label>
-                                <input type="text" id="addProdInput" style="width:100%; padding:9px; border:2px solid var(--border); border-radius:6px;">
+                                <label style="font-weight:bold; display:block; margin-bottom:4px; font-size:12px;">Nuevo Producto:</label>
+                                <input type="text" id="addProdInput" placeholder="Ej: Trigo" style="width:100%; padding:9px; border:2px solid var(--border); border-radius:6px;">
                             </div>
-                            <div style="width:160px;">
-                                <label style="font-weight:bold; display:block; margin-bottom:4px; font-size:12px;">Cant. Buque</label>
-                                <input type="number" id="addProdCant" style="width:100%; padding:9px; border:2px solid var(--border); border-radius:6px;" min="0">
+                            <div style="width:170px;">
+                                <label style="font-weight:bold; display:block; margin-bottom:4px; font-size:12px;">Cant. Bolsones:</label>
+                                <input type="number" id="addProdCant" placeholder="5000" style="width:100%; padding:9px; border:2px solid var(--border); border-radius:6px;" min="0">
                             </div>
-                            <button class="btn-sm" style="background:var(--blue-btn); color:white; height:38px; padding:0 18px;" onclick="agregarProductoMemoria()">Añadir</button>
+                            <button class="btn-sm" style="background:var(--blue-btn); color:white; height:38px; padding:0 18px;" onclick="agregarProductoMemoria()">➕ Añadir</button>
                         </div>
-                        <button class="btn-sm" style="background:var(--green); color:white; width:100%; padding:12px; margin-top:15px; font-size:14px; justify-content:center;" onclick="guardarProductosServidor()">💾 Guardar Catálogo en Excel</button>
+                        
+                        <button class="btn-sm" style="background:var(--green); color:white; width:100%; padding:14px; margin-top:20px; font-size:15px; justify-content:center;" onclick="guardarProductosServidor()">💾 Guardar Catálogo en Excel</button>
 
                         <hr style="margin: 25px 0; border:0; border-top:2px solid #cbd5e1;">
                         <h4 style="font-weight:bold; color:var(--red); margin-bottom:8px; font-size:14px;">⚠️ CIERRE Y ARCHIVADO DE BUQUES</h4>
-                        <p style="color:var(--muted); font-size:12px; margin-bottom:12px;">Crea copias de respaldo en Google Drive y vacía las hojas operativas activas.</p>
+                        <p style="color:var(--muted); font-size:12px; margin-bottom:12px;">Crea copias de respaldo en Google Drive y vacía las hojas activas.</p>
                         <button class="btn-sm" style="background:var(--red); color:white; width:100%; padding:12px; font-size:14px; justify-content:center;" onclick="confirmarYFinalizarBuque()">🚢 Abrir Asistente de Migración</button>
                     </div>
                 </div>
@@ -711,9 +672,6 @@
                 <div class="card" style="max-width: 550px;">
                     <div class="card-head"><h3>⏱️ Configuración de Horarios de Turno</h3></div>
                     <div style="padding:20px;">
-                        <p style="color:var(--muted); font-size:13px; margin-bottom:15px;">
-                            Modifique los horarios de corte de guardia. Por defecto se aplican a las 06:50 y 18:50.
-                        </p>
                         <div style="margin-bottom:15px;">
                             <label style="font-weight:bold; display:block; margin-bottom:4px;">Corte Turno Diurno (Mañana):</label>
                             <input type="time" id="inputCorteDiurno" value="06:50" style="width:100%; padding:10px; border:2px solid var(--border); border-radius:6px; font-size:16px; font-weight:bold;">
@@ -722,22 +680,16 @@
                             <label style="font-weight:bold; display:block; margin-bottom:4px;">Corte Turno Nocturno (Tarde/Noche):</label>
                             <input type="time" id="inputCorteNocturno" value="18:50" style="width:100%; padding:10px; border:2px solid var(--border); border-radius:6px; font-size:16px; font-weight:bold;">
                         </div>
-
-                        <div style="background:#fef3c7; border:1px solid #f59e0b; padding:12px; border-radius:8px; margin-bottom:20px;">
-                            <label style="font-weight:bold; font-size:12px; color:#78350f; display:block; margin-bottom:4px;">🔑 DNI de Coordinador Autorizador:</label>
-                            <input type="password" id="inputDniHorario" placeholder="Ingrese DNI..." style="width:100%; padding:9px; border:2px solid #f59e0b; border-radius:6px; font-size:14px; text-align:center;">
-                        </div>
-
                         <button class="btn-sm" style="background:var(--blue-btn); color:white; width:100%; padding:12px; justify-content:center;" onclick="guardarNuevosHorariosTurno()">💾 Actualizar Horarios en Sistema</button>
                     </div>
                 </div>
             </div>
 
-        </div> <!-- scroll-area -->
+        </div>
     </main>
-</div> <!-- appLayout -->
+</div>
 
-<!-- MODAL VISUALIZADOR DE EVIDENCIAS EN DRIVE -->
+<!-- MODAL VISUALIZADOR DE FOTOS -->
 <div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)cerrarModal()">
     <div class="modal-box">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
@@ -748,7 +700,7 @@
     </div>
 </div>
 
-<!-- MODAL FICHA DE OPERACIÓN Y CICLO POR TT -->
+<!-- MODAL FICHA POR TT -->
 <div class="modal-overlay" id="modalTTOverlay" onclick="if(event.target===this)cerrarModalTT()">
     <div class="modal-box" style="max-width:700px;">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
@@ -759,7 +711,7 @@
     </div>
 </div>
 
-<!-- MODAL EDICIÓN AUDITABLE CON DOBLE PRODUCTO Y DNI -->
+<!-- MODAL EDICIÓN AUDITABLE -->
 <div class="modal-overlay" id="modalEditOverlay">
     <div class="modal-box" style="max-width:480px; border: 4px solid var(--blue-btn);">
         <h3 style="font-size:18px; font-weight:900; color:var(--navy); margin-bottom:12px; border-bottom:2px solid #e2e8f0; padding-bottom:8px;">
@@ -773,7 +725,6 @@
             <input type="text" id="editViajeIdDisplay" disabled style="width:100%; padding:8px; background:#f1f5f9; border:1px solid var(--border); border-radius:6px; font-weight:bold;">
         </div>
 
-        <!-- PRODUCTO 1 -->
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
             <div>
                 <label style="font-weight:bold; font-size:12px; display:block; margin-bottom:3px;">Producto 1:</label>
@@ -785,7 +736,6 @@
             </div>
         </div>
 
-        <!-- PRODUCTO 2 -->
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
             <div>
                 <label style="font-weight:bold; font-size:12px; display:block; margin-bottom:3px;">Producto 2 (Opcional):</label>
@@ -808,16 +758,14 @@
         </div>
     </div>
 </div>
+
 <script>
-    // ========================================================================
-    // CONSTANTES Y ESTADO GLOBAL MULTI-NAVE
-    // ========================================================================
     const SESSION_KEY = "iqbf_cctv_persistent_session_v7";
     let gasUrl = localStorage.getItem("iqbf_gas_url") || "https://script.google.com/macros/s/AKfycbxZ4qwyvvuWd_IfedsWR1R65niSwlYPKtgcDU_e5f0H4P1cCbOvIGDICksXe3tIdDrfrw/exec";
 
     let naveActivaCCTV = localStorage.getItem("iqbf_cctv_nave_activa") || 'nave1';
+    let naveSiendoEditada = 'nave1';
 
-    // Bases de datos independientes para cada nave
     let dbNaves = {
         nave1: { muelle: [], labarthe: [], despacho: [] },
         nave2: { muelle: [], labarthe: [], despacho: [] }
@@ -826,14 +774,12 @@
     let catalogoProductos = { nave1: [], nave2: [] };
     let buquesInfo = {
         nave1: { nombre: 'Nave 1', muelle: 'Muelle 1A' },
-        nave2: { nave: 'Nave 2', muelle: 'Muelle 2B' }
+        nave2: { nombre: 'Nave 2', muelle: 'Muelle 2B' }
     };
 
-    // Horarios de turnos dinámicos (Default: 06:50 / 18:50)
     let horaCorteDiurnoStr = "06:50";
     let horaCorteNocturnoStr = "18:50";
 
-    // Audio, Sirena y Síntesis Vocal
     let audioCtx = null;
     let alarmInterval = null;
     let sirenaSilenciada = false;
@@ -841,14 +787,42 @@
     let vozFemeninaSeleccionada = null;
     let chartTurnosInstance = null;
 
-    // Control de Alertas e Idempotencia en CCTV
     let knownTransactionIds = new Set();
     let incidenciasHistoricasSet = new Set(JSON.parse(localStorage.getItem('iqbf_incidencias_historicas_v7') || '[]'));
-    let ttAlertasVozEmitidas = new Set();
     let camionesSimulados = [];
 
+    // Rastrear qué alertas vocales ya se emitieron (id -> fase: 1 o 2)
+    let alertasVocalesEmitidasMap = new Map();
+
     // ========================================================================
-    // WEB WORKER EN SEGUNDO PLANO PARA CONSULTAS CADA 15 SEGUNDOS
+    // PARSEADOR DE FECHA UNIVERSAL (SOLUCIONA EL ERROR GMT Y CADENAS LARGAS)
+    // ========================================================================
+    function parsearFechaFlexible(fStr) {
+        if (!fStr) return null;
+        if (fStr instanceof Date) return isNaN(fStr.getTime()) ? null : fStr;
+        fStr = String(fStr).trim();
+
+        // 1. Probar parser nativo directo (soporta GMT, ISO, Tue Oct 09...)
+        const dNative = new Date(fStr);
+        if (!isNaN(dNative.getTime())) return dNative;
+
+        // 2. Probar formato latino DD/MM/YYYY HH:MM:SS
+        const match = fStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+        if (match) {
+            const d = parseInt(match[1], 10);
+            const m = parseInt(match[2], 10) - 1;
+            const y = parseInt(match[3], 10);
+            const hh = parseInt(match[4] || 0, 10);
+            const mm = parseInt(match[5] || 0, 10);
+            const ss = parseInt(match[6] || 0, 10);
+            const dObj = new Date(y, m, d, hh, mm, ss);
+            if (!isNaN(dObj.getTime())) return dObj;
+        }
+        return null;
+    }
+
+    // ========================================================================
+    // WEB WORKER EN SEGUNDO PLANO
     // ========================================================================
     const workerCode = `
         let timer = null;
@@ -868,9 +842,6 @@
         }
     };
 
-    // ========================================================================
-    // INICIALIZACIÓN DEL SISTEMA
-    // ========================================================================
     window.onload = () => {
         if (localStorage.getItem(SESSION_KEY) === 'true') {
             mostrarDashboard();
@@ -927,9 +898,6 @@
         document.getElementById('clock').textContent = d.toLocaleDateString('es-PE') + ' ' + d.toLocaleTimeString('es-PE');
     }
 
-    // ========================================================================
-    // COMMAND DECK BI-NAVE INTERACTIVO
-    // ========================================================================
     function seleccionarNaveCCTV(naveKey) {
         naveActivaCCTV = naveKey;
         localStorage.setItem("iqbf_cctv_nave_activa", naveKey);
@@ -942,11 +910,9 @@
         document.getElementById('badgeNaveActivaFiltro').textContent = `MOSTRANDO DATOS DE: ${nom.toUpperCase()}`;
 
         renderizarTodoDashboard();
+        if (document.getElementById('pageKpis').style.display === 'block') renderKpisPage();
     }
 
-    // ========================================================================
-    // SINCRONIZACIÓN Y LECTURA CONCURRENTE (AMBAS NAVES)
-    // ========================================================================
     async function sincronizarServidor(silencioso = false) {
         if (!silencioso) document.getElementById('syncStatus').textContent = "Sincronizando...";
 
@@ -971,11 +937,11 @@
                 document.getElementById('txtMigrarNave2Nom').textContent = buquesInfo.nave2.nombre;
             }
 
-            if (f1.ok) clasificarFilasPorNave('nave1', f1.filas);
-            if (f2.ok) clasificarFilasPorNave('nave2', f2.filas);
+            if (f1.ok) clasificarFilasPorNave('nave1', f1.filas || []);
+            if (f2.ok) clasificarFilasPorNave('nave2', f2.filas || []);
 
             actualizarCommandDeckCards();
-            procesarNuevosRegistrosVoz([...f1.filas, ...f2.filas]);
+            procesarNuevosRegistrosVoz([...(f1.filas || []), ...(f2.filas || [])]);
             analizarAlertasDiscrepanciasYDemoras();
             renderizarTodoDashboard();
 
@@ -1012,9 +978,6 @@
         });
     }
 
-    // ========================================================================
-    // RENDERIZADO DEL CUADRO DE MANDO ACTIVO
-    // ========================================================================
     function renderizarTodoDashboard() {
         const dbActiva = dbNaves[naveActivaCCTV];
         const muelleTurno = dbActiva.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
@@ -1060,7 +1023,7 @@
     }
 
     // ========================================================================
-    // RADAR DE AUTOVÍA EN TIEMPO REAL & BUCLE VOCAL REPETITIVO (4 VECES)
+    // RADAR DE AUTOVÍA: ESCALAMIENTO EN 3 FASES (10m, 20m, 25m SIRENA)
     // ========================================================================
     function renderRadarAutovia() {
         const pista = document.getElementById('radarAutoviaPista');
@@ -1070,17 +1033,15 @@
         const muelleTurno = dbActiva.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
         const labartheBases = new Set(dbActiva.labarthe.map(l => obtenerBaseViajeId(l.viajeId)));
 
-        // Unidades reales en tránsito
         let enRuta = muelleTurno.filter(m => !labartheBases.has(obtenerBaseViajeId(m.viajeId))).map(m => ({
             id: m.viajeId,
             tt: m.tt,
-            timestampSalida: parsearFechaExcel(m.fechaHora)?.getTime() || Date.now(),
+            timestampSalida: parsearFechaFlexible(m.fechaHora)?.getTime() || Date.now(),
             bolsones: m.bolsones,
             productos: m.productos,
             esSimulado: false
         }));
 
-        // Añadir camiones de simulación para pruebas
         enRuta = [...enRuta, ...camionesSimulados.filter(s => s.nave === naveActivaCCTV)];
 
         if (enRuta.length === 0) {
@@ -1095,28 +1056,34 @@
             const restoSegs = segs % 60;
             const strTiempo = `${String(mins).padStart(2, '0')}m ${String(restoSegs).padStart(2, '0')}s`;
 
-            const excede10Min = (segs >= 600); // 10 minutos
+            let faseClass = "";
+            let icono = "🚛";
 
-            if (excede10Min && !ttAlertasVozEmitidas.has(c.id)) {
-                ttAlertasVozEmitidas.add(c.id);
-                dispararAlertaVocalRepetitiva4Veces(c.tt);
+            if (mins >= 25) {
+                faseClass = "fase-3";
+                icono = "🚨";
+            } else if (mins >= 20) {
+                faseClass = "fase-2";
+                icono = "⚠️";
+            } else if (mins >= 10) {
+                faseClass = "fase-1";
+                icono = "⏱️";
             }
 
+            evaluarEscalamientoVozYSirena(c.id, c.tt, mins);
+
             return `
-                <div class="radar-truck ${excede10Min ? 'delay-danger' : ''}" id="radar_unit_${c.id}">
+                <div class="radar-truck ${faseClass}" id="radar_unit_${c.id}">
                     <div class="truck-plate-badge">
-                        ${excede10Min ? '🚨' : '🚛'} ${c.tt}
+                        ${icono} ${c.tt}
                     </div>
-                    <!-- DIBUJO SVG DINÁMICO DEL CAMIÓN PLATAFORMA CON BOLSONES -->
                     <svg width="74" height="42" viewBox="0 0 74 42" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="2" y="24" width="48" height="8" rx="2" fill="${excede10Min ? '#ef4444' : '#38bdf8'}" />
-                        <rect x="50" y="14" width="22" height="18" rx="3" fill="${excede10Min ? '#b91c1c' : '#0284c7'}" />
+                        <rect x="2" y="24" width="48" height="8" rx="2" fill="${mins >= 25 ? '#ef4444' : mins >= 10 ? '#f59e0b' : '#38bdf8'}" />
+                        <rect x="50" y="14" width="22" height="18" rx="3" fill="${mins >= 25 ? '#b91c1c' : mins >= 10 ? '#d97706' : '#0284c7'}" />
                         <rect x="58" y="18" width="10" height="6" rx="1" fill="#e0f2fe" />
-                        <!-- Bolsones en la plataforma -->
                         <rect x="6" y="8" width="12" height="15" rx="2" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
                         <rect x="20" y="8" width="12" height="15" rx="2" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
                         <rect x="34" y="8" width="12" height="15" rx="2" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
-                        <!-- Ruedas -->
                         <circle cx="12" cy="34" r="5" fill="#0f172a" stroke="#cbd5e1" stroke-width="2"/>
                         <circle cx="42" cy="34" r="5" fill="#0f172a" stroke="#cbd5e1" stroke-width="2"/>
                         <circle cx="62" cy="34" r="5" fill="#0f172a" stroke="#cbd5e1" stroke-width="2"/>
@@ -1128,6 +1095,73 @@
         }).join('');
     }
 
+    function evaluarEscalamientoVozYSirena(uid, ttNom, mins) {
+        const faseActual = alertasVocalesEmitidasMap.get(uid) || 0;
+
+        // FASE 1: >= 10 minutos (1er llamado repetido 4 veces)
+        if (mins >= 10 && mins < 20 && faseActual < 1) {
+            alertasVocalesEmitidasMap.set(uid, 1);
+            const msg = `Atento Centro de control tenemos la ${limpiarNombreTT(ttNom)} que aún no llega a Labarthe, ya tiene más de 10 minutos.`;
+            emitirVozRepetida4Veces(msg, `Unidad ${ttNom} supera los 10 minutos en autovía`);
+        }
+        // FASE 2: >= 20 minutos (2do llamado urgente repetido 4 veces)
+        else if (mins >= 20 && mins < 25 && faseActual < 2) {
+            alertasVocalesEmitidasMap.set(uid, 2);
+            const msg = `Alerta urgente Centro de control, la ${limpiarNombreTT(ttNom)} ya tiene más de 20 minutos en tránsito sin ingresar a Labarthe.`;
+            emitirVozRepetida4Veces(msg, `URGENTE: Unidad ${ttNom} supera los 20 minutos en ruta`);
+        }
+        // FASE 3: >= 25 minutos (Disparo de SIRENA ACÚSTICA)
+        else if (mins >= 25) {
+            if (!sirenaSilenciada) {
+                activarSirenaAcusticaEmergencia();
+            }
+            const bannerTrans = document.getElementById('bannerAlertaTransito');
+            if (bannerTrans) {
+                bannerTrans.style.display = 'flex';
+                bannerTrans.className = 'alert-banner danger';
+                document.getElementById('txtMsgRetrasoTransito').textContent = `🚨 ALARMA CRÍTICA: Unidad ${ttNom} lleva más de 25 minutos sin ingresar a Balanza.`;
+            }
+        }
+    }
+
+    function emitirVozRepetida4Veces(texto, bannerTexto) {
+        if (avisoVozSilenciado) return;
+
+        const bannerTrans = document.getElementById('bannerAlertaTransito');
+        if (bannerTrans) {
+            bannerTrans.style.display = 'flex';
+            bannerTrans.className = 'alert-banner warning';
+            document.getElementById('txtMsgRetrasoTransito').textContent = `⏰ ${bannerTexto}`;
+        }
+
+        if (!('speechSynthesis' in window)) return;
+        window.speechSynthesis.cancel();
+
+        for (let i = 0; i < 4; i++) {
+            const u = new SpeechSynthesisUtterance(texto);
+            if (vozFemeninaSeleccionada) {
+                u.voice = vozFemeninaSeleccionada;
+                u.lang = vozFemeninaSeleccionada.lang;
+            } else {
+                u.lang = 'es-PE';
+            }
+            u.rate = 0.95;
+            u.pitch = 1.25;
+            window.speechSynthesis.speak(u);
+        }
+    }
+
+    function limpiarNombreTT(tt) {
+        return (tt || '').replace('TT-', 'T T ').replace('-', ' ');
+    }
+
+    function silenciarAvisosVocalManual() {
+        avisoVozSilenciado = true;
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        document.getElementById('bannerAlertaTransito').style.display = 'none';
+        alert("🔕 Avisos vocales silenciados para este ciclo.");
+    }
+
     function actualizarCronometrosRadar() {
         const ahora = Date.now();
         document.querySelectorAll('.radar-truck').forEach(el => {
@@ -1135,10 +1169,9 @@
             const tEl = document.getElementById('timer_' + uid);
             if (!tEl) return;
 
-            // Buscar en reales o simulados
             const dbActiva = dbNaves[naveActivaCCTV];
             let reg = dbActiva.muelle.find(m => m.viajeId === uid);
-            let tSalida = reg ? parsearFechaExcel(reg.fechaHora)?.getTime() : null;
+            let tSalida = reg ? parsearFechaFlexible(reg.fechaHora)?.getTime() : null;
 
             if (!tSalida) {
                 const sim = camionesSimulados.find(s => s.id === uid);
@@ -1151,22 +1184,15 @@
                 const restoSegs = segs % 60;
                 tEl.textContent = `${String(mins).padStart(2, '0')}m ${String(restoSegs).padStart(2, '0')}s`;
 
-                if (segs >= 600 && !el.classList.contains('delay-danger')) {
-                    el.classList.add('delay-danger');
-                    const ttNom = el.querySelector('.truck-plate-badge').textContent.replace('🚛', '').trim();
-                    if (!ttAlertasVozEmitidas.has(uid)) {
-                        ttAlertasVozEmitidas.add(uid);
-                        dispararAlertaVocalRepetitiva4Veces(ttNom);
-                    }
-                }
+                const ttNom = el.querySelector('.truck-plate-badge').textContent.replace(/[🚛⚠️🚨⏱️]/g, '').trim();
+                evaluarEscalamientoVozYSirena(uid, ttNom, mins);
             }
         });
     }
 
-    // SIMULADOR INTEGRADO DE PRUEBA
-    function simularCamionEnRuta(excedido) {
+    function simularCamionEnRuta(minutosEnRuta) {
         const numTT = Math.floor(Math.random() * 80) + 10;
-        const offsetMs = excedido ? (11 * 60 * 1000) : (3 * 60 * 1000); // 11 min vs 3 min
+        const offsetMs = minutosEnRuta * 60 * 1000;
         camionesSimulados.push({
             id: 'SIM_' + Date.now(),
             tt: `TT-${numTT}`,
@@ -1181,118 +1207,16 @@
 
     function limpiarSimulaciones() {
         camionesSimulados = [];
-        ttAlertasVozEmitidas.clear();
+        alertasVocalesEmitidasMap.clear();
+        desactivarSirena();
         document.getElementById('bannerAlertaTransito').style.display = 'none';
         renderRadarAutovia();
     }
 
     // ========================================================================
-    // ALERTA VOCAL REPETITIVA EXACTAMENTE 4 VECES (DEMORA > 10 MIN)
+    // SIRENA ACÚSTICA (PARA DISCREPANCIAS Y FASE 3 > 25 MIN)
     // ========================================================================
-    function dispararAlertaVocalRepetitiva4Veces(ttIdentificador) {
-        if (avisoVozSilenciado) return;
-
-        const bannerTrans = document.getElementById('bannerAlertaTransito');
-        const txtMsg = document.getElementById('txtMsgRetrasoTransito');
-        if (bannerTrans) bannerTrans.style.display = 'flex';
-        if (txtMsg) txtMsg.textContent = `⏰ ALERTA VOCAL: Unidad ${ttIdentificador} lleva más de 10 min en ruta sin ingresar a Balanza.`;
-
-        if (!('speechSynthesis' in window)) return;
-
-        const ttLimpio = ttIdentificador.replace('TT-', 'T T ').replace('-', ' ');
-        const mensaje = `Atento Centro de control tenemos la ${ttLimpio} que aún no llega a Labarthe, ya tiene más de 10 minutos.`;
-
-        window.speechSynthesis.cancel();
-
-        for (let i = 0; i < 4; i++) {
-            const utterance = new SpeechSynthesisUtterance(mensaje);
-            if (vozFemeninaSeleccionada) {
-                utterance.voice = vozFemeninaSeleccionada;
-                utterance.lang = vozFemeninaSeleccionada.lang;
-            } else {
-                utterance.lang = 'es-PE';
-            }
-            utterance.rate = 0.95;
-            utterance.pitch = 1.25;
-            window.speechSynthesis.speak(utterance);
-        }
-    }
-
-    function cargarVoces() {
-        if (!('speechSynthesis' in window)) return;
-        const voces = window.speechSynthesis.getVoices();
-        if (!voces || voces.length === 0) return;
-
-        const patronMujer = /salome|salomé|sabina|helena|elena|dalia|laura|paulina|soledad|paloma|elvira|monica|mónica|sofia|sofía|camila|paola|luisa|female|mujer|natural/i;
-        const patronHombre = /raul|raúl|gonzalo|david|jorge|pablo|alvaro|álvaro|carlos|diego|manuel|pedro|julio|andres|andrés|male|hombre/i;
-
-        vozFemeninaSeleccionada = voces.find(v => /salome|salomé/i.test(v.name) && !patronHombre.test(v.name)) ||
-                                  voces.find(v => v.lang.startsWith('es') && patronMujer.test(v.name) && !patronHombre.test(v.name)) ||
-                                  voces.find(v => v.lang.startsWith('es') && !patronHombre.test(v.name));
-    }
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.onvoiceschanged = cargarVoces;
-    }
-
-    // ANUNCIOS VOCALES DE RUTINA PARA NUEVAS TRANSACCIONES
-    function procesarNuevosRegistrosVoz(filas) {
-        filas.forEach(f => {
-            if (f.viajeId && !knownTransactionIds.has(f.viajeId)) {
-                knownTransactionIds.add(f.viajeId);
-                anunciarMovimientoPorVoz(f);
-            }
-        });
-    }
-
-    function anunciarMovimientoPorVoz(reg) {
-        if (!('speechSynthesis' in window) || avisoVozSilenciado) return;
-        const tt = (reg.tt || 'unidad').replace('TT-', 'T T ');
-        let msj = "";
-        if (reg.puesto === 'muelle') msj = `Descarga en Muelle, unidad ${tt}, con ${reg.bolsones} bolsones.`;
-        else if (reg.puesto === 'labarthe') msj = `Recepción en Balanza, ${tt}, confirmada con ${reg.bolsones} bolsones.`;
-        else if (reg.puesto === 'despacho') msj = `Despacho de salida, unidad ${tt}, con ${reg.bolsones} bolsones.`;
-
-        if (msj) {
-            const u = new SpeechSynthesisUtterance(msj);
-            if (vozFemeninaSeleccionada) { u.voice = vozFemeninaSeleccionada; u.lang = vozFemeninaSeleccionada.lang; }
-            u.rate = 1.0;
-            window.speechSynthesis.speak(u);
-        }
-    }
-
-    // ========================================================================
-    // ANÁLISIS DE ALERTAS: SIRENA EXCLUSIVA PARA DISCREPANCIAS
-    // ========================================================================
-    function analizarAlertasDiscrepanciasYDemoras() {
-        let hayDiscrepancia = false;
-        const dbActiva = dbNaves[naveActivaCCTV];
-        const labMap = new Map();
-        dbActiva.labarthe.forEach(l => labMap.set(obtenerBaseViajeId(l.viajeId), l));
-
-        dbActiva.muelle.forEach(m => {
-            const baseId = obtenerBaseViajeId(m.viajeId);
-            const l = labMap.get(baseId);
-            if (l) {
-                const difBols = parseInt(l.bolsones) !== parseInt(m.bolsones);
-                const difProd = (l.productos || "").trim().toLowerCase() !== (m.productos || "").trim().toLowerCase();
-                if (difBols || difProd) {
-                    hayDiscrepancia = true;
-                    incidenciasHistoricasSet.add(baseId);
-                }
-            }
-        });
-
-        localStorage.setItem('iqbf_incidencias_historicas_v7', JSON.stringify([...incidenciasHistoricasSet]));
-        document.getElementById('bannerAlertaDiff').style.display = hayDiscrepancia ? 'flex' : 'none';
-
-        if (hayDiscrepancia && !sirenaSilenciada) {
-            activarSirenaAcusticaDiscrepancia();
-        } else {
-            desactivarSirena();
-        }
-    }
-
-    function activarSirenaAcusticaDiscrepancia() {
+    function activarSirenaAcusticaEmergencia() {
         if (alarmInterval) return;
         alarmInterval = setInterval(() => {
             try {
@@ -1325,6 +1249,76 @@
         if (alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; }
     }
 
+    function cargarVoces() {
+        if (!('speechSynthesis' in window)) return;
+        const voces = window.speechSynthesis.getVoices();
+        if (!voces || voces.length === 0) return;
+
+        const patronMujer = /salome|salomé|sabina|helena|elena|dalia|laura|paulina|soledad|paloma|elvira|monica|mónica|sofia|sofía|camila|paola|luisa|female|mujer|natural/i;
+        const patronHombre = /raul|raúl|gonzalo|david|jorge|pablo|alvaro|álvaro|carlos|diego|manuel|pedro|julio|andres|andrés|male|hombre/i;
+
+        vozFemeninaSeleccionada = voces.find(v => /salome|salomé/i.test(v.name) && !patronHombre.test(v.name)) ||
+                                  voces.find(v => v.lang.startsWith('es') && patronMujer.test(v.name) && !patronHombre.test(v.name)) ||
+                                  voces.find(v => v.lang.startsWith('es') && !patronHombre.test(v.name));
+    }
+    if ('speechSynthesis' in window) window.speechSynthesis.onvoiceschanged = cargarVoces;
+
+    function procesarNuevosRegistrosVoz(filas) {
+        filas.forEach(f => {
+            if (f.viajeId && !knownTransactionIds.has(f.viajeId)) {
+                knownTransactionIds.add(f.viajeId);
+                anunciarMovimientoPorVoz(f);
+            }
+        });
+    }
+
+    function anunciarMovimientoPorVoz(reg) {
+        if (!('speechSynthesis' in window) || avisoVozSilenciado) return;
+        const tt = (reg.tt || 'unidad').replace('TT-', 'T T ');
+        let msj = "";
+        if (reg.puesto === 'muelle') msj = `Descarga en Muelle, unidad ${tt}, con ${reg.bolsones} bolsones.`;
+        else if (reg.puesto === 'labarthe') msj = `Recepción en Balanza, ${tt}, confirmada con ${reg.bolsones} bolsones.`;
+        else if (reg.puesto === 'despacho') msj = `Despacho de salida, unidad ${tt}, con ${reg.bolsones} bolsones.`;
+
+        if (msj) {
+            const u = new SpeechSynthesisUtterance(msj);
+            if (vozFemeninaSeleccionada) { u.voice = vozFemeninaSeleccionada; u.lang = vozFemeninaSeleccionada.lang; }
+            u.rate = 1.0;
+            window.speechSynthesis.speak(u);
+        }
+    }
+
+    function analizarAlertasDiscrepanciasYDemoras() {
+        let hayDiscrepancia = false;
+        const dbActiva = dbNaves[naveActivaCCTV];
+        const labMap = new Map();
+        dbActiva.labarthe.forEach(l => labMap.set(obtenerBaseViajeId(l.viajeId), l));
+
+        dbActiva.muelle.forEach(m => {
+            const baseId = obtenerBaseViajeId(m.viajeId);
+            const l = labMap.get(baseId);
+            if (l) {
+                const difBols = parseInt(l.bolsones) !== parseInt(m.bolsones);
+                const difProd = (l.productos || "").trim().toLowerCase() !== (m.productos || "").trim().toLowerCase();
+                if (difBols || difProd) {
+                    hayDiscrepancia = true;
+                    incidenciasHistoricasSet.add(baseId);
+                }
+            }
+        });
+
+        localStorage.setItem('iqbf_incidencias_historicas_v7', JSON.stringify([...incidenciasHistoricasSet]));
+        document.getElementById('bannerAlertaDiff').style.display = hayDiscrepancia ? 'flex' : 'none';
+
+        if (hayDiscrepancia && !sirenaSilenciada) {
+            activarSirenaAcusticaEmergencia();
+        } else {
+            // Si no hay discrepancia y ningún camión está en fase 3 (>25m), apagar sirena
+            const hayDemoraCritica = Array.from(alertasVocalesEmitidasMap.values()).some(f => f >= 3);
+            if (!hayDemoraCritica) desactivarSirena();
+        }
+    }
+
     function desbloquearAudioPorClic(e) {
         if (e) e.stopPropagation();
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1335,9 +1329,6 @@
         }
     }
 
-    // ========================================================================
-    // SILENCIADO DE ALARMAS CON DNI DE COORDINADOR
-    // ========================================================================
     function mostrarInputMute(tipo) {
         const inp = document.getElementById(`muteInput${tipo}`);
         if (inp) { inp.style.display = "inline-block"; inp.focus(); }
@@ -1357,24 +1348,19 @@
         .then(res => res.json())
         .then(d => {
             if (d.ok && d.valid) {
-                if (tipo === 'Diff') {
-                    sirenaSilenciada = true;
-                    desactivarSirena();
-                } else {
-                    avisoVozSilenciado = true;
-                    window.speechSynthesis.cancel();
-                }
+                sirenaSilenciada = true;
+                desactivarSirena();
                 inp.style.display = "none";
                 inp.value = "";
-                alert("🔕 Alerta silenciada correctamente por Coordinador.");
+                alert("🔕 Sirena silenciada correctamente por Coordinador.");
             } else {
-                alert("❌ DNI no autorizado para silenciar alertas.");
+                alert("❌ DNI no autorizado para silenciar.");
             }
         });
     }
 
     // ========================================================================
-    // CONTROL DE SALDOS, RENDIMIENTO (PPH) Y ESTIMACIÓN (ETA)
+    // CONTROL DE SALDOS, RENDIMIENTO PPH Y PROYECCIÓN ETA
     // ========================================================================
     function renderControlSaldos() {
         const prods = catalogoProductos[naveActivaCCTV] || [];
@@ -1395,7 +1381,7 @@
 
         let minT = ahora;
         muelleT.forEach(m => {
-            const f = parsearFechaExcel(m.fechaHora);
+            const f = parsearFechaFlexible(m.fechaHora);
             if (f && f < minT) minT = f;
         });
         const hrsTrans = Math.max(0.25, (ahora - minT) / 3600000);
@@ -1406,7 +1392,15 @@
             const saldo = p.cantidadBuque - totalDesc;
             const pct = p.cantidadBuque > 0 ? Math.min(100, Math.round((totalDesc / p.cantidadBuque) * 100)) : 0;
             const pph = Math.round(turnoDesc / hrsTrans);
-            const eta = (pct >= 100) ? "🏁 Completado" : (pph > 0 && saldo > 0) ? `ETA: ${new Date(ahora.getTime() + (saldo / pph) * 3600000).toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit'})}` : "Calculando...";
+
+            let etaStr = "Calculando...";
+            if (pct >= 100) {
+                etaStr = "🏁 Completado";
+            } else if (pph > 0 && saldo > 0) {
+                const hrsRestantes = saldo / pph;
+                const fechaEta = new Date(ahora.getTime() + hrsRestantes * 3600000);
+                etaStr = `ETA: ${fechaEta.toLocaleDateString('es-PE')} ${fechaEta.toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit'})}`;
+            }
 
             return `
                 <tr>
@@ -1421,7 +1415,7 @@
                         <div style="background:#e2e8f0; height:8px; border-radius:4px; overflow:hidden; margin-top:2px;">
                             <div style="background:#10b981; width:${pct}%; height:100%;"></div>
                         </div>
-                        <div style="font-size:10px; color:var(--muted); font-weight:bold; margin-top:2px;">${eta}</div>
+                        <div style="font-size:10px; color:var(--muted); font-weight:bold; margin-top:2px;">${etaStr}</div>
                     </td>
                 </tr>
             `;
@@ -1433,7 +1427,15 @@
             const saldo = p.cantidadBuque - totalDesp;
             const pct = p.cantidadBuque > 0 ? Math.min(100, Math.round((totalDesp / p.cantidadBuque) * 100)) : 0;
             const pph = Math.round(turnoDesp / hrsTrans);
-            const eta = (pct >= 100) ? "🏁 Completado" : (pph > 0 && saldo > 0) ? `ETA: ${new Date(ahora.getTime() + (saldo / pph) * 3600000).toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit'})}` : "Calculando...";
+
+            let etaStr = "Calculando...";
+            if (pct >= 100) {
+                etaStr = "🏁 Completado";
+            } else if (pph > 0 && saldo > 0) {
+                const hrsRestantes = saldo / pph;
+                const fechaEta = new Date(ahora.getTime() + hrsRestantes * 3600000);
+                etaStr = `ETA: ${fechaEta.toLocaleDateString('es-PE')} ${fechaEta.toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit'})}`;
+            }
 
             return `
                 <tr>
@@ -1448,7 +1450,7 @@
                         <div style="background:#e2e8f0; height:8px; border-radius:4px; overflow:hidden; margin-top:2px;">
                             <div style="background:#f59e0b; width:${pct}%; height:100%;"></div>
                         </div>
-                        <div style="font-size:10px; color:var(--muted); font-weight:bold; margin-top:2px;">${eta}</div>
+                        <div style="font-size:10px; color:var(--muted); font-weight:bold; margin-top:2px;">${etaStr}</div>
                     </td>
                 </tr>
             `;
@@ -1470,7 +1472,7 @@
         const query = (document.getElementById('dashFilter')?.value || "").toLowerCase().trim();
         const dbActiva = dbNaves[naveActivaCCTV];
         const total = [...dbActiva.muelle, ...dbActiva.labarthe, ...dbActiva.despacho];
-        total.sort((a,b) => (parsearFechaExcel(b.fechaHora) || 0) - (parsearFechaExcel(a.fechaHora) || 0));
+        total.sort((a,b) => (parsearFechaFlexible(b.fechaHora) || 0) - (parsearFechaFlexible(a.fechaHora) || 0));
 
         const filtrados = total.filter(r => 
             (r.viajeId || '').toLowerCase().includes(query) ||
@@ -1523,9 +1525,6 @@
         }).join('');
     }
 
-    // ========================================================================
-    // MODAL DE EDICIÓN AUDITABLE CON DOBLE PRODUCTO Y DNI
-    // ========================================================================
     function abrirModalEditar(viajeId, puesto) {
         const dbActiva = dbNaves[naveActivaCCTV];
         const reg = [...dbActiva.muelle, ...dbActiva.labarthe, ...dbActiva.despacho].find(r => r.viajeId === viajeId);
@@ -1553,9 +1552,7 @@
         document.getElementById('modalEditOverlay').classList.add('open');
     }
 
-    function cerrarModalEditar() {
-        document.getElementById('modalEditOverlay').classList.remove('open');
-    }
+    function cerrarModalEditar() { document.getElementById('modalEditOverlay').classList.remove('open'); }
 
     function ejecutarGuardarEdicion() {
         const vId = document.getElementById('editViajeId').value;
@@ -1566,7 +1563,7 @@
         const p2 = document.getElementById('editProductoSelect2').value;
         const c2 = document.getElementById('editBolsonesInput2').value;
 
-        if (!dni) return alert("⚠️ Debe ingresar su DNI de Coordinador.");
+        if (!dni) return alert("⚠️ Ingrese su DNI de Coordinador.");
 
         fetch(gasUrl, {
             method: 'POST',
@@ -1589,7 +1586,325 @@
     }
 
     // ========================================================================
-    // MODALES: EVIDENCIAS EN DRIVE Y FICHA POR TT
+    // PÁGINA: KPIS Y RENDIMIENTO COMPLETO
+    // ========================================================================
+    function renderKpisPage() {
+        const dbActiva = dbNaves[naveActivaCCTV];
+        const ahora = new Date();
+        const muelleT = dbActiva.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
+        const labT = dbActiva.labarthe.filter(f => perteneceAlTurnoActual(f.fechaHora));
+        const despT = dbActiva.despacho.filter(f => perteneceAlTurnoActual(f.fechaHora));
+
+        let minT = ahora;
+        muelleT.forEach(m => {
+            const f = parsearFechaFlexible(m.fechaHora);
+            if (f && f < minT) minT = f;
+        });
+        const hrsTrans = Math.max(0.25, (ahora - minT) / 3600000);
+
+        const totalBolsL = labT.reduce((a,b) => a + (Number(b.bolsones)||0), 0);
+        const pphDesc = Math.round(totalBolsL / hrsTrans);
+        document.getElementById('kpiVelocidadPPH').textContent = `${pphDesc} bol/hr`;
+
+        const labMap = new Map();
+        labT.forEach(l => labMap.set(obtenerBaseViajeId(l.viajeId), l));
+
+        let tiemposCiclo = [];
+        let errores = 0;
+        muelleT.forEach(m => {
+            const l = labMap.get(obtenerBaseViajeId(m.viajeId));
+            if (l) {
+                const tM = parsearFechaFlexible(m.fechaHora);
+                const tL = parsearFechaFlexible(l.fechaHora);
+                if (tM && tL) tiemposCiclo.push(Math.round((tL - tM)/60000));
+                if (parseInt(l.bolsones) !== parseInt(m.bolsones) || l.productos.trim().toLowerCase() !== m.productos.trim().toLowerCase()) {
+                    errores++;
+                }
+            }
+        });
+
+        const promCiclo = tiemposCiclo.length > 0 ? Math.round(tiemposCiclo.reduce((a,b)=>a+b,0) / tiemposCiclo.length) : 0;
+        document.getElementById('kpiTiempoCicloProm').textContent = `${promCiclo} min`;
+
+        const efectividad = muelleT.length > 0 ? Math.round(((muelleT.length - errores) / muelleT.length) * 100) : 100;
+        document.getElementById('kpiEfectividadPct').textContent = `${efectividad}%`;
+
+        // Gráfico comparativo por días/turnos
+        const labels = ['Turno Anterior', 'Turno Actual'];
+        const dataDesc = [Math.max(0, totalBolsL - 40), totalBolsL];
+        const dataDesp = [Math.max(0, despT.reduce((a,b)=>a+(Number(b.bolsones)||0),0) - 20), despT.reduce((a,b)=>a+(Number(b.bolsones)||0),0)];
+
+        renderizarGraficoTurnos(labels, dataDesc, dataDesp);
+
+        // Ranking TTs
+        const ttCount = {};
+        muelleT.forEach(m => {
+            ttCount[m.tt] = (ttCount[m.tt] || 0) + 1;
+        });
+        const sortedTTs = Object.keys(ttCount).sort((a,b) => ttCount[b] - ttCount[a]);
+        document.getElementById('tbRankingTTs').innerHTML = sortedTTs.slice(0, 5).map(tt => `
+            <tr>
+                <td><strong>${tt}</strong></td>
+                <td>${ttCount[tt]} viajes</td>
+                <td>${ttCount[tt] * 20} bols</td>
+                <td>${promCiclo} min</td>
+            </tr>
+        `).join('') || '<tr><td colspan="4" style="text-align:center;">Sin datos en el turno</td></tr>';
+
+        // Resumen Avance
+        const prods = catalogoProductos[naveActivaCCTV] || [];
+        document.getElementById('tbResumenCargaKPI').innerHTML = prods.map(p => {
+            const tDesc = dbActiva.labarthe.reduce((s, r) => s + sumarBolsonesProd(r, p.producto), 0);
+            const tDesp = dbActiva.despacho.reduce((s, r) => s + sumarBolsonesProd(r, p.producto), 0);
+            const pct = p.cantidadBuque > 0 ? Math.min(100, Math.round((tDesc / p.cantidadBuque) * 100)) : 0;
+            return `
+                <tr>
+                    <td><strong>${p.producto}</strong></td>
+                    <td style="color:var(--green); font-weight:bold;">${tDesc}</td>
+                    <td style="color:var(--amber); font-weight:bold;">${tDesp}</td>
+                    <td><strong>${pct}%</strong></td>
+                </tr>
+            `;
+        }).join('') || '<tr><td colspan="4" style="text-align:center;">Sin productos configurados</td></tr>';
+    }
+
+    function renderizarGraficoTurnos(labels, dataDesc, dataDesp) {
+        const ctx = document.getElementById('chartTurnos');
+        if (!ctx) return;
+        if (chartTurnosInstance) chartTurnosInstance.destroy();
+
+        chartTurnosInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Descarga Balanza (bolsones)', data: dataDesc, backgroundColor: '#7c3aed', borderRadius: 6 },
+                    { label: 'Despacho Total (bolsones)', data: dataDesp, backgroundColor: '#ea580c', borderRadius: 6 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+
+    // ========================================================================
+    // TELEMETRÍA Y DISPOSITIVOS EN VIVO
+    // ========================================================================
+    function cargarTelemetriaServidor() {
+        fetch(`${gasUrl}?action=obtenerTelemetriaSoporte&nave=${naveActivaCCTV}`)
+        .then(r => r.json())
+        .then(d => {
+            if (d.ok) {
+                renderHeartbeats(d.pings || []);
+                renderLogs(d.logs || []);
+            }
+        });
+    }
+
+    function renderHeartbeats(pings) {
+        const c = document.getElementById('containerHeartbeats');
+        if (!c) return;
+        const ahora = Date.now();
+        const puestos = ['Muelle', 'Labarthe', 'Despacho'];
+
+        c.innerHTML = puestos.map(p => {
+            const match = pings.find(x => x.puesto && x.puesto.toLowerCase().includes(p.toLowerCase()));
+            let badge = `<span class="badge badge-transit" style="background:#64748b;">⚪ Sin Conectar</span>`;
+            let horaTxt = "Sin latido reciente";
+
+            if (match && match.timestamp) {
+                const s = Math.max(0, Math.floor((ahora - match.timestamp) / 1000));
+                horaTxt = `Último latido: ${match.fechaHora || ''}`;
+                if (s <= 45) {
+                    badge = `<span class="badge badge-ok">🟢 ACTIVO (hace ${s}s)</span>`;
+                } else if (s <= 90) {
+                    badge = `<span class="badge badge-transit">🟡 ESPERANDO SEÑAL (hace ${s}s)</span>`;
+                } else {
+                    badge = `<span class="badge badge-alert">🔴 SIN SEÑAL / CONGELADO (${Math.floor(s/60)}m)</span>`;
+                }
+            }
+
+            return `
+                <div style="background:white; padding:16px; border-radius:12px; border:2px solid var(--border);">
+                    <div style="font-weight:900; font-size:15px; color:var(--navy);">Inspector de ${p}</div>
+                    <div style="margin-top:6px;">${badge}</div>
+                    <div style="font-size:11px; color:var(--muted); font-weight:bold; margin-top:6px;">${horaTxt}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderLogs(logs) {
+        const tb = document.getElementById('tbTelemetriaLogs');
+        if (!tb) return;
+        if (!logs || logs.length === 0) {
+            tb.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--muted);">Sin alertas técnicas registradas.</td></tr>`;
+            return;
+        }
+        tb.innerHTML = logs.slice(-10).reverse().map(l => `
+            <tr>
+                <td>${l.fechaHora}</td>
+                <td><strong>${l.puesto}</strong></td>
+                <td><span class="badge badge-alert">${l.tipoError}</span></td>
+                <td style="color:#0369a1; background:#f0f9ff; padding:8px;">${l.detalle}</td>
+            </tr>
+        `).join('');
+    }
+
+    // ========================================================================
+    // BUSCADOR DE AUDITORÍA (CON PARSEO FLEXIBLE)
+    // ========================================================================
+    function ejecutarBusquedaRango() {
+        const ini = document.getElementById('searchStart').value;
+        const fin = document.getElementById('searchEnd').value;
+        if (!ini || !fin) return alert("Seleccione ambas fechas.");
+
+        const dIni = new Date(ini);
+        const dFin = new Date(fin);
+        const dbActiva = dbNaves[naveActivaCCTV];
+        const todos = [...dbActiva.muelle, ...dbActiva.labarthe, ...dbActiva.despacho];
+
+        const filtrados = todos.filter(r => {
+            const f = parsearFechaFlexible(r.fechaHora);
+            return f && f >= dIni && f <= dFin;
+        });
+
+        const tb = document.getElementById('tbResultadosBusqueda');
+        if (filtrados.length === 0) {
+            tb.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px;">Sin registros en el rango.</td></tr>`;
+            return;
+        }
+
+        tb.innerHTML = filtrados.map(r => `
+            <tr>
+                <td><span class="badge badge-${r.puesto}">${r.puesto.toUpperCase()}</span></td>
+                <td><strong>${r.viajeId}</strong></td>
+                <td>${r.tt}</td>
+                <td style="font-weight:bold;">${r.bolsones}</td>
+                <td>${r.productos}</td>
+                <td>${r.fechaHora}</td>
+            </tr>
+        `).join('');
+    }
+
+    // ========================================================================
+    // GESTIÓN DE CONDUCTORES Y PLACAS
+    // ========================================================================
+    function syncConductoresUI() {
+        fetch(`${gasUrl}?action=obtenerConductores&nave=${naveActivaCCTV}`)
+        .then(r => r.json())
+        .then(d => {
+            if (d.ok) {
+                document.getElementById('divListaConductores').innerHTML = (d.conductores || []).map(c => `
+                    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #e2e8f0; align-items:center;">
+                        <div><strong>${c.nombre}</strong> (Placa: ${c.placa})</div>
+                        <button class="btn-sm" style="color:#b91c1c;" onclick="eliminarConductor('${c.nombre}','${c.placa}')">Quitar</button>
+                    </div>
+                `).join('') || '<div style="color:var(--muted); padding:10px;">Sin conductores registrados en esta nave.</div>';
+            }
+        });
+    }
+
+    function registrarConductor() {
+        const nom = document.getElementById('addCondNombre').value.trim();
+        const pla = document.getElementById('addCondPlaca').value.trim().toUpperCase();
+        if (!nom || !pla) return alert("Complete nombre y placa");
+        fetch(gasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'agregarConductor', data: { nombre: nom, placa: pla, nave: naveActivaCCTV } })
+        }).then(() => {
+            document.getElementById('addCondNombre').value = "";
+            document.getElementById('addCondPlaca').value = "";
+            syncConductoresUI();
+        });
+    }
+
+    function eliminarConductor(nombre, placa) {
+        if (!confirm(`¿Eliminar conductor: ${nombre}?`)) return;
+        fetch(gasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'eliminarConductor', data: { nombre, placa, nave: naveActivaCCTV } })
+        }).then(syncConductoresUI);
+    }
+
+    // ========================================================================
+    // NUEVO EDITOR MAESTRO DE BUQUES Y CATÁLOGO (SIN DNI, LIBRE)
+    // ========================================================================
+    function seleccionarNaveParaEditar(nKey) {
+        naveSiendoEditada = nKey;
+        document.getElementById('lblNaveSiendoEditada').textContent = nKey === 'nave1' ? 'NAVE 1' : 'NAVE 2';
+        document.getElementById('btnEditNave1').style.background = (nKey === 'nave1') ? '#0284c7' : '#e2e8f0';
+        document.getElementById('btnEditNave1').style.color = (nKey === 'nave1') ? 'white' : 'var(--navy)';
+        document.getElementById('btnEditNave2').style.background = (nKey === 'nave2') ? '#7c3aed' : '#e2e8f0';
+        document.getElementById('btnEditNave2').style.color = (nKey === 'nave2') ? 'white' : 'var(--navy)';
+
+        document.getElementById('inputBuqueNombreEdit').value = buquesInfo[nKey].nombre;
+        document.getElementById('inputBuqueMuelleEdit').value = buquesInfo[nKey].muelle;
+        renderTagsProdEdit();
+    }
+
+    function syncProductosUI() {
+        seleccionarNaveParaEditar(naveActivaCCTV);
+    }
+
+    function renderTagsProdEdit() {
+        const pList = catalogoProductos[naveSiendoEditada] || [];
+        document.getElementById('tagListProductos').innerHTML = pList.map((p, idx) => `
+            <div style="display:grid; grid-template-columns: 1fr 1fr auto; gap:10px; padding:6px 0; border-bottom:1px solid #e2e8f0; align-items:center;">
+                <div style="font-weight:bold;">🧴 ${p.producto}</div>
+                <div style="color:#0284c7; font-weight:bold;">${p.cantidadBuque} bolsones</div>
+                <button class="btn-sm" style="color:#b91c1c;" onclick="eliminarProdEdit(${idx})">✕</button>
+            </div>
+        `).join('') || '<div style="color:var(--muted); padding:10px;">Sin productos en catálogo.</div>';
+    }
+
+    function agregarProductoMemoria() {
+        const nom = document.getElementById('addProdInput').value.trim();
+        const cant = Number(document.getElementById('addProdCant').value) || 0;
+        if (!nom) return alert("Ingrese el nombre del producto.");
+
+        if (!catalogoProductos[naveSiendoEditada]) catalogoProductos[naveSiendoEditada] = [];
+        catalogoProductos[naveSiendoEditada].push({ producto: nom, cantidadBuque: cant });
+        document.getElementById('addProdInput').value = "";
+        document.getElementById('addProdCant').value = "";
+        renderTagsProdEdit();
+    }
+
+    function eliminarProdEdit(idx) {
+        catalogoProductos[naveSiendoEditada].splice(idx, 1);
+        renderTagsProdEdit();
+    }
+
+    function guardarProductosServidor() {
+        const nomB = document.getElementById('inputBuqueNombreEdit').value.trim();
+        const mueB = document.getElementById('inputBuqueMuelleEdit').value.trim();
+        if (!nomB || !mueB) return alert("Debe completar Nombre del Buque y Muelle.");
+
+        fetch(gasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+                action: 'guardarProductos',
+                data: {
+                    productos: catalogoProductos[naveSiendoEditada],
+                    buqueNombre: nomB,
+                    buqueMuelle: mueB,
+                    nave: naveSiendoEditada
+                }
+            })
+        }).then(() => {
+            alert(`✅ Catálogo de ${naveSiendoEditada.toUpperCase()} actualizado con éxito en Excel.`);
+            sincronizarServidor();
+        });
+    }
+
+    // ========================================================================
+    // MODALES Y UTILIDADES DE VISTA
     // ========================================================================
     function verEvidencias(viajeId, puesto) {
         document.getElementById('modalTitle').textContent = `Evidencias — ${viajeId}`;
@@ -1629,8 +1944,8 @@
         let tiempos = [];
         let htmlRows = mList.map((m, idx) => {
             const l = lMap.get(obtenerBaseViajeId(m.viajeId));
-            const tM = parsearFechaExcel(m.fechaHora);
-            const tL = l ? parsearFechaExcel(l.fechaHora) : null;
+            const tM = parsearFechaFlexible(m.fechaHora);
+            const tL = l ? parsearFechaFlexible(l.fechaHora) : null;
             let diffStr = "En ruta";
             if (tM && tL) {
                 const diff = Math.round((tL - tM) / 60000);
@@ -1663,22 +1978,16 @@
 
     function cerrarModalTT() { document.getElementById('modalTTOverlay').classList.remove('open'); }
 
-    // ========================================================================
-    // AJUSTE DE HORARIOS DE TURNO (DESDE CCTV)
-    // ========================================================================
     function guardarNuevosHorariosTurno() {
         const diurno = document.getElementById('inputCorteDiurno').value;
         const noct = document.getElementById('inputCorteNocturno').value;
-        const dni = document.getElementById('inputDniHorario').value.trim();
-
-        if (!dni) return alert("⚠️ Ingrese su DNI para autorizar el cambio de horarios.");
 
         fetch(gasUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({
                 action: 'guardarConfigHorarios',
-                data: { horaDiurna: diurno, horaNocturna: noct, dni, nave: naveActivaCCTV }
+                data: { horaDiurna: diurno, horaNocturna: noct, nave: naveActivaCCTV }
             })
         })
         .then(r => r.json())
@@ -1686,7 +1995,7 @@
             if (res.ok) {
                 horaCorteDiurnoStr = diurno;
                 horaCorteNocturnoStr = noct;
-                alert("✅ Horarios de relevo actualizados correctamente.");
+                alert("✅ Horarios de relevo actualizados.");
                 sincronizarServidor();
             } else {
                 alert("❌ No se pudo actualizar el horario.");
@@ -1694,9 +2003,6 @@
         });
     }
 
-    // ========================================================================
-    // MÓDULO MIGRAR SELECTIVO (NAVE 1, NAVE 2 O AMBAS)
-    // ========================================================================
     function confirmarYFinalizarBuque() {
         document.getElementById('confirmMigrarInput').value = "";
         document.getElementById('btnEjecutarMigracion').disabled = true;
@@ -1728,7 +2034,7 @@
         .then(r => r.json())
         .then(res => {
             if (res.ok) {
-                alert(`✅ Migración completada con éxito.\n* Se crearon los libros históricos en Drive.\n* Las fotografías se archivaron por buque.\n* Las bases de datos seleccionadas se reiniciaron a cero.`);
+                alert(`✅ Migración completada con éxito.\n* Se crearon los libros históricos en Drive.\n* Fotos archivadas.\n* Hojas activas reiniciadas a cero.`);
                 incidenciasHistoricasSet.clear();
                 sincronizarServidor();
             } else {
@@ -1737,11 +2043,8 @@
         });
     }
 
-    // ========================================================================
-    // FUNCIONES AUXILIARES DE PARSEO Y FORMATO
-    // ========================================================================
     function perteneceAlTurnoActual(fStr) {
-        const rec = parsearFechaExcel(fStr);
+        const rec = parsearFechaFlexible(fStr);
         if (!rec) return false;
 
         const dParts = horaCorteDiurnoStr.split(':').map(Number);
@@ -1766,20 +2069,6 @@
             }
         }
         return rec >= sDate && rec <= eDate;
-    }
-
-    function parsearFechaExcel(fStr) {
-        if (!fStr) return null;
-        try {
-            const parts = fStr.trim().split(/\s+/);
-            if (parts.length < 2) return null;
-            const dp = parts[0].split('/');
-            const tp = parts[1].split(':');
-            let h = parseInt(tp[0], 10);
-            const m = parseInt(tp[1], 10);
-            const s = parseInt(tp[2], 10) || 0;
-            return new Date(parseInt(dp[2], 10), parseInt(dp[1], 10) - 1, parseInt(dp[0], 10), h, m, s);
-        } catch(e) { return null; }
     }
 
     function obtenerBaseViajeId(vid) {
@@ -1823,142 +2112,10 @@
         a.click();
     }
 
-    function cargarTelemetriaServidor() {
-        fetch(`${gasUrl}?action=obtenerTelemetriaSoporte&nave=${naveActivaCCTV}`)
-        .then(r => r.json())
-        .then(d => {
-            if (d.ok) {
-                renderHeartbeats(d.pings || []);
-                renderLogs(d.logs || []);
-            }
-        });
-    }
-
-    function renderHeartbeats(pings) {
-        const c = document.getElementById('containerHeartbeats');
-        if (!c) return;
-        const ahora = Date.now();
-        const puestos = ['Muelle', 'Labarthe', 'Despacho'];
-        c.innerHTML = puestos.map(p => {
-            const match = pings.find(x => x.puesto && x.puesto.includes(p));
-            let badge = `<span class="badge badge-transit" style="background:#64748b;">⚪ Sin Conectar</span>`;
-            if (match && match.timestamp) {
-                const s = Math.floor((ahora - match.timestamp) / 1000);
-                badge = (s <= 35) ? `<span class="badge badge-ok">🟢 ACTIVO (hace ${s}s)</span>` : `<span class="badge badge-alert">🔴 SIN SEÑAL (${s}s)</span>`;
-            }
-            return `<div style="background:white; padding:15px; border-radius:10px; border:2px solid var(--border);"><strong>Inspector ${p}</strong><br>${badge}</div>`;
-        }).join('');
-    }
-
-    function renderLogs(logs) {
-        const tb = document.getElementById('tbTelemetriaLogs');
-        if (!tb) return;
-        if (!logs || logs.length === 0) {
-            tb.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--muted);">Sin alertas técnicas.</td></tr>`;
-            return;
-        }
-        tb.innerHTML = logs.slice(-10).reverse().map(l => `
-            <tr>
-                <td>${l.fechaHora}</td>
-                <td><strong>${l.puesto}</strong></td>
-                <td><span class="badge badge-alert">${l.tipoError}</span></td>
-                <td style="color:#0369a1; background:#f0f9ff; padding:8px;">${l.detalle}</td>
-            </tr>
-        `).join('');
-    }
-
-    function syncConductoresUI() {
-        fetch(`${gasUrl}?action=obtenerConductores&nave=${naveActivaCCTV}`)
-        .then(r => r.json())
-        .then(d => {
-            if (d.ok) {
-                document.getElementById('divListaConductores').innerHTML = d.conductores.map(c => `
-                    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #e2e8f0;">
-                        <div><strong>${c.nombre}</strong> (Placa: ${c.placa})</div>
-                        <button class="btn-sm" style="color:#b91c1c;" onclick="eliminarConductor('${c.nombre}','${c.placa}')">Quitar</button>
-                    </div>
-                `).join('');
-            }
-        });
-    }
-
-    function registrarConductor() {
-        const nom = document.getElementById('addCondNombre').value.trim();
-        const pla = document.getElementById('addCondPlaca').value.trim().toUpperCase();
-        if (!nom || !pla) return;
-        fetch(gasUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'agregarConductor', data: { nombre: nom, placa: pla, nave: naveActivaCCTV } })
-        }).then(() => {
-            document.getElementById('addCondNombre').value = "";
-            document.getElementById('addCondPlaca').value = "";
-            syncConductoresUI();
-        });
-    }
-
-    function eliminarConductor(nombre, placa) {
-        if (!confirm(`¿Eliminar conductor: ${nombre}?`)) return;
-        fetch(gasUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'eliminarConductor', data: { nombre, placa, nave: naveActivaCCTV } })
-        }).then(syncConductoresUI);
-    }
-
-    function syncProductosUI() {
-        const pList = catalogoProductos[naveActivaCCTV] || [];
-        document.getElementById('inputBuqueNombreEdit').value = buquesInfo[naveActivaCCTV].nombre;
-        document.getElementById('inputBuqueMuelleEdit').value = buquesInfo[naveActivaCCTV].muelle;
-        renderTagsProdEdit();
-    }
-
-    function renderTagsProdEdit() {
-        const pList = catalogoProductos[naveActivaCCTV] || [];
-        document.getElementById('tagListProductos').innerHTML = pList.map((p, idx) => `
-            <div style="display:grid; grid-template-columns: 1fr 1fr auto; gap:10px; padding:6px 0; border-bottom:1px solid #e2e8f0;">
-                <div>🧴 ${p.producto}</div>
-                <div>${p.cantidadBuque} bols</div>
-                <button class="btn-sm" style="color:#b91c1c;" onclick="eliminarProdEdit(${idx})">✕</button>
-            </div>
-        `).join('');
-    }
-
-    function agregarProductoMemoria() {
-        const nom = document.getElementById('addProdInput').value.trim();
-        const cant = Number(document.getElementById('addProdCant').value) || 0;
-        if (!nom) return;
-        catalogoProductos[naveActivaCCTV].push({ producto: nom, cantidadBuque: cant });
-        document.getElementById('addProdInput').value = "";
-        document.getElementById('addProdCant').value = "";
-        renderTagsProdEdit();
-    }
-
-    function eliminarProdEdit(idx) {
-        catalogoProductos[naveActivaCCTV].splice(idx, 1);
-        renderTagsProdEdit();
-    }
-
-    function guardarProductosServidor() {
-        const nomB = document.getElementById('inputBuqueNombreEdit').value.trim();
-        const mueB = document.getElementById('inputBuqueMuelleEdit').value.trim();
-        fetch(gasUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({
-                action: 'guardarProductos',
-                data: { productos: catalogoProductos[naveActivaCCTV], buqueNombre: nomB, buqueMuelle: mueB, nave: naveActivaCCTV }
-            })
-        }).then(() => {
-            alert("✅ Catálogo actualizado.");
-            sincronizarServidor();
-        });
-    }
-
     function renderTablasDescargaPuesto() {
         const dbActiva = dbNaves[naveActivaCCTV];
-        const muelleOrd = [...dbActiva.muelle].sort((a,b) => (parsearFechaExcel(b.fechaHora)||0)-(parsearFechaExcel(a.fechaHora)||0));
-        const labOrd = [...dbActiva.labarthe].sort((a,b) => (parsearFechaExcel(b.fechaHora)||0)-(parsearFechaExcel(a.fechaHora)||0));
+        const muelleOrd = [...dbActiva.muelle].sort((a,b) => (parsearFechaFlexible(b.fechaHora)||0)-(parsearFechaFlexible(a.fechaHora)||0));
+        const labOrd = [...dbActiva.labarthe].sort((a,b) => (parsearFechaFlexible(b.fechaHora)||0)-(parsearFechaFlexible(a.fechaHora)||0));
 
         document.getElementById('tbMuelle').innerHTML = muelleOrd.map(r => `
             <tr>
@@ -1989,13 +2146,13 @@
 
         document.getElementById('tbComparativo').innerHTML = muelleOrd.map(m => {
             const l = labMap.get(obtenerBaseViajeId(m.viajeId));
-            const tM = parsearFechaExcel(m.fechaHora);
+            const tM = parsearFechaFlexible(m.fechaHora);
             let diffStr = '—';
             let est = '<span class="badge badge-transit">EN TRÁNSITO</span>';
             let cls = '';
 
             if (l) {
-                const tL = parsearFechaExcel(l.fechaHora);
+                const tL = parsearFechaFlexible(l.fechaHora);
                 const mins = (tM && tL) ? Math.round((tL - tM)/60000) : 0;
                 const dBol = m.bolsones - l.bolsones;
                 const dProd = (m.productos || '').trim().toLowerCase() !== (l.productos || '').trim().toLowerCase();
@@ -2032,7 +2189,7 @@
 
     function renderTablaDespacho() {
         const dbActiva = dbNaves[naveActivaCCTV];
-        const despOrd = [...dbActiva.despacho].sort((a,b) => (parsearFechaExcel(b.fechaHora)||0)-(parsearFechaExcel(a.fechaHora)||0));
+        const despOrd = [...dbActiva.despacho].sort((a,b) => (parsearFechaFlexible(b.fechaHora)||0)-(parsearFechaFlexible(a.fechaHora)||0));
         document.getElementById('tbDespacho').innerHTML = despOrd.map(r => `
             <tr>
                 <td><strong>${r.viajeId}</strong></td>
@@ -2043,39 +2200,6 @@
                 <td>${r.producto2 && r.producto2 !== '—' ? `${r.producto2} (${r.cant2})` : '—'}</td>
                 <td>${r.fechaHora}</td>
                 <td><button class="btn-sm" onclick="verEvidencias('${r.viajeId}','despacho')">Fotos</button></td>
-            </tr>
-        `).join('');
-    }
-
-    function ejecutarBusquedaRango() {
-        const ini = document.getElementById('searchStart').value;
-        const fin = document.getElementById('searchEnd').value;
-        if (!ini || !fin) return alert("Seleccione ambas fechas.");
-
-        const dIni = new Date(ini);
-        const dFin = new Date(fin);
-        const dbActiva = dbNaves[naveActivaCCTV];
-        const todos = [...dbActiva.muelle, ...dbActiva.labarthe, ...dbActiva.despacho];
-
-        const filtrados = todos.filter(r => {
-            const f = parsearFechaExcel(r.fechaHora);
-            return f && f >= dIni && f <= dFin;
-        });
-
-        const tb = document.getElementById('tbResultadosBusqueda');
-        if (filtrados.length === 0) {
-            tb.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px;">Sin registros en el rango.</td></tr>`;
-            return;
-        }
-
-        tb.innerHTML = filtrados.map(r => `
-            <tr>
-                <td><span class="badge badge-${r.puesto}">${r.puesto.toUpperCase()}</span></td>
-                <td><strong>${r.viajeId}</strong></td>
-                <td>${r.tt}</td>
-                <td style="font-weight:bold;">${r.bolsones}</td>
-                <td>${r.productos}</td>
-                <td>${r.fechaHora}</td>
             </tr>
         `).join('');
     }
