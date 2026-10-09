@@ -246,10 +246,6 @@
 </head>
 <body onclick="desbloquearAudioPorClic()">
 
-<div id="audioUnlockBanner" onclick="desbloquearAudioPorClic(event)">
-    🔊 CLIC AQUÍ para habilitar las Alertas Acústicas y de Voz
-</div>
-
 <div id="celebrationOverlay">
     <canvas id="confettiCanvas"></canvas>
     <div class="celebration-box">
@@ -909,7 +905,24 @@
         </div>
     </div>
 </div>
-
+  <!-- VENTANA DE AUTORIZACIÓN DE AUDIO Y VOZ (ELIMINA EL BLOQUEO DEL NAVEGADOR) -->
+<div id="modalPermisoAudioInicial">
+    <div class="audio-splash-box">
+        <div style="font-size: 3.5rem; margin-bottom: 12px; animation: truckBounce 1s infinite alternate;">🔊</div>
+        <h2 style="color: var(--navy); font-size: 20px; font-weight: 900; margin-bottom: 8px;">
+            CENTRO DE CONTROL CCTV
+        </h2>
+        <div style="font-size: 13px; font-weight: bold; color: #0284c7; margin-bottom: 15px;">
+            ACTIVACIÓN DEL SISTEMA DE VOZ Y SIRENA TÁCTICA
+        </div>
+        <p style="font-size: 13px; line-height: 1.5; color: var(--muted); margin-bottom: 22px;">
+            Para autorizar a Microsoft Edge o Google Chrome la reproducción en tiempo real de los <strong>anuncios vocales de camiones</strong>, el <strong>radar de autovía</strong> y las <strong>alarmas acústicas</strong>, presione el siguiente botón:
+        </p>
+        <button class="btn-sm" style="background:#16a34a; color:white; width:100%; padding:15px; font-size:15px; justify-content:center; border-radius:12px; box-shadow: 0 4px 15px rgba(22, 163, 74, 0.4);" onclick="confirmarYDesbloquearAudioTotal()">
+            🔊 ACTIVAR AUDIO Y ENTRAR AL RADAR
+        </button>
+    </div>
+</div>
 <script>
     const SESSION_KEY = "iqbf_cctv_persistent_session_v7";
     let gasUrl = localStorage.getItem("iqbf_gas_url") || "https://script.google.com/macros/s/AKfycbxZ4qwyvvuWd_IfedsWR1R65niSwlYPKtgcDU_e5f0H4P1cCbOvIGDICksXe3tIdDrfrw/exec";
@@ -924,8 +937,8 @@
 
     let catalogoProductos = { nave1: [], nave2: [] };
     let buquesInfo = {
-        nave1: { nombre: 'Nave 1', muelle: 'Muelle 1A' },
-        nave2: { nombre: 'Nave 2', muelle: 'Muelle 2B' }
+    nave1: { nombre: 'Nave 1', muelle: 'Muelle 1A' },
+    nave2: { nombre: 'Nave 2', muelle: 'Muelle 2B' } 
     };
 
     let horaCorteDiurnoStr = "06:50";
@@ -957,18 +970,23 @@
         const dNative = new Date(fStr);
         if (!isNaN(dNative.getTime())) return dNative;
 
-        // 2. Probar formato latino DD/MM/YYYY HH:MM:SS
-        const match = fStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
-        if (match) {
-            const d = parseInt(match[1], 10);
-            const m = parseInt(match[2], 10) - 1;
-            const y = parseInt(match[3], 10);
-            const hh = parseInt(match[4] || 0, 10);
-            const mm = parseInt(match[5] || 0, 10);
-            const ss = parseInt(match[6] || 0, 10);
-            const dObj = new Date(y, m, d, hh, mm, ss);
-            if (!isNaN(dObj.getTime())) return dObj;
-        }
+        // 2. Probar formato latino DD/MM/YYYY con soporte estricto a.m. / p.m.
+    const match = fStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?(?:\s*([ap]\.?\s*m\.?))?/i);
+    if (match) {
+    const d = parseInt(match[1], 10);
+    const m = parseInt(match[2], 10) - 1;
+    const y = parseInt(match[3], 10);
+    let hh = parseInt(match[4] || 0, 10);
+    const mm = parseInt(match[5] || 0, 10);
+    const ss = parseInt(match[6] || 0, 10);
+    const ampm = match[7] ? match[7].toLowerCase().replace(/\./g, '').trim() : '';
+
+    if (ampm.includes('p') && hh < 12) hh += 12;
+    if (ampm.includes('a') && hh === 12) hh = 0;
+
+    const dObj = new Date(y, m, d, hh, mm, ss);
+    if (!isNaN(dObj.getTime())) return dObj;
+    }
         return null;
     }
 
@@ -1347,31 +1365,39 @@
 
     // AVISOS DE DEMORA ESCALONADA (REPETIDOS EXACTAMENTE 4 VECES)
     function emitirVozRepetida4Veces(texto, bannerTexto) {
-        if (avisoVozSilenciado) return;
+    if (avisoVozSilenciado) return;
 
-        const bannerTrans = document.getElementById('bannerAlertaTransito');
-        if (bannerTrans) {
-            bannerTrans.style.display = 'flex';
-            bannerTrans.className = 'alert-banner warning';
-            document.getElementById('txtMsgRetrasoTransito').textContent = `⏰ ${bannerTexto}`;
-        }
-
-        if (!('speechSynthesis' in window)) return;
-        window.speechSynthesis.cancel();
-
-        for (let i = 0; i < 4; i++) {
-            const u = new SpeechSynthesisUtterance(texto);
-            if (vozFemeninaSeleccionada) {
-                u.voice = vozFemeninaSeleccionada;
-                u.lang = vozFemeninaSeleccionada.lang;
-            } else {
-                u.lang = 'es-CO';
-            }
-            u.rate = 0.93;
-            u.pitch = 1.22;
-            window.speechSynthesis.speak(u);
-        }
+    const bannerTrans = document.getElementById('bannerAlertaTransito');
+    if (bannerTrans) {
+        bannerTrans.style.display = 'flex';
+        bannerTrans.className = 'alert-banner warning';
+        document.getElementById('txtMsgRetrasoTransito').textContent = `⏰ ${bannerTexto}`;
     }
+
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+
+    let repeticiones = 0;
+    function reproducirSiguiente() {
+        if (repeticiones >= 4 || avisoVozSilenciado) return;
+        repeticiones++;
+
+        globalUtteranceInstance = new SpeechSynthesisUtterance(texto);
+        if (vozFemeninaSeleccionada) {
+            globalUtteranceInstance.voice = vozFemeninaSeleccionada;
+            globalUtteranceInstance.lang = vozFemeninaSeleccionada.lang;
+        } else {
+            globalUtteranceInstance.lang = 'es-CO';
+        }
+        globalUtteranceInstance.rate = 0.93;
+        globalUtteranceInstance.pitch = 1.22;
+        globalUtteranceInstance.onend = () => {
+            setTimeout(reproducirSiguiente, 800); // Pausa de 0.8s entre llamada y llamada
+        };
+        window.speechSynthesis.speak(globalUtteranceInstance);
+    }
+    reproducirSiguiente();
+}
 
     function limpiarNombreTT(tt) {
         return (tt || '').replace('TT-', 'T T ').replace('-', ' ');
@@ -1910,44 +1936,91 @@
         const efectividad = muelleT.length > 0 ? Math.round(((muelleT.length - errores) / muelleT.length) * 100) : 100;
         document.getElementById('kpiEfectividadPct').textContent = `${efectividad}%`;
 
-        // Gráfico comparativo por días/turnos
-        const labels = ['Turno Anterior', 'Turno Actual'];
-        const dataDesc = [Math.max(0, totalBolsL - 40), totalBolsL];
-        const dataDesp = [Math.max(0, despT.reduce((a,b)=>a+(Number(b.bolsones)||0),0) - 20), despT.reduce((a,b)=>a+(Number(b.bolsones)||0),0)];
+        // ====================================================================
+        // GRÁFICO Y TABLA COMPARATIVA CON DATOS 100% REALES (SIN NÚMEROS FALSOS)
+        // ====================================================================
+        const turnosMap = {};
+
+        function agruparPorTurnoReal(r, esDescarga) {
+            const f = parsearFechaFlexible(r.fechaHora);
+            if (!f) return;
+
+            const dParts = horaCorteDiurnoStr.split(':').map(Number);
+            const nParts = horaCorteNocturnoStr.split(':').map(Number);
+            const startDiurno = dParts[0] * 60 + dParts[1];
+            const endDiurno = nParts[0] * 60 + nParts[1];
+            const mins = f.getHours() * 60 + f.getMinutes();
+
+            const esDiurno = (mins >= startDiurno && mins < endDiurno);
+            const fechaBase = new Date(f);
+            if (!esDiurno && mins < startDiurno) {
+                fechaBase.setDate(fechaBase.getDate() - 1);
+            }
+
+            const pad = n => String(n).padStart(2, '0');
+            const claveTurno = `${pad(fechaBase.getDate())}/${pad(fechaBase.getMonth() + 1)} (${esDiurno ? 'Día' : 'Noche'})`;
+
+            if (!turnosMap[claveTurno]) {
+                turnosMap[claveTurno] = {
+                    etiqueta: claveTurno,
+                    descarga: 0,
+                    despacho: 0,
+                    muelle: 0,
+                    timestamp: fechaBase.getTime() + (esDiurno ? 0 : 43200000)
+                };
+            }
+
+            const bols = Number(r.bolsones) || 0;
+            if (esDescarga) {
+                turnosMap[claveTurno].descarga += bols;
+            } else {
+                turnosMap[claveTurno].despacho += bols;
+            }
+        }
+
+        dbActiva.muelle.forEach(r => {
+            const f = parsearFechaFlexible(r.fechaHora);
+            if (!f) return;
+            const dParts = horaCorteDiurnoStr.split(':').map(Number);
+            const nParts = horaCorteNocturnoStr.split(':').map(Number);
+            const mins = f.getHours() * 60 + f.getMinutes();
+            const esDiurno = (mins >= (dParts[0]*60 + dParts[1]) && mins < (nParts[0]*60 + nParts[1]));
+            const fechaBase = new Date(f);
+            if (!esDiurno && mins < (dParts[0]*60 + dParts[1])) fechaBase.setDate(fechaBase.getDate() - 1);
+            const pad = n => String(n).padStart(2, '0');
+            const claveTurno = `${pad(fechaBase.getDate())}/${pad(fechaBase.getMonth() + 1)} (${esDiurno ? 'Día' : 'Noche'})`;
+            if (turnosMap[claveTurno]) {
+                turnosMap[claveTurno].muelle += (Number(r.bolsones) || 0);
+            }
+        });
+
+        dbActiva.labarthe.forEach(r => agruparPorTurnoReal(r, true));
+        dbActiva.despacho.forEach(r => agruparPorTurnoReal(r, false));
+
+        // Ordenar cronológicamente
+        const turnosOrdenados = Object.values(turnosMap).sort((a, b) => a.timestamp - b.timestamp);
+
+        // Si aún no hay turnos anteriores, grafica el turno actual real
+        const labels = turnosOrdenados.length > 0 ? turnosOrdenados.map(t => t.etiqueta) : ['Turno Actual'];
+        const dataDesc = turnosOrdenados.length > 0 ? turnosOrdenados.map(t => t.descarga) : [totalBolsL];
+        const dataDesp = turnosOrdenados.length > 0 ? turnosOrdenados.map(t => t.despacho) : [despT.reduce((a,b)=>a+(Number(b.bolsones)||0),0)];
 
         renderizarGraficoTurnos(labels, dataDesc, dataDesp);
 
-        // Ranking TTs
-        const ttCount = {};
-        muelleT.forEach(m => {
-            ttCount[m.tt] = (ttCount[m.tt] || 0) + 1;
-        });
-        const sortedTTs = Object.keys(ttCount).sort((a,b) => ttCount[b] - ttCount[a]);
-        document.getElementById('tbRankingTTs').innerHTML = sortedTTs.slice(0, 5).map(tt => `
-            <tr>
-                <td><strong>${tt}</strong></td>
-                <td>${ttCount[tt]} viajes</td>
-                <td>${ttCount[tt] * 20} bols</td>
-                <td>${promCiclo} min</td>
-            </tr>
-        `).join('') || '<tr><td colspan="4" style="text-align:center;">Sin datos en el turno</td></tr>';
-
-        // Resumen Avance
-        const prods = catalogoProductos[naveActivaCCTV] || [];
-        document.getElementById('tbResumenCargaKPI').innerHTML = prods.map(p => {
-            const tDesc = dbActiva.labarthe.reduce((s, r) => s + sumarBolsonesProd(r, p.producto), 0);
-            const tDesp = dbActiva.despacho.reduce((s, r) => s + sumarBolsonesProd(r, p.producto), 0);
-            const pct = p.cantidadBuque > 0 ? Math.min(100, Math.round((tDesc / p.cantidadBuque) * 100)) : 0;
-            return `
+        // LLENAR LA TABLA INFERIOR DE HISTORIAL CON DATOS REALES (YA NO QUEDARÁ VACÍA)
+        const tbHist = document.getElementById('tbHistorialTurnos');
+        if (tbHist) {
+            tbHist.innerHTML = turnosOrdenados.slice().reverse().map(t => `
                 <tr>
-                    <td><strong>${p.producto}</strong></td>
-                    <td style="color:var(--green); font-weight:bold;">${tDesc}</td>
-                    <td style="color:var(--amber); font-weight:bold;">${tDesp}</td>
-                    <td><strong>${pct}%</strong></td>
+                    <td><strong>📅 ${t.etiqueta}</strong></td>
+                    <td style="color:#0284c7; font-weight:bold;">${t.muelle} bolsones</td>
+                    <td style="color:#7c3aed; font-weight:bold;">${t.descarga} bolsones</td>
+                    <td style="color:var(--amber); font-weight:bold;">${t.despacho} bolsones</td>
+                    <td><span class="badge badge-ok">✅ Registrado</span></td>
+                    <td>Concluido / Activo</td>
                 </tr>
-            `;
-        }).join('') || '<tr><td colspan="4" style="text-align:center;">Sin productos configurados</td></tr>';
-    }
+            `).join('') || '<tr><td colspan="6" style="text-align:center; padding:15px; color:var(--muted);">Sin historial de turnos previos</td></tr>';
+        }
 
     function renderizarGraficoTurnos(labels, dataDesc, dataDesp) {
         const ctx = document.getElementById('chartTurnos');
@@ -2542,24 +2615,6 @@
     function cerrarCelebracion() {
         document.getElementById('celebrationOverlay').style.display = "none";
     }
-</script>
-    <!-- VENTANA DE AUTORIZACIÓN DE AUDIO Y VOZ (ELIMINA EL BLOQUEO DEL NAVEGADOR) -->
-<div id="modalPermisoAudioInicial">
-    <div class="audio-splash-box">
-        <div style="font-size: 3.5rem; margin-bottom: 12px; animation: truckBounce 1s infinite alternate;">🔊</div>
-        <h2 style="color: var(--navy); font-size: 20px; font-weight: 900; margin-bottom: 8px;">
-            CENTRO DE CONTROL CCTV
-        </h2>
-        <div style="font-size: 13px; font-weight: bold; color: #0284c7; margin-bottom: 15px;">
-            ACTIVACIÓN DEL SISTEMA DE VOZ Y SIRENA TÁCTICA
-        </div>
-        <p style="font-size: 13px; line-height: 1.5; color: var(--muted); margin-bottom: 22px;">
-            Para autorizar a Microsoft Edge o Google Chrome la reproducción en tiempo real de los <strong>anuncios vocales de camiones</strong>, el <strong>radar de autovía</strong> y las <strong>alarmas acústicas</strong>, presione el siguiente botón:
-        </p>
-        <button class="btn-sm" style="background:#16a34a; color:white; width:100%; padding:15px; font-size:15px; justify-content:center; border-radius:12px; box-shadow: 0 4px 15px rgba(22, 163, 74, 0.4);" onclick="confirmarYDesbloquearAudioTotal()">
-            🔊 ACTIVAR AUDIO Y ENTRAR AL RADAR
-        </button>
-    </div>
-</div>    
+</script>    
 </body>
 </html>
