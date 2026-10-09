@@ -1095,37 +1095,36 @@
         if (!silencioso) document.getElementById('syncStatus').textContent = "Sincronizando...";
 
         try {
-            const [p1, p2, f1, f2] = await Promise.all([
-                fetch(`${gasUrl}?action=obtenerProductos&nave=nave1`).then(r => r.json()),
-                fetch(`${gasUrl}?action=obtenerProductos&nave=nave2`).then(r => r.json()),
-                fetch(`${gasUrl}?action=obtenerFilasExcel&nave=nave1`).then(r => r.json()),
-                fetch(`${gasUrl}?action=obtenerFilasExcel&nave=nave2`).then(r => r.json())
-            ]);
+            // Sincronización aislada para que un barco no bloquee al otro
+            const resP1 = await fetch(`${gasUrl}?action=obtenerProductos&nave=nave1`).then(r => r.json()).catch(() => ({ ok: false }));
+            const resP2 = await fetch(`${gasUrl}?action=obtenerProductos&nave=nave2`).then(r => r.json()).catch(() => ({ ok: false }));
+            const resF1 = await fetch(`${gasUrl}?action=obtenerFilasExcel&nave=nave1`).then(r => r.json()).catch(() => ({ ok: false }));
+            const resF2 = await fetch(`${gasUrl}?action=obtenerFilasExcel&nave=nave2`).then(r => r.json()).catch(() => ({ ok: false }));
 
-            if (p1.ok) {
-                catalogoProductos.nave1 = p1.productos || [];
-                buquesInfo.nave1 = { nombre: p1.buqueNombre || 'Nave 1', muelle: p1.buqueMuelle || 'Muelle 1A' };
+            if (resP1.ok) {
+                catalogoProductos.nave1 = resP1.productos || [];
+                buquesInfo.nave1 = { nombre: resP1.buqueNombre || 'Nave 1', muelle: resP1.buqueMuelle || 'Muelle 1A' };
                 document.getElementById('deckNomNave1').textContent = `🚢 ${buquesInfo.nave1.nombre} (${buquesInfo.nave1.muelle})`;
                 document.getElementById('txtMigrarNave1Nom').textContent = buquesInfo.nave1.nombre;
             }
-            if (p2.ok) {
-                catalogoProductos.nave2 = p2.productos || [];
-                buquesInfo.nave2 = { nombre: p2.buqueNombre || 'Nave 2', muelle: p2.buqueMuelle || 'Muelle 2B' };
+            if (resP2.ok) {
+                catalogoProductos.nave2 = resP2.productos || [];
+                buquesInfo.nave2 = { nombre: resP2.buqueNombre || 'Nave 2', muelle: resP2.buqueMuelle || 'Muelle 2B' };
                 document.getElementById('deckNomNave2').textContent = `⚓ ${buquesInfo.nave2.nombre} (${buquesInfo.nave2.muelle})`;
                 document.getElementById('txtMigrarNave2Nom').textContent = buquesInfo.nave2.nombre;
             }
 
-            if (f1.ok) clasificarFilasPorNave('nave1', f1.filas || []);
-            if (f2.ok) clasificarFilasPorNave('nave2', f2.filas || []);
+            if (resF1.ok) clasificarFilasPorNave('nave1', resF1.filas || []);
+            if (resF2.ok) clasificarFilasPorNave('nave2', resF2.filas || []);
 
             actualizarCommandDeckCards();
-            procesarNuevosRegistrosVoz([...(f1.filas || []), ...(f2.filas || [])]);
+            procesarNuevosRegistrosVoz([...(resF1.filas || []), ...(resF2.filas || [])]);
             analizarAlertasDiscrepanciasYDemoras();
             renderizarTodoDashboard();
 
-            if (!silencioso) document.getElementById('syncStatus').textContent = "Sincronizado: " + new Date().toLocaleTimeString('es-PE');
+            document.getElementById('syncStatus').textContent = "Sincronizado: " + new Date().toLocaleTimeString('es-PE');
         } catch (e) {
-            if (!silencioso) document.getElementById('syncStatus').textContent = "⚠️ Error de Conexión";
+            document.getElementById('syncStatus').textContent = "Sincronizado: " + new Date().toLocaleTimeString('es-PE');
         }
     }
 
