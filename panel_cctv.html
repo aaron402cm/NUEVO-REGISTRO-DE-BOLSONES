@@ -959,7 +959,7 @@
         self.onmessage = function(e) {
             if (e.data === 'start') {
                 if (timer) clearInterval(timer);
-                timer = setInterval(() => { self.postMessage('tick'); }, 15000);
+                timer = setInterval(() => { self.postMessage('tick'); }, 8000);
             } else if (e.data === 'stop') {
                 if (timer) clearInterval(timer);
             }
