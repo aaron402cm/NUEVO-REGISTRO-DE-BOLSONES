@@ -7,6 +7,100 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
+        /* ESTILOS DEL SONAR MILITAR CIRCULAR 360° */
+        .sonar-scope {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #022c22 0%, #064e3b 40%, #021f17 80%, #01140f 100%);
+            border: 3px solid #10b981;
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.3), inset 0 0 20px rgba(0,0,0,0.8);
+            position: relative;
+            overflow: hidden;
+        }
+        .sonar-sweep {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, rgba(16, 185, 129, 0.45) 0deg, rgba(16, 185, 129, 0) 65deg);
+            animation: sonarSweepAnim 3.8s linear infinite;
+            pointer-events: none;
+            z-index: 2;
+        }
+        @keyframes sonarSweepAnim {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .sonar-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px dashed rgba(52, 211, 153, 0.35);
+            pointer-events: none;
+        }
+        .ring-1 { inset: 20px; }
+        .ring-2 { inset: 50px; }
+        .ring-3 { inset: 80px; }
+        .sonar-cross-h {
+            position: absolute; top: 50%; left: 0; right: 0; height: 1px;
+            background: rgba(52, 211, 153, 0.25); pointer-events: none;
+        }
+        .sonar-cross-v {
+            position: absolute; left: 50%; top: 0; bottom: 0; width: 1px;
+            background: rgba(52, 211, 153, 0.25); pointer-events: none;
+        }
+        .sonar-cardinal {
+            position: absolute; font-size: 9px; font-weight: 900; color: #34d399; font-family: monospace;
+        }
+        .sonar-cardinal.n { top: 3px; left: 50%; transform: translateX(-50%); }
+        .sonar-cardinal.e { right: 4px; top: 50%; transform: translateY(-50%); }
+        .sonar-cardinal.s { bottom: 3px; left: 50%; transform: translateX(-50%); }
+        .sonar-cardinal.w { left: 4px; top: 50%; transform: translateY(-50%); }
+
+        /* PUNTOS DE CALOR TÁCTICOS (BLIPS) */
+        .sonar-blip {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            cursor: pointer;
+            transition: all 0.5s ease;
+        }
+        .sonar-blip.normal {
+            background: #38bdf8;
+            box-shadow: 0 0 10px #38bdf8, 0 0 20px #0284c7;
+            animation: blipGlow 1.2s infinite alternate;
+        }
+        .sonar-blip.warn {
+            background: #f59e0b;
+            box-shadow: 0 0 12px #f59e0b, 0 0 22px #d97706;
+            animation: blipGlow 0.8s infinite alternate;
+        }
+        .sonar-blip.danger {
+            background: #ef4444;
+            box-shadow: 0 0 15px #ef4444, 0 0 28px #dc2626;
+            animation: blipGlow 0.5s infinite alternate;
+        }
+        @keyframes blipGlow {
+            from { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
+            to { transform: translate(-50%, -50%) scale(1.4); opacity: 1; }
+        }
+        .sonar-blip-label {
+            position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
+            font-size: 8px; font-weight: 900; color: #f8fafc; background: rgba(15, 23, 42, 0.85);
+            padding: 1px 4px; border-radius: 3px; white-space: nowrap; pointer-events: none; border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        /* MODAL DE PERMISO DE AUDIO */
+        #modalPermisoAudioInicial {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.88);
+            display: none; align-items: center; justify-content: center; z-index: 30000;
+        }
+        .audio-splash-box {
+            background: #ffffff; border-radius: 20px; padding: 35px; max-width: 460px; width: 90%;
+            text-align: center; border: 4px solid #0284c7; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+        }
         :root {
             --navy: #0f172a;
             --blue: #1e3a8a;
@@ -240,6 +334,7 @@
                     <span id="clock" style="font-weight: bold; color: var(--navy); font-size:13px;">—</span>
                     <button class="btn-sm" style="background:#16a34a; color:white;" onclick="exportarExcelTurno()">📊 Exportar Turno</button>
                     <button class="btn-sm" style="background:var(--blue-btn); color:white;" onclick="sincronizarServidor()">🔄 Sincronizar</button>
+                    <button class="btn-sm" style="background:#7c3aed; color:white;" onclick="probarVozFemeninaEnVivo()">🎙️ Probar Voz</button>
                     <button class="btn-sm" style="background:#ef4444; color:white;" onclick="doLogout()">🚪 Salir</button>
                 </div>
             </div>
@@ -337,14 +432,15 @@
                     </div>
                 </div>
 
+                <!-- RADAR DUAL: AUTOVÍA LINEAL + SONAR CIRCULAR MILITAR 360° -->
                 <div class="radar-card">
                     <div class="radar-header">
                         <div>
                             <h3 style="font-size:16px; font-weight:900; display:flex; align-items:center; gap:8px;">
-                                🚛 Radar de Autovía en Tiempo Real (Muelle ➔ Balanza Labarthe)
+                                🛰️ Sistema Integrado de Rastreo Táctico (Autovía & Sonar Militar 360°)
                             </h3>
                             <div style="font-size:12px; color:#94a3b8; margin-top:2px;">
-                                10m: 1er aviso (x4) · 20m: 2do aviso urgente (x4) · 25m: Sirena acústica continua
+                                Monitoreo perimetral naval: Muelle ➔ Balanza Labarthe con detección de puntos de calor
                             </div>
                         </div>
                         <div style="display:flex; gap:8px;">
@@ -354,9 +450,46 @@
                             <button class="btn-sm" style="background:#334155; color:white;" onclick="limpiarSimulaciones()">🧹 Limpiar</button>
                         </div>
                     </div>
-                    <div class="radar-pista" id="radarAutoviaPista">
-                        <div style="color:#64748b; font-weight:bold; font-size:13px; margin:auto;">
-                            ● No hay camiones transitando en este momento para la nave seleccionada.
+
+                    <div style="display:grid; grid-template-columns: 1fr 280px; gap:20px; align-items:center;">
+                        <!-- LADO IZQUIERDO: AUTOVÍA LINEAL CON CRONÓMETROS -->
+                        <div>
+                            <div style="font-size:11px; font-weight:900; color:#38bdf8; text-transform:uppercase; margin-bottom:8px; letter-spacing:1px;">
+                                🛣️ RUTA TERRESTRE EN TIEMPO REAL:
+                            </div>
+                            <div class="radar-pista" id="radarAutoviaPista">
+                                <div style="color:#64748b; font-weight:bold; font-size:13px; margin:auto;">
+                                    ● No hay camiones transitando en este momento para la nave seleccionada.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- LADO DERECHO: SONAR CIRCULAR MILITAR CON BARRIDO 360° -->
+                        <div style="display:flex; flex-direction:column; align-items:center; background:#090d16; padding:15px; border-radius:14px; border:2px solid #1e293b; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);">
+                            <div style="width:100%; display:flex; justify-content:space-between; font-size:10px; font-weight:900; color:#00f0ff; letter-spacing:1px; margin-bottom:6px; font-family:monospace;">
+                                <span>SONAR SCANNER</span>
+                                <span id="radarTargetsCount">TARGETS: 0</span>
+                            </div>
+
+                            <!-- ESFERA DE SONAR CIRCULAR CON AGUJA GIRATORIA -->
+                            <div class="sonar-scope" id="sonarScopeScreen">
+                                <div class="sonar-sweep"></div>
+                                <div class="sonar-ring ring-1"></div>
+                                <div class="sonar-ring ring-2"></div>
+                                <div class="sonar-ring ring-3"></div>
+                                <div class="sonar-cross-h"></div>
+                                <div class="sonar-cross-v"></div>
+                                <span class="sonar-cardinal n">N</span>
+                                <span class="sonar-cardinal e">E</span>
+                                <span class="sonar-cardinal s">S</span>
+                                <span class="sonar-cardinal w">W</span>
+                                <!-- PUNTOS DE CALOR (BLIPS) DINÁMICOS -->
+                                <div id="sonarBlipsContainer"></div>
+                            </div>
+
+                            <div style="font-size:10px; color:#94a3b8; font-weight:bold; margin-top:8px; font-family:monospace;">
+                                RNG: 3.0 KM | SWEEP: 360° CONTINUOUS
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1049,12 +1182,78 @@
         renderTablaDespacho();
     }
 
-    // ========================================================================
-    // RADAR DE AUTOVÍA: ESCALAMIENTO EN 3 FASES (10m, 20m, 25m SIRENA)
-    // ========================================================================
+    // VARIABLE GLOBAL PARA QUE CHROME NUNCA DESTRUYA EL AUDIO
+    let globalUtteranceInstance = null;
+    let audioDesbloqueadoPorUsuario = false;
+
+    // AL ABRIR LA PÁGINA: SI NO HA DADO PERMISO EN ESTA SESIÓN, MUESTRA EL MODAL
+    window.addEventListener('load', () => {
+        if (!sessionStorage.getItem('iqbf_audio_unlocked')) {
+            document.getElementById('modalPermisoAudioInicial').style.display = 'flex';
+        } else {
+            audioDesbloqueadoPorUsuario = true;
+        }
+    });
+
+    // FUNCIÓN QUE SE EJECUTA AL HACER CLIC EN EL BOTÓN VERDE DEL MODAL
+    function confirmarYDesbloquearAudioTotal() {
+        document.getElementById('modalPermisoAudioInicial').style.display = 'none';
+        sessionStorage.setItem('iqbf_audio_unlocked', 'true');
+        audioDesbloqueadoPorUsuario = true;
+
+        // Desbloquear AudioContext nativo
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        // Cargar voces del sistema operativo
+        cargarVoces();
+
+        // Confirmación inmediata por voz femenina
+        setTimeout(() => {
+            const msj = "Sistema de audio y voz táctica activado. Centro de control en línea.";
+            emitirLocucionFemeninaPausada(msj);
+        }, 400);
+    }
+
+    // BOTÓN DE PRUEBA MANUAL EN LA BARRA SUPERIOR
+    function probarVozFemeninaEnVivo() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        cargarVoces();
+
+        const nom = (buquesInfo[naveActivaCCTV]?.nombre || 'LILY GLORY').toUpperCase();
+        const testTexto = `Prueba de audio correcta. Centro de control monitoreando el buque ${nom}. Registro en Muelle, unidad T T 14, con 20 bolsones.`;
+        emitirLocucionFemeninaPausada(testTexto);
+    }
+
+    // LOCUTOR VOCAL ESTRICTO (PROTEGIDO CONTRA ERRORES DE CHROME / EDGE)
+    function emitirLocucionFemeninaPausada(texto) {
+        if (!('speechSynthesis' in window)) return;
+        window.speechSynthesis.cancel(); // Detener audios anteriores
+
+        if (!vozFemeninaSeleccionada) cargarVoces();
+
+        globalUtteranceInstance = new SpeechSynthesisUtterance(texto);
+        if (vozFemeninaSeleccionada) {
+            globalUtteranceInstance.voice = vozFemeninaSeleccionada;
+            globalUtteranceInstance.lang = vozFemeninaSeleccionada.lang;
+        } else {
+            globalUtteranceInstance.lang = 'es-CO';
+        }
+
+        // Tono cálido, femenino, pausado y sensual
+        globalUtteranceInstance.pitch = 1.22;
+        globalUtteranceInstance.rate = 0.92;
+
+        window.speechSynthesis.speak(globalUtteranceInstance);
+    }
+
+    // RENDERIZADO DEL RADAR (ACTUALIZA AUTOVÍA Y SONAR 360° SIMULTÁNEAMENTE)
     function renderRadarAutovia() {
         const pista = document.getElementById('radarAutoviaPista');
-        if (!pista) return;
+        const blipsContainer = document.getElementById('sonarBlipsContainer');
+        const targetsCount = document.getElementById('radarTargetsCount');
+        if (!pista || !blipsContainer) return;
 
         const dbActiva = dbNaves[naveActivaCCTV];
         const muelleTurno = dbActiva.muelle.filter(f => perteneceAlTurnoActual(f.fechaHora));
@@ -1070,40 +1269,62 @@
         }));
 
         enRuta = [...enRuta, ...camionesSimulados.filter(s => s.nave === naveActivaCCTV)];
+        if (targetsCount) targetsCount.textContent = `TARGETS: ${enRuta.length}`;
 
         if (enRuta.length === 0) {
             pista.innerHTML = `<div style="color:#64748b; font-weight:bold; font-size:13px; margin:auto;">● No hay camiones transitando en este momento para la nave seleccionada.</div>`;
+            blipsContainer.innerHTML = '';
             return;
         }
 
         const ahora = Date.now();
-        pista.innerHTML = enRuta.map(c => {
+        let blipsHtml = "";
+
+        pista.innerHTML = enRuta.map((c, index) => {
             const segs = Math.max(0, Math.floor((ahora - c.timestampSalida) / 1000));
             const mins = Math.floor(segs / 60);
             const restoSegs = segs % 60;
             const strTiempo = `${String(mins).padStart(2, '0')}m ${String(restoSegs).padStart(2, '0')}s`;
 
             let faseClass = "";
+            let blipClass = "normal";
             let icono = "🚛";
 
             if (mins >= 25) {
                 faseClass = "fase-3";
+                blipClass = "danger";
                 icono = "🚨";
             } else if (mins >= 20) {
                 faseClass = "fase-2";
+                blipClass = "danger";
                 icono = "⚠️";
             } else if (mins >= 10) {
                 faseClass = "fase-1";
+                blipClass = "warn";
                 icono = "⏱️";
             }
 
             evaluarEscalamientoVozYSirena(c.id, c.tt, mins);
 
+            // CÁLCULO DE COORDENADAS POLARES PARA EL SONAR MILITAR 360°
+            // El camión avanza desde el borde exterior (Muelle) hacia el centro (Balanza)
+            const radioMax = 95; // Radio en px dentro del sonar
+            const pctAvance = Math.min(1, segs / 600); // 10 min representa el trayecto estándar
+            const distRadio = Math.max(15, radioMax * (1 - pctAvance * 0.75));
+            const anguloRad = ((index * 68 + mins * 20) % 360) * (Math.PI / 180);
+
+            const x = 110 + distRadio * Math.cos(anguloRad);
+            const y = 110 + distRadio * Math.sin(anguloRad);
+
+            blipsHtml += `
+                <div class="sonar-blip ${blipClass}" style="left:${x}px; top:${y}px;" title="${c.tt} (${strTiempo})">
+                    <span class="sonar-blip-label">${c.tt}</span>
+                </div>
+            `;
+
             return `
                 <div class="radar-truck ${faseClass}" id="radar_unit_${c.id}">
-                    <div class="truck-plate-badge">
-                        ${icono} ${c.tt}
-                    </div>
+                    <div class="truck-plate-badge">${icono} ${c.tt}</div>
                     <svg width="74" height="42" viewBox="0 0 74 42" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect x="2" y="24" width="48" height="8" rx="2" fill="${mins >= 25 ? '#ef4444' : mins >= 10 ? '#f59e0b' : '#38bdf8'}" />
                         <rect x="50" y="14" width="22" height="18" rx="3" fill="${mins >= 25 ? '#b91c1c' : mins >= 10 ? '#d97706' : '#0284c7'}" />
@@ -1120,37 +1341,11 @@
                 </div>
             `;
         }).join('');
+
+        blipsContainer.innerHTML = blipsHtml;
     }
 
-    function evaluarEscalamientoVozYSirena(uid, ttNom, mins) {
-        const faseActual = alertasVocalesEmitidasMap.get(uid) || 0;
-
-        // FASE 1: >= 10 minutos (1er llamado repetido 4 veces)
-        if (mins >= 10 && mins < 20 && faseActual < 1) {
-            alertasVocalesEmitidasMap.set(uid, 1);
-            const msg = `Atento Centro de control tenemos la ${limpiarNombreTT(ttNom)} que aún no llega a Labarthe, ya tiene más de 10 minutos.`;
-            emitirVozRepetida4Veces(msg, `Unidad ${ttNom} supera los 10 minutos en autovía`);
-        }
-        // FASE 2: >= 20 minutos (2do llamado urgente repetido 4 veces)
-        else if (mins >= 20 && mins < 25 && faseActual < 2) {
-            alertasVocalesEmitidasMap.set(uid, 2);
-            const msg = `Alerta urgente Centro de control, la ${limpiarNombreTT(ttNom)} ya tiene más de 20 minutos en tránsito sin ingresar a Labarthe.`;
-            emitirVozRepetida4Veces(msg, `URGENTE: Unidad ${ttNom} supera los 20 minutos en ruta`);
-        }
-        // FASE 3: >= 25 minutos (Disparo de SIRENA ACÚSTICA)
-        else if (mins >= 25) {
-            if (!sirenaSilenciada) {
-                activarSirenaAcusticaEmergencia();
-            }
-            const bannerTrans = document.getElementById('bannerAlertaTransito');
-            if (bannerTrans) {
-                bannerTrans.style.display = 'flex';
-                bannerTrans.className = 'alert-banner danger';
-                document.getElementById('txtMsgRetrasoTransito').textContent = `🚨 ALARMA CRÍTICA: Unidad ${ttNom} lleva más de 25 minutos sin ingresar a Balanza.`;
-            }
-        }
-    }
-
+    // AVISOS DE DEMORA ESCALONADA (REPETIDOS EXACTAMENTE 4 VECES)
     function emitirVozRepetida4Veces(texto, bannerTexto) {
         if (avisoVozSilenciado) return;
 
@@ -1170,10 +1365,10 @@
                 u.voice = vozFemeninaSeleccionada;
                 u.lang = vozFemeninaSeleccionada.lang;
             } else {
-                u.lang = 'es-PE';
+                u.lang = 'es-CO';
             }
-            u.rate = 0.95;
-            u.pitch = 1.25;
+            u.rate = 0.93;
+            u.pitch = 1.22;
             window.speechSynthesis.speak(u);
         }
     }
@@ -2348,5 +2543,23 @@
         document.getElementById('celebrationOverlay').style.display = "none";
     }
 </script>
+    <!-- VENTANA DE AUTORIZACIÓN DE AUDIO Y VOZ (ELIMINA EL BLOQUEO DEL NAVEGADOR) -->
+<div id="modalPermisoAudioInicial">
+    <div class="audio-splash-box">
+        <div style="font-size: 3.5rem; margin-bottom: 12px; animation: truckBounce 1s infinite alternate;">🔊</div>
+        <h2 style="color: var(--navy); font-size: 20px; font-weight: 900; margin-bottom: 8px;">
+            CENTRO DE CONTROL CCTV
+        </h2>
+        <div style="font-size: 13px; font-weight: bold; color: #0284c7; margin-bottom: 15px;">
+            ACTIVACIÓN DEL SISTEMA DE VOZ Y SIRENA TÁCTICA
+        </div>
+        <p style="font-size: 13px; line-height: 1.5; color: var(--muted); margin-bottom: 22px;">
+            Para autorizar a Microsoft Edge o Google Chrome la reproducción en tiempo real de los <strong>anuncios vocales de camiones</strong>, el <strong>radar de autovía</strong> y las <strong>alarmas acústicas</strong>, presione el siguiente botón:
+        </p>
+        <button class="btn-sm" style="background:#16a34a; color:white; width:100%; padding:15px; font-size:15px; justify-content:center; border-radius:12px; box-shadow: 0 4px 15px rgba(22, 163, 74, 0.4);" onclick="confirmarYDesbloquearAudioTotal()">
+            🔊 ACTIVAR AUDIO Y ENTRAR AL RADAR
+        </button>
+    </div>
+</div>    
 </body>
 </html>
