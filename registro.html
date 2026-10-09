@@ -16,7 +16,6 @@
   --font-base: 16px;
 }
 
-/* Modo Nocturno Portuario (Port Night Vision) */
 body.mode-night {
   --bg: #090d16; --card-bg: #111827; --border: #334155;
   --text: #f8fafc; --muted: #94a3b8; --blue-light: #1e293b;
@@ -32,7 +31,26 @@ html, body {
   font-size: var(--font-base);
 }
 
-/* Barra Superior de Herramientas y Red */
+/* Pantalla de Login en Bloqueo Total (Evita que se vea nada de fondo) */
+#screenLogin {
+  position: fixed; inset: 0; z-index: 99999;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 1.5rem; background: #0f172a;
+}
+.login-box {
+  background: white; border-radius: 20px; padding: 2.2rem 1.5rem; width: 100%; max-width: 380px;
+  text-align: center; border: 4px solid #0284c7; box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+}
+.login-box input[type="password"] {
+  width: 100%; padding: 1.1rem; font-size: 1.8rem; border: 3px solid #cbd5e1; border-radius: 12px;
+  margin-bottom: 1.2rem; text-align: center; outline: none; font-weight: bold;
+}
+.btn-login {
+  width: 100%; padding: 1.1rem; font-size: 1.4rem; font-weight: 900; background: #0284c7;
+  color: white; border: none; border-radius: 12px; cursor: pointer;
+}
+
+/* Barra Superior de Herramientas */
 .top-toolbar {
   display: flex; justify-content: space-between; align-items: center;
   background: #0f172a; color: white; padding: 8px 12px; font-size: 0.85rem; font-weight: bold;
@@ -43,41 +61,33 @@ html, body {
 }
 .btn-tool:active { background: #475569; }
 
-#netStatusBadge {
-  display: inline-flex; align-items: center; gap: 6px; font-weight: 900; font-size: 0.85rem;
-}
+#netStatusBadge { display: inline-flex; align-items: center; gap: 6px; font-weight: 900; font-size: 0.85rem; }
 .net-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; background: #22c55e; }
 
-/* Banners de Advertencia */
+/* Banners */
 #offlineBanner {
   display: none; background: #ea580c; color: white; padding: 12px 16px; text-align: center;
   font-weight: 900; position: sticky; top: 0; z-index: 10001; cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3); animation: pulseWarn 1.5s infinite alternate;
 }
-@keyframes pulseWarn { from { background-color: #ea580c; } to { background-color: #c2410c; } }
-
 #shiftCountdownBanner {
   display: none; background: #b91c1c; color: #fef08a; padding: 10px; text-align: center;
-  font-weight: 900; position: sticky; top: 0; z-index: 10000; letter-spacing: 0.5px;
+  font-weight: 900; position: sticky; top: 0; z-index: 10000;
 }
 
-/* Header Permanente de Nave Activa y Bodega */
+/* Cabecera Permanente de Nave */
 #naveHeaderSticky {
   background: linear-gradient(135deg, #0284c7, #0369a1); color: white;
   padding: 12px 16px; border-bottom: 3px solid #075985; box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  display: none;
 }
 .nave-title-lg { font-size: 1.25rem; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; }
 .progress-container { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
 .prod-prog-item { font-size: 0.8rem; font-weight: bold; }
-.prog-bar-bg {
-  background: rgba(255,255,255,0.25); height: 10px; border-radius: 5px; overflow: hidden; margin-top: 3px;
-}
-.prog-bar-fill {
-  background: #4ade80; height: 100%; width: 0%; transition: width 0.4s ease; border-radius: 5px;
-}
+.prog-bar-bg { background: rgba(255,255,255,0.25); height: 10px; border-radius: 5px; overflow: hidden; margin-top: 3px; }
+.prog-bar-fill { background: #4ade80; height: 100%; width: 0%; transition: width 0.4s ease; border-radius: 5px; }
 
-/* Pantallas */
-.screen { display: none; padding: 1rem; padding-bottom: 6rem; }
+/* Pantallas y Tarjetas */
+.screen { display: none; padding: 1rem; padding-bottom: 5.5rem; }
 .card {
   background: var(--card-bg); border-radius: 16px; border: 3px solid var(--border);
   padding: 1.1rem; margin-bottom: 1.1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.04);
@@ -85,25 +95,7 @@ html, body {
 .card-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; }
 .card-title { font-size: 1.15rem; font-weight: 900; color: var(--text); }
 
-/* Pantalla 1: Login */
-#screenLogin {
-  min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 1.5rem; background: #0f172a;
-}
-.login-box {
-  background: white; border-radius: 20px; padding: 2.5rem 1.5rem; width: 100%; max-width: 380px;
-  text-align: center; border: 3px solid #0284c7; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-}
-.login-box input[type="password"] {
-  width: 100%; padding: 1.2rem; font-size: 1.8rem; border: 3px solid #cbd5e1; border-radius: 12px;
-  margin-bottom: 1.2rem; text-align: center; outline: none; font-weight: bold;
-}
-.btn-login {
-  width: 100%; padding: 1.2rem; font-size: 1.4rem; font-weight: 900; background: #0284c7;
-  color: white; border: none; border-radius: 12px; cursor: pointer;
-}
-
-/* Pantalla 2: Selección Obligatoria de Nave */
+/* Pantalla Selección de Nave */
 #screenSelectNave {
   min-height: 100vh; display: none; flex-direction: column; justify-content: center;
   padding: 1.5rem; background: #0f172a;
@@ -111,13 +103,12 @@ html, body {
 .ship-card-btn {
   background: white; border-radius: 18px; padding: 20px; margin-bottom: 15px; cursor: pointer;
   border: 4px solid #38bdf8; text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-  transition: transform 0.1s ease;
 }
 .ship-card-btn:active { transform: scale(0.98); }
 .ship-card-btn h2 { font-size: 1.6rem; color: #0c4a6e; font-weight: 900; }
 .ship-card-btn p { font-size: 1.05rem; color: #64748b; font-weight: bold; margin-top: 4px; }
 
-/* Teclado Calculadora Táctil Senior */
+/* Teclados y Digital Display */
 .digital-display {
   background: #0f172a; color: #38bdf8; font-family: monospace, monospace; font-size: 2.3rem;
   font-weight: 900; text-align: center; padding: 12px; border-radius: 12px; border: 3px solid #334155;
@@ -136,7 +127,7 @@ html, body {
 /* Doble Producto */
 .btn-add-prod {
   width: 100%; background: #0284c7; color: white; border: none; padding: 14px; border-radius: 12px;
-  font-size: 1.2rem; font-weight: 900; cursor: pointer; display: flex; align-items: center;
+  font-size: 1.15rem; font-weight: 900; cursor: pointer; display: flex; align-items: center;
   justify-content: center; gap: 8px; margin-top: 12px; border-bottom: 4px solid #0369a1;
 }
 .btn-remove-prod {
@@ -146,14 +137,13 @@ html, body {
 .prod-chips-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-top: 8px; }
 .prod-chip {
   padding: 12px 6px; border: 2px solid var(--border); border-radius: 10px; background: var(--card-bg);
-  color: var(--text); font-weight: bold; text-align: center; cursor: pointer; font-size: 1.1rem;
+  color: var(--text); font-weight: bold; text-align: center; cursor: pointer; font-size: 1.05rem;
 }
 .prod-chip.selected { border-color: #0284c7; background: #e0f2fe; color: #0369a1; font-weight: 900; }
 
-/* Control Ciego Labarthe */
 .tt-blind-item {
   padding: 14px; border: 3px solid var(--border); border-radius: 12px; background: var(--card-bg);
-  cursor: pointer; font-size: 1.3rem; font-weight: 900; text-align: center; margin-bottom: 8px;
+  cursor: pointer; font-size: 1.25rem; font-weight: 900; text-align: center; margin-bottom: 8px;
 }
 .tt-blind-item.selected { border-color: #0284c7; background: #e0f2fe; color: #0284c7; }
 
@@ -170,14 +160,13 @@ html, body {
   border-radius: 50%; width: 30px; height: 30px; font-weight: bold; font-size: 1.1rem; z-index: 10;
 }
 
-/* Botón Guardar con Bloqueo Anti-Doble Clic */
 .btn-save-main {
   width: 100%; padding: 18px; border: none; border-radius: 16px; background: #16a34a; color: white;
-  font-size: 1.6rem; font-weight: 900; cursor: pointer; border-bottom: 6px solid #15803d; margin-top: 15px;
+  font-size: 1.55rem; font-weight: 900; cursor: pointer; border-bottom: 6px solid #15803d; margin-top: 15px;
 }
 .btn-save-main:disabled { background: #64748b; border-color: #475569; cursor: not-allowed; opacity: 0.6; }
 
-/* Modales y Navegación */
+/* Modal y Barra de Navegación Inferior */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: none; align-items: center;
   justify-content: center; z-index: 10005;
@@ -190,7 +179,7 @@ html, body {
 
 .bottom-nav {
   position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg);
-  border-top: 3px solid var(--border); display: flex; z-index: 200; height: 56px;
+  border-top: 3px solid var(--border); display: none; z-index: 200; height: 58px;
 }
 .bnav-btn {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -207,17 +196,28 @@ html, body {
 </head>
 <body>
 
-<!-- BANNER SIN SEÑAL / COLA OFFLINE -->
-<div id="offlineBanner" onclick="sincronizarColaOfflineManual()">
-  🟠 TRABAJANDO SIN RED (<span id="countOffline">0</span> PENDIENTES) — TOCA PARA SINCRONIZAR 🔄
+<!-- PANTALLA 1: LOGIN (OCULTA TODO HASTA PONER LA CLAVE) -->
+<div id="screenLogin">
+  <div class="login-box">
+    <div style="font-size:3.5rem; margin-bottom:8px;">📦</div>
+    <h1 style="color:#0284c7; font-size:2rem; font-weight:900; margin-bottom:4px;">IQBF Control</h1>
+    <p style="color:#64748b; font-weight:bold; margin-bottom:18px;">Registro Portuario de Bolsones</p>
+    <input type="password" id="pwInput" placeholder="••••••••" autocomplete="current-password" onkeypress="if(event.key === 'Enter') doLogin()">
+    <button class="btn-login" onclick="doLogin()">INGRESAR</button>
+    <div id="loginErr" style="color:#dc2626; font-weight:bold; margin-top:12px; min-height:1.2rem;"></div>
+  </div>
 </div>
 
-<!-- CUENTA REGRESIVA CAMBIO DE TURNO (ÚLTIMOS 5 MIN) -->
+<!-- BANNERS -->
+<div id="offlineBanner" onclick="actualizarDatosManual()">
+  🟠 TRABAJANDO SIN RED (<span id="countOffline">0</span> PENDIENTES) — TOCA PARA ENVIAR 🔄
+</div>
+
 <div id="shiftCountdownBanner">
   ⏱️ FIN DE TURNO EN: <span id="clockShift" style="background:rgba(0,0,0,0.4); padding:2px 8px; border-radius:6px;">05:00</span>
 </div>
 
-<!-- BARRA SUPERIOR DE HERRAMIENTAS Y SENIOR ACCESSIBILITY -->
+<!-- BARRA SUPERIOR DE HERRAMIENTAS -->
 <div class="top-toolbar">
   <div>
     <button class="btn-tool" onclick="cambiarTema()">🌗 Modo</button>
@@ -225,13 +225,13 @@ html, body {
     <button class="btn-tool" onclick="ajustarFuente(1)">A+</button>
   </div>
   <div style="display:flex; align-items:center; gap:8px;">
+    <button class="btn-tool" onclick="cambiarNaveManual()" style="background:#0369a1;">🚢 Cambiar Nave</button>
     <div id="netStatusBadge"><span class="net-dot" id="netDot"></span><span id="netText">En Línea</span></div>
-    <button class="btn-tool" onclick="forzarSincronizacionCompleta()">🔄 Sinc</button>
   </div>
 </div>
 
-<!-- CABECERA PERMANENTE DE NAVE ACTIVA Y BODEGA -->
-<div id="naveHeaderSticky" style="display:none;">
+<!-- CABECERA DE NAVE ACTIVA -->
+<div id="naveHeaderSticky">
   <div style="display:flex; justify-content:space-between; align-items:center;">
     <div>
       <div style="font-size:0.75rem; text-transform:uppercase; opacity:0.85; font-weight:bold;">NAVE OPERANDO:</div>
@@ -244,23 +244,11 @@ html, body {
   <div id="containerBarrasProgreso" class="progress-container"></div>
 </div>
 
-<!-- PANTALLA 1: LOGIN -->
-<div id="screenLogin">
-  <div class="login-box">
-    <div style="font-size:3.5rem; margin-bottom:10px;">📦</div>
-    <h1 style="color:#0284c7; font-size:2rem; font-weight:900; margin-bottom:6px;">IQBF Control</h1>
-    <p style="color:#64748b; font-weight:bold; margin-bottom:20px;">Registro Portuario de Bolsones</p>
-    <input type="password" id="pwInput" placeholder="••••••••" autocomplete="current-password" onkeypress="if(event.key === 'Enter') doLogin()">
-    <button class="btn-login" onclick="doLogin()">INGRESAR</button>
-    <div id="loginErr" style="color:#dc2626; font-weight:bold; margin-top:12px; min-height:1.2rem;"></div>
-  </div>
-</div>
-
-<!-- PANTALLA 2: SELECCIÓN OBLIGATORIA DE NAVE (TRAS LOGIN) -->
+<!-- PANTALLA 2: SELECCIÓN DE NAVE -->
 <div id="screenSelectNave">
   <div style="text-align:center; color:white; margin-bottom:25px;">
     <h1 style="font-size:2.2rem; font-weight:900;">🚢 Asignación de Buque</h1>
-    <p style="color:#94a3b8; font-size:1.1rem; margin-top:6px;">Selecciona la nave que vas a operar en este turno:</p>
+    <p style="color:#94a3b8; font-size:1.1rem; margin-top:6px;">Selecciona la nave con la que operarás en este turno:</p>
   </div>
   <div class="ship-card-btn" onclick="fijarNaveTurno('nave1')">
     <div style="font-size:3rem;">🚢</div>
@@ -296,21 +284,18 @@ html, body {
 
 <!-- PANTALLA 4: FORMULARIO DE DESCARGA (MUELLE Y LABARTHE) -->
 <div id="screenFormDescarga" class="screen">
-  <!-- Puesto Muelle: Teclado TT -->
   <div class="card" id="cardTTMuelle">
     <div class="card-header-flex"><span class="card-title">🚛 Terminal Truck (TT)</span></div>
     <div class="digital-display" id="displayTT">TT - ___</div>
     <div class="keypad-grid" id="gridKeypadTT"></div>
   </div>
 
-  <!-- Puesto Labarthe: Control Ciego Selección TT -->
   <div class="card" id="cardTTLabarthe" style="display:none;">
     <div class="card-header-flex"><span class="card-title">🚛 Unidades Arribadas de Muelle</span></div>
     <p style="font-size:0.9rem; color:var(--muted); margin-bottom:10px; font-weight:bold;">Selecciona el TT en balanza para conteo ciego:</p>
     <div id="listaTTsEnTransito"></div>
   </div>
 
-  <!-- PRODUCTO 1 Y CANTIDAD -->
   <div class="card" style="border-color:#0284c7;">
     <div class="card-header-flex"><span class="card-title" style="color:#0284c7;">📦 Producto 1</span></div>
     <div class="prod-chips-grid" id="gridProd1"></div>
@@ -321,7 +306,6 @@ html, body {
     </div>
   </div>
 
-  <!-- PRODUCTO 2 (CARGA COMBINADA CON BOTÓN +) -->
   <div id="cardProd2" class="card" style="display:none; border-color:#7c3aed;">
     <div class="card-header-flex">
       <span class="card-title" style="color:#7c3aed;">📦 Producto 2 (Combinado)</span>
@@ -339,7 +323,6 @@ html, body {
     ➕ Agregar Segundo Producto en esta TT
   </button>
 
-  <!-- FOTOS DE EVIDENCIA -->
   <div class="card" style="margin-top:14px;">
     <div class="card-header-flex">
       <span class="card-title">📸 Evidencias Físicas <span style="color:#dc2626;">(Mín 2, Máx 5)</span></span>
@@ -399,7 +382,7 @@ html, body {
   </div>
 </div>
 
-<!-- PANTALLA 6: HISTORIAL DEL TURNO -->
+<!-- PANTALLA 6: HISTORIAL -->
 <div id="screenHistorial" class="screen">
   <div style="text-align:center; font-weight:900; font-size:1.3rem; margin-bottom:12px;">Registros de este Turno</div>
   <div style="display:flex; gap:8px; margin-bottom:12px;">
@@ -410,11 +393,17 @@ html, body {
   <div id="contenedorHistorialList"></div>
 </div>
 
-<!-- NAVEGACIÓN INFERIOR -->
+<!-- BARRA DE NAVEGACIÓN INFERIOR -->
 <div class="bottom-nav">
-  <button class="bnav-btn active" id="btnNavForm" onclick="cambiarVistaPrincipal('form')">✏️ Registrar</button>
-  <button class="bnav-btn" id="btnNavHist" onclick="cambiarVistaPrincipal('hist')">📋 Turno</button>
-  <button class="bnav-btn" onclick="volverSelectorPuesto()">🔄 Puestos</button>
+  <button class="bnav-btn active" id="btnNavPuestos" onclick="irAPuestos()">
+    <span style="font-size:1.2rem;">📦</span>Registrar
+  </button>
+  <button class="bnav-btn" id="btnNavHist" onclick="irATurno()">
+    <span style="font-size:1.2rem;">📋</span>Turno
+  </button>
+  <button class="bnav-btn" onclick="actualizarDatosManual()">
+    <span style="font-size:1.2rem;">🔄</span>Actualizar
+  </button>
 </div>
 
 <!-- MODAL DE CONFIRMACIÓN -->
@@ -429,24 +418,21 @@ html, body {
   </div>
 </div>
 
-<!-- TOAST FLOTANTE -->
 <div class="toast" id="toast"></div>
 
-<!-- INICIO DEL SCRIPT: MOTOR DE BASE DE DATOS LOCAL Y GENERADOR DE IDEMPOTENCIA -->
 <script>
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxZ4qwyvvuWd_IfedsWR1R65niSwlYPKtgcDU_e5f0H4P1cCbOvIGDICksXe3tIdDrfrw/exec";
 const SESSION_KEY = "iqbf_agent_persistent_v7";
 const IDB_NAME = "iqbf_offline_db";
 const IDB_STORE = "pendientes_envio";
 
-// Variables de Estado Operativo
 let naveSeleccionada = localStorage.getItem("iqbf_nave_activa") || null;
+let nombreBuqueActivo = "—";
 let puestoActual = null;
 let productosNave = [];
 let conductoresList = [];
 let dbGlobal = { muelle: [], labarthe: [], despacho: [] };
 
-// Estados de Formulario Descarga
 let valTT = "";
 let prod1Seleccionado = null;
 let cant1Bols = 0;
@@ -455,7 +441,6 @@ let cant2Bols = 0;
 let fotosDescarga = [];
 let viajeIdHeredadoLabarthe = "";
 
-// Estados de Formulario Despacho
 let conductorSeleccionado = null;
 let placaSeleccionada = null;
 let prodDesp1Seleccionado = null;
@@ -464,37 +449,52 @@ let prodDesp2Seleccionado = null;
 let cantDesp2Bols = 0;
 let fotosDespacho = [];
 
-// Control de Concurrencia y Debounce
 let isSavingLocked = false;
 let isSyncingOfflineQueue = false;
 
-// ============================================================
-// 1. INICIALIZACIÓN DE INDEXEDDB PARA COLA RESILIENTE
-// ============================================================
+// CONTROLADOR MAESTRO DE PANTALLAS (APAGA TODAS Y MUESTRA SOLO UNA)
+function mostrarPantalla(id) {
+  const pantallas = [
+    'screenSelectNave',
+    'screenSelectPuesto',
+    'screenFormDescarga',
+    'screenFormDespacho',
+    'screenHistorial'
+  ];
+  pantallas.forEach(pId => {
+    const el = document.getElementById(pId);
+    if (el) el.style.display = (pId === id) ? 'block' : 'none';
+  });
+
+  const nav = document.querySelector('.bottom-nav');
+  const hdr = document.getElementById('naveHeaderSticky');
+  const esLoginONave = (id === 'screenSelectNave');
+
+  if (nav) nav.style.display = esLoginONave ? 'none' : 'flex';
+  if (hdr) hdr.style.display = (esLoginONave || !naveSeleccionada) ? 'none' : 'block';
+}
+
 function openIDB() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(IDB_NAME, 1);
-    request.onupgradeneeded = (e) => {
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = (e) => {
       const db = e.target.result;
-      if (!db.objectStoreNames.contains(IDB_STORE)) {
-        db.createObjectStore(IDB_STORE, { keyPath: "idempotencyKey" });
-      }
+      if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE, { keyPath: "idempotencyKey" });
     };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
   });
 }
 
-async function guardarEnIndexedDB(registro) {
+async function guardarEnIndexedDB(reg) {
   try {
     const db = await openIDB();
     const tx = db.transaction(IDB_STORE, "readwrite");
-    tx.objectStore(IDB_STORE).put(registro);
-    await new Promise((res) => { tx.oncomplete = res; });
+    tx.objectStore(IDB_STORE).put(reg);
+    await new Promise(r => { tx.oncomplete = r; });
     actualizarBadgeColaOffline();
-  } catch (e) {
-    // Respaldo secundario en localStorage
-    localStorage.setItem("iqbf_bkp_" + registro.idempotencyKey, JSON.stringify(registro));
+  } catch(e) {
+    localStorage.setItem("iqbf_bkp_" + reg.idempotencyKey, JSON.stringify(reg));
     actualizarBadgeColaOffline();
   }
 }
@@ -504,50 +504,40 @@ async function obtenerTodosDeIndexedDB() {
     const db = await openIDB();
     const tx = db.transaction(IDB_STORE, "readonly");
     const store = tx.objectStore(IDB_STORE);
-    return new Promise((resolve) => {
-      const req = store.getAll();
-      req.onsuccess = () => resolve(req.result || []);
-      req.onerror = () => resolve([]);
+    return new Promise(r => {
+      const q = store.getAll();
+      q.onsuccess = () => r(q.result || []);
+      q.onerror = () => r([]);
     });
-  } catch (e) {
-    return [];
-  }
+  } catch(e) { return []; }
 }
 
-async function eliminarDeIndexedDB(idempotencyKey) {
+async function eliminarDeIndexedDB(k) {
   try {
     const db = await openIDB();
     const tx = db.transaction(IDB_STORE, "readwrite");
-    tx.objectStore(IDB_STORE).delete(idempotencyKey);
-    localStorage.removeItem("iqbf_bkp_" + idempotencyKey);
-    await new Promise((res) => { tx.oncomplete = res; });
+    tx.objectStore(IDB_STORE).delete(k);
+    localStorage.removeItem("iqbf_bkp_" + k);
+    await new Promise(r => { tx.oncomplete = r; });
     actualizarBadgeColaOffline();
-  } catch (e) {}
+  } catch(e) {}
 }
 
-// ============================================================
-// 2. GENERADOR DE CLAVE DE IDEMPOTENCIA DETERMINISTA
-// ============================================================
-function generarClaveIdempotencia(puesto, nave, identificador, p1, c1, p2, c2) {
+function generarClaveIdempotencia(puesto, nave, ident, p1, c1, p2, c2) {
   const d = new Date();
-  // Ventana de 60 segundos normalizada para anular duplicados por reintento
-  const ventanaMinuto = `${d.getFullYear()}${d.getMonth() + 1}${d.getDate()}_${d.getHours()}_${d.getMinutes()}`;
-  const rawString = `${puesto}_${nave}_${identificador}_${p1}_${c1}_${p2}_${c2}_${ventanaMinuto}`.replace(/\s+/g, '').toUpperCase();
-  
+  const v = `${d.getFullYear()}${d.getMonth() + 1}${d.getDate()}_${d.getHours()}_${d.getMinutes()}`;
+  const str = `${puesto}_${nave}_${ident}_${p1}_${c1}_${p2}_${c2}_${v}`.replace(/\s+/g, '').toUpperCase();
   let hash = 0;
-  for (let i = 0; i < rawString.length; i++) {
-    hash = ((hash << 5) - hash) + rawString.charCodeAt(i);
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
     hash |= 0;
   }
-  return `IDEMP_${Math.abs(hash)}_${ventanaMinuto}`;
+  return `IDEMP_${Math.abs(hash)}_${v}`;
 }
-// ============================================================
-// 3. ERGONOMÍA SENIOR: TEMA VISUAL Y ZOOM DE FUENTE
-// ============================================================
+
 function cambiarTema() {
   document.body.classList.toggle('mode-night');
-  const esNoche = document.body.classList.contains('mode-night');
-  localStorage.setItem('iqbf_theme', esNoche ? 'night' : 'day');
+  localStorage.setItem('iqbf_theme', document.body.classList.contains('mode-night') ? 'night' : 'day');
 }
 
 let nivelFuente = 16;
@@ -557,27 +547,17 @@ function ajustarFuente(delta) {
   localStorage.setItem('iqbf_font_size', nivelFuente);
 }
 
-function cargarPreferenciasSenior() {
-  if (localStorage.getItem('iqbf_theme') === 'night') {
-    document.body.classList.add('mode-night');
-  }
-  const fSize = localStorage.getItem('iqbf_font_size');
-  if (fSize) {
-    nivelFuente = parseInt(fSize, 10);
-    document.documentElement.style.setProperty('--font-base', nivelFuente + 'px');
-  }
-}
-
-// ============================================================
-// 4. INICIALIZACIÓN, SESIÓN Y CONTROL DE TURNOS
-// ============================================================
 window.onload = async () => {
-  cargarPreferenciasSenior();
+  if (localStorage.getItem('iqbf_theme') === 'night') document.body.classList.add('mode-night');
+  const fSize = localStorage.getItem('iqbf_font_size');
+  if (fSize) document.documentElement.style.setProperty('--font-base', fSize + 'px');
+
   construirTeclados();
   configurarEventosRed();
   actualizarBadgeColaOffline();
 
   if (verificarSesionValida()) {
+    document.getElementById('screenLogin').style.display = 'none';
     if (!naveSeleccionada) {
       mostrarSeleccionNave();
     } else {
@@ -588,10 +568,6 @@ window.onload = async () => {
   }
 
   setInterval(actualizarRelojFinTurno, 1000);
-  setInterval(enviarLatidoVida, 15000);
-  setInterval(() => {
-    if (navigator.onLine) sincronizarColaOfflineSilencioso();
-  }, 25000);
 };
 
 function obtenerTurnoActual() {
@@ -599,10 +575,8 @@ function obtenerTurnoActual() {
   const totalMins = ahora.getHours() * 60 + ahora.getMinutes();
   const startDiurno = 6 * 60 + 50; 
   const endDiurno = 18 * 60 + 50;  
-
   let fechaClave = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
   let tipo = (totalMins >= startDiurno && totalMins < endDiurno) ? "diurno" : "nocturno";
-
   if (tipo === "nocturno" && totalMins < startDiurno) {
     const ayer = new Date(ahora);
     ayer.setDate(ahora.getDate() - 1);
@@ -612,44 +586,29 @@ function obtenerTurnoActual() {
 }
 
 function verificarSesionValida() {
-  const sesion = localStorage.getItem(SESSION_KEY);
-  return sesion === obtenerTurnoActual();
+  return localStorage.getItem(SESSION_KEY) === obtenerTurnoActual();
 }
 
 function actualizarRelojFinTurno() {
   const ahora = new Date();
   const mins = ahora.getHours() * 60 + ahora.getMinutes();
-  const startD = 410; // 06:50
-  const endD = 1130;  // 18:50
-
   let fin = new Date(ahora);
-  if (mins >= startD && mins < endD) {
-    fin.setHours(18, 50, 0, 0);
-  } else {
-    if (mins >= endD) fin.setDate(fin.getDate() + 1);
+  if (mins >= 410 && mins < 1130) fin.setHours(18, 50, 0, 0);
+  else {
+    if (mins >= 1130) fin.setDate(fin.getDate() + 1);
     fin.setHours(6, 50, 0, 0);
   }
-
   const diffSecs = Math.floor((fin - ahora) / 1000);
   const banner = document.getElementById('shiftCountdownBanner');
   const clock = document.getElementById('clockShift');
-
   if (diffSecs <= 300 && diffSecs > 0) {
     banner.style.display = 'block';
-    const m = Math.floor(diffSecs / 60);
-    const s = diffSecs % 60;
-    clock.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  } else if (diffSecs <= 0) {
-    banner.style.display = 'block';
-    clock.textContent = "00:00 - RELEVO";
+    clock.textContent = `${String(Math.floor(diffSecs / 60)).padStart(2, '0')}:${String(diffSecs % 60).padStart(2, '0')}`;
   } else {
     banner.style.display = 'none';
   }
 }
 
-// ============================================================
-// 5. ACCESO Y SELECCIÓN DE NAVE OBLIGATORIA
-// ============================================================
 async function doLogin() {
   const pw = document.getElementById('pwInput').value.trim();
   const err = document.getElementById('loginErr');
@@ -669,16 +628,13 @@ async function doLogin() {
     } else {
       err.textContent = "❌ Contraseña incorrecta";
     }
-  } catch (e) {
-    err.textContent = "⚠️ Error de conexión con el servidor";
+  } catch(e) {
+    err.textContent = "⚠️ Error de conexión";
   }
 }
 
 async function mostrarSeleccionNave() {
-  document.getElementById('screenLogin').style.display = 'none';
-  document.getElementById('screenSelectNave').style.display = 'flex';
-  
-  // Consultar nombres de buques en segundo plano
+  mostrarPantalla('screenSelectNave');
   try {
     const [r1, r2] = await Promise.all([
       fetch(`${GAS_URL}?action=obtenerProductos&nave=nave1`).then(r => r.json()),
@@ -692,21 +648,25 @@ async function mostrarSeleccionNave() {
       document.getElementById('btnCardNave2Title').textContent = r2.buqueNombre;
       document.getElementById('btnCardNave2Sub').textContent = `Muelle: ${r2.buqueMuelle || '2B'}`;
     }
-  } catch (e) {}
+  } catch(e) {}
+}
+
+function cambiarNaveManual() {
+  if (confirm("¿Deseas cambiar a la otra nave de operaciones?")) {
+    naveSeleccionada = null;
+    localStorage.removeItem("iqbf_nave_activa");
+    mostrarSeleccionNave();
+  }
 }
 
 function fijarNaveTurno(naveKey) {
   naveSeleccionada = naveKey;
   localStorage.setItem("iqbf_nave_activa", naveKey);
-  document.getElementById('screenSelectNave').style.display = 'none';
   iniciarAplicacionConNave(naveKey);
 }
 
 async function iniciarAplicacionConNave(naveKey) {
-  document.getElementById('naveHeaderSticky').style.display = 'block';
-  document.getElementById('screenSelectPuesto').style.display = 'block';
-  document.getElementById('lblNaveMini').textContent = (naveKey === 'nave1') ? "NAVE 1" : "NAVE 2";
-
+  mostrarPantalla('screenSelectPuesto');
   await cargarDatosDeNave(naveKey);
 }
 
@@ -720,9 +680,10 @@ async function cargarDatosDeNave(naveKey, silencioso = false) {
 
     if (pRes.ok) {
       productosNave = pRes.productos || [];
-      const nom = pRes.buqueNombre || (naveKey === 'nave1' ? 'Nave 1' : 'Nave 2');
+      nombreBuqueActivo = pRes.buqueNombre || (naveKey === 'nave1' ? 'Nave 1' : 'Nave 2');
       const mue = pRes.buqueMuelle || 'Muelle';
-      document.getElementById('lblNaveActiva').textContent = `🚢 ${nom} (${mue})`;
+      document.getElementById('lblNaveActiva').textContent = `🚢 ${nombreBuqueActivo} (${mue})`;
+      document.getElementById('lblNaveMini').textContent = nombreBuqueActivo;
       renderBarrasProgresoBodega();
       renderChipsProductos();
     }
@@ -742,65 +703,51 @@ async function cargarDatosDeNave(naveKey, silencioso = false) {
       renderHistorialTurno();
       if (puestoActual === 'labarthe') renderListaTTsEnTransitoLabarthe();
     }
-  } catch (e) {
-    if (!silencioso) showToast("⚠️ Mostrando datos guardados localmente");
+  } catch(e) {
+    if (!silencioso) showToast("⚠️ Sin red. Mostrando datos locales");
   }
 }
 
-// ============================================================
-// 6. CABECERA DE BODEGA Y AVANCE EN VIVO
-// ============================================================
 function renderBarrasProgresoBodega() {
   const container = document.getElementById('containerBarrasProgreso');
   if (!container) return;
-
   if (productosNave.length === 0) {
     container.innerHTML = '<div style="font-size:0.8rem; opacity:0.8;">Sin productos en catálogo</div>';
     return;
   }
-
   container.innerHTML = productosNave.map(p => {
-    const totalDescargado = dbGlobal.labarthe.reduce((sum, r) => {
-      let cant = 0;
-      if (r.producto1 && r.producto1.toLowerCase() === p.producto.toLowerCase()) cant += Number(r.cant1) || 0;
-      if (r.producto2 && r.producto2.toLowerCase() === p.producto.toLowerCase()) cant += Number(r.cant2) || 0;
-      return sum + cant;
+    const total = dbGlobal.labarthe.reduce((sum, r) => {
+      let c = 0;
+      if (r.producto1 && r.producto1.toLowerCase() === p.producto.toLowerCase()) c += Number(r.cant1) || 0;
+      if (r.producto2 && r.producto2.toLowerCase() === p.producto.toLowerCase()) c += Number(r.cant2) || 0;
+      return sum + c;
     }, 0);
-
     const meta = Number(p.cantidadBuque) || 0;
-    const pct = meta > 0 ? Math.min(100, Math.round((totalDescargado / meta) * 100)) : 0;
-
+    const pct = meta > 0 ? Math.min(100, Math.round((total / meta) * 100)) : 0;
     return `
       <div class="prod-prog-item">
         <div style="display:flex; justify-content:space-between;">
-          <span>🧴 ${p.producto}: ${totalDescargado} / ${meta}</span>
-          <span>${pct}%</span>
+          <span>🧴 ${p.producto}: ${total} / ${meta}</span><span>${pct}%</span>
         </div>
-        <div class="prog-bar-bg">
-          <div class="prog-bar-fill" style="width: ${pct}%;"></div>
-        </div>
+        <div class="prog-bar-bg"><div class="prog-bar-fill" style="width: ${pct}%;"></div></div>
       </div>
     `;
   }).join('');
 }
 
-// ============================================================
-// 7. NAVEGACIÓN ENTRE PUESTOS
-// ============================================================
 function entrarPuesto(puesto) {
   puestoActual = puesto;
-  document.getElementById('screenSelectPuesto').style.display = 'none';
   document.getElementById('lblPuestoActivoBadge').textContent = puesto.toUpperCase();
 
   resetFormularioDescarga();
   resetFormularioDespacho();
 
   if (puesto === 'despacho') {
-    document.getElementById('screenFormDespacho').style.display = 'block';
+    mostrarPantalla('screenFormDespacho');
     filtrarConductoresUI();
     renderFotosGrid('despacho');
   } else {
-    document.getElementById('screenFormDescarga').style.display = 'block';
+    mostrarPantalla('screenFormDescarga');
     if (puesto === 'labarthe') {
       document.getElementById('cardTTMuelle').style.display = 'none';
       document.getElementById('cardTTLabarthe').style.display = 'block';
@@ -813,37 +760,33 @@ function entrarPuesto(puesto) {
   }
 }
 
-function volverSelectorPuesto() {
+// BOTÓN INFERIOR: REGISTRAR (VUELVE A LA LISTA DE PUESTOS)
+function irAPuestos() {
   puestoActual = null;
-  document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
-  document.getElementById('screenSelectPuesto').style.display = 'block';
   document.getElementById('lblPuestoActivoBadge').textContent = "—";
-  cambiarVistaPrincipal('form');
+  document.getElementById('btnNavPuestos').classList.add('active');
+  document.getElementById('btnNavHist').classList.remove('active');
+  mostrarPantalla('screenSelectPuesto');
 }
 
-function cambiarVistaPrincipal(vista) {
-  document.getElementById('btnNavForm').classList.toggle('active', vista === 'form');
-  document.getElementById('btnNavHist').classList.toggle('active', vista === 'hist');
+// BOTÓN INFERIOR: TURNO (ABRE EL HISTORIAL)
+function irATurno() {
+  document.getElementById('btnNavPuestos').classList.remove('active');
+  document.getElementById('btnNavHist').classList.add('active');
+  mostrarPantalla('screenHistorial');
+  renderHistorialTurno();
+}
 
-  if (vista === 'hist') {
-    document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
-    document.getElementById('screenHistorial').style.display = 'block';
-    renderHistorialTurno();
-  } else {
-    document.getElementById('screenHistorial').style.display = 'none';
-    if (puestoActual === 'despacho') {
-      document.getElementById('screenFormDespacho').style.display = 'block';
-    } else if (puestoActual) {
-      document.getElementById('screenFormDescarga').style.display = 'block';
-    } else {
-      document.getElementById('screenSelectPuesto').style.display = 'block';
-    }
+// BOTÓN INFERIOR: ACTUALIZAR (SINCRONIZA EN VIVO CON GOOGLE SHEETS)
+async function actualizarDatosManual() {
+  showToast("🔄 Actualizando con Excel...");
+  if (naveSeleccionada) {
+    await cargarDatosDeNave(naveSeleccionada, false);
   }
+  await sincronizarColaOfflineSilencioso();
+  showToast("✅ Datos actualizados");
 }
 
-// ============================================================
-// 8. TECLADOS NUMÉRICOS TÁCTILES SENIOR
-// ============================================================
 function construirTeclados() {
   ['gridKeypadTT', 'gridKeypadBols1', 'gridKeypadBols2', 'gridKeypadBolsDesp1', 'gridKeypadBolsDesp2'].forEach(id => {
     const cont = document.getElementById(id);
@@ -883,27 +826,16 @@ function procesarTecla(tecladoId, key) {
 function manipularConteo(actual, key) {
   let s = actual === 0 ? "" : String(actual);
   if (key === 'C') return 0;
-  if (key === '⌫') {
-    s = s.slice(0, -1);
-    return s === "" ? 0 : parseInt(s, 10);
-  }
+  if (key === '⌫') return s.slice(0, -1) === "" ? 0 : parseInt(s.slice(0, -1), 10);
   if (s.length < 2) {
     let n = parseInt(s + key, 10);
-    if (n > 30) {
-      showToast("⚠️ Máximo 30 bolsones por producto");
-      return 30;
-    }
-    return n;
+    return n > 30 ? (showToast("⚠️ Máximo 30 bolsones"), 30) : n;
   }
   return actual;
 }
 
-// ============================================================
-// 9. LÓGICA DE DOBLE PRODUCTO Y CHIPS SELECTORES
-// ============================================================
 function renderChipsProductos() {
   const nombres = productosNave.map(p => p.producto);
-  
   function llenarGrid(gridId, seleccionActual, alSeleccionar) {
     const el = document.getElementById(gridId);
     if (!el) return;
@@ -919,7 +851,6 @@ function renderChipsProductos() {
       el.appendChild(chip);
     });
   }
-
   llenarGrid('gridProd1', prod1Seleccionado, (nom) => { prod1Seleccionado = nom; });
   llenarGrid('gridProd2', prod2Seleccionado, (nom) => { prod2Seleccionado = nom; });
   llenarGrid('gridProdDesp1', prodDesp1Seleccionado, (nom) => { prodDesp1Seleccionado = nom; });
@@ -934,8 +865,7 @@ function habilitarSegundoProducto() {
 function quitarSegundoProducto() {
   document.getElementById('cardProd2').style.display = 'none';
   document.getElementById('btnAddProd2').style.display = 'flex';
-  prod2Seleccionado = null;
-  cant2Bols = 0;
+  prod2Seleccionado = null; cant2Bols = 0;
   document.getElementById('displayBols2').textContent = "00 Bolsones";
 }
 
@@ -947,34 +877,25 @@ function habilitarSegundoProductoDespacho() {
 function quitarSegundoProductoDespacho() {
   document.getElementById('cardProdDesp2').style.display = 'none';
   document.getElementById('btnAddProdDesp2').style.display = 'flex';
-  prodDesp2Seleccionado = null;
-  cantDesp2Bols = 0;
+  prodDesp2Seleccionado = null; cantDesp2Bols = 0;
   document.getElementById('displayBolsDesp2').textContent = "00 Bolsones";
 }
 
-// ============================================================
-// 10. CONTROL CIEGO ESTRICTO EN LABARTHE
-// ============================================================
 function renderListaTTsEnTransitoLabarthe() {
   const cont = document.getElementById('listaTTsEnTransito');
   if (!cont) return;
-
   const labartheBases = new Set(dbGlobal.labarthe.map(l => obtenerBaseId(l.viajeId)));
   const enTransito = dbGlobal.muelle.filter(m => !labartheBases.has(obtenerBaseId(m.viajeId)));
 
   if (enTransito.length === 0) {
-    cont.innerHTML = '<div style="text-align:center; padding:15px; color:var(--muted); font-weight:bold;">● No hay camiones pendientes de Muelle en este turno.</div>';
+    cont.innerHTML = '<div style="text-align:center; padding:15px; color:var(--muted); font-weight:bold;">● No hay camiones pendientes de Muelle.</div>';
     return;
   }
-
-  cont.innerHTML = enTransito.map(m => {
-    const isSel = (viajeIdHeredadoLabarthe === m.viajeId);
-    return `
-      <div class="tt-blind-item ${isSel ? 'selected' : ''}" onclick="seleccionarTTLabartheCiego('${m.viajeId}')">
-        🚛 ${m.tt}
-      </div>
-    `;
-  }).join('');
+  cont.innerHTML = enTransito.map(m => `
+    <div class="tt-blind-item ${viajeIdHeredadoLabarthe === m.viajeId ? 'selected' : ''}" onclick="seleccionarTTLabartheCiego('${m.viajeId}')">
+      🚛 ${m.tt}
+    </div>
+  `).join('');
 }
 
 function seleccionarTTLabartheCiego(viajeId) {
@@ -983,8 +904,6 @@ function seleccionarTTLabartheCiego(viajeId) {
   if (!regMuelle) return;
 
   valTT = regMuelle.tt.replace(/[^0-9]/g, '');
-
-  // Carga ciega de productos preasignados (cantidades inician vacías a 00)
   prod1Seleccionado = regMuelle.producto1;
   cant1Bols = 0;
   document.getElementById('displayBols1').textContent = "00 Bolsones";
@@ -997,43 +916,30 @@ function seleccionarTTLabartheCiego(viajeId) {
   } else {
     quitarSegundoProducto();
   }
-
-  // Ocultar botón "+" para que Labarthe no agregue productos que Muelle no mandó
   document.getElementById('btnAddProd2').style.display = 'none';
-
   renderChipsProductos();
   renderListaTTsEnTransitoLabarthe();
 }
 
 function obtenerBaseId(vid) {
-  if (!vid) return "";
-  const parts = vid.split('_');
-  return parts.slice(0, 2).join('_');
+  return vid ? vid.split('_').slice(0, 2).join('_') : "";
 }
 
-// ============================================================
-// 11. BÚSQUEDA Y SELECCIÓN EN DESPACHO
-// ============================================================
 function filtrarConductoresUI() {
   const cont = document.getElementById('listaConductoresDespacho');
   if (!cont) return;
   const q = (document.getElementById('searchChofer').value || "").trim().toLowerCase();
-
   const filtrados = conductoresList.filter(c => c.nombre.toLowerCase().includes(q) || c.placa.toLowerCase().includes(q));
 
   if (filtrados.length === 0) {
     cont.innerHTML = '<div style="padding:10px; color:var(--muted); font-weight:bold;">Sin coincidencias</div>';
     return;
   }
-
-  cont.innerHTML = filtrados.map(c => {
-    const isSel = (conductorSeleccionado === c.nombre && placaSeleccionada === c.placa);
-    return `
-      <div class="tt-blind-item ${isSel ? 'selected' : ''}" style="font-size:1.05rem; text-align:left;" onclick="seleccionarConductorDespacho('${c.nombre}', '${c.placa}')">
-        👤 <strong>${c.nombre}</strong><br><small style="color:var(--muted)">Placa: ${c.placa}</small>
-      </div>
-    `;
-  }).join('');
+  cont.innerHTML = filtrados.map(c => `
+    <div class="tt-blind-item ${conductorSeleccionado === c.nombre ? 'selected' : ''}" style="font-size:1.05rem; text-align:left;" onclick="seleccionarConductorDespacho('${c.nombre}', '${c.placa}')">
+      👤 <strong>${c.nombre}</strong><br><small style="color:var(--muted)">Placa: ${c.placa}</small>
+    </div>
+  `).join('');
 }
 
 function seleccionarConductorDespacho(nombre, placa) {
@@ -1043,42 +949,31 @@ function seleccionarConductorDespacho(nombre, placa) {
   filtrarConductoresUI();
 }
 
-// ============================================================
-// 12. GESTIÓN Y COMPRESIÓN DE EVIDENCIAS FOTOGRÁFICAS
-// ============================================================
 function renderFotosGrid(tipo) {
   const isDesp = (tipo === 'despacho');
   const fotos = isDesp ? fotosDespacho : fotosDescarga;
   const grid = document.getElementById(isDesp ? 'fotoGridDespacho' : 'fotoGridDescarga');
   const hidden = document.getElementById(isDesp ? 'hiddenInputsDespacho' : 'hiddenInputsDescarga');
   if (!grid || !hidden) return;
-
   grid.innerHTML = ""; hidden.innerHTML = "";
 
   fotos.forEach((src, idx) => {
     const slot = document.createElement('div');
     slot.className = "foto-slot";
-    slot.innerHTML = `
-      <img src="${src}">
-      <button class="btn-del-foto" onclick="eliminarFoto(${idx}, '${tipo}')">✕</button>
-    `;
+    slot.innerHTML = `<img src="${src}"><button class="btn-del-foto" onclick="eliminarFoto(${idx}, '${tipo}')">✕</button>`;
     grid.appendChild(slot);
   });
 
   if (fotos.length < 5) {
     const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.capture = 'environment';
-    input.id = `input_foto_${tipo}_${fotos.length}`;
-    input.style.display = 'none';
+    input.type = 'file'; input.accept = 'image/*'; input.capture = 'environment';
+    input.id = `input_foto_${tipo}_${fotos.length}`; input.style.display = 'none';
     input.onchange = (e) => procesarFotoCapturada(e, tipo);
     hidden.appendChild(input);
 
     const slotAdd = document.createElement('label');
-    slotAdd.className = "foto-slot";
-    slotAdd.setAttribute('for', input.id);
-    slotAdd.innerHTML = `<span style="font-size:2.4rem;">📸</span><span style="font-size:0.85rem; font-weight:bold; margin-top:4px;">Tomar Foto</span>`;
+    slotAdd.className = "foto-slot"; slotAdd.setAttribute('for', input.id);
+    slotAdd.innerHTML = `<span style="font-size:2.4rem;">📸</span><span style="font-size:0.85rem; font-weight:bold;">Tomar Foto</span>`;
     grid.appendChild(slotAdd);
   }
 }
@@ -1086,24 +981,19 @@ function renderFotosGrid(tipo) {
 function procesarFotoCapturada(event, tipo) {
   const file = event.target.files[0];
   if (!file) return;
-
   const reader = new FileReader();
   reader.onload = (e) => {
     const img = new Image();
     img.src = e.target.result;
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const MAX_W = 600;
       let w = img.width, h = img.height;
-      if (w > MAX_W) { h = Math.round((h * MAX_W) / w); w = MAX_W; }
-
+      if (w > 600) { h = Math.round((h * 600) / w); w = 600; }
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
       const b64 = canvas.toDataURL('image/jpeg', 0.40);
-
       if (tipo === 'despacho') fotosDespacho.push(b64);
       else fotosDescarga.push(b64);
-
       renderFotosGrid(tipo);
     };
   };
@@ -1116,40 +1006,33 @@ function eliminarFoto(idx, tipo) {
   renderFotosGrid(tipo);
 }
 
-// ============================================================
-// 13. CONFIRMACIÓN Y GUARDADO CON DEBOUNCE (2.5s)
-// ============================================================
 function abrirConfirmacionModal() {
   const isDesp = (puestoActual === 'despacho');
-
   if (isDesp) {
-    if (!conductorSeleccionado || !placaSeleccionada) return showToast("⚠️ Selecciona un conductor y placa");
-    if (!prodDesp1Seleccionado || cantDesp1Bols <= 0) return showToast("⚠️ Ingresa el producto 1 y su cantidad");
+    if (!conductorSeleccionado || !placaSeleccionada) return showToast("⚠️ Selecciona chofer y placa");
+    if (!prodDesp1Seleccionado || cantDesp1Bols <= 0) return showToast("⚠️ Ingresa el producto 1 y cantidad");
     if (fotosDespacho.length < 2) return showToast("⚠️ Requiere mínimo 2 fotos de evidencia");
   } else {
-    if (!valTT) return showToast("⚠️ Ingresa o selecciona el Terminal Truck");
-    if (!prod1Seleccionado || cant1Bols <= 0) return showToast("⚠️ Ingresa el producto 1 y su cantidad");
+    if (!valTT) return showToast("⚠️ Ingresa o selecciona la TT");
+    if (!prod1Seleccionado || cant1Bols <= 0) return showToast("⚠️ Ingresa el producto 1 y cantidad");
     if (fotosDescarga.length < 2) return showToast("⚠️ Requiere mínimo 2 fotos de evidencia");
   }
 
+  // AHORA MUESTRA EL NOMBRE REAL DEL BUQUE
   const rows = [
-    ['NAVE', (naveSeleccionada === 'nave1' ? 'NAVE 1' : 'NAVE 2')],
+    ['NAVE', nombreBuqueActivo],
     ['PUESTO', puestoActual.toUpperCase()]
   ];
 
   if (isDesp) {
     rows.push(['CHOFER', conductorSeleccionado], ['PLACA', placaSeleccionada]);
     rows.push(['PROD 1', `${prodDesp1Seleccionado} (${cantDesp1Bols} bol)`]);
-    if (prodDesp2Seleccionado && cantDesp2Bols > 0) {
-      rows.push(['PROD 2', `${prodDesp2Seleccionado} (${cantDesp2Bols} bol)`]);
-    }
+    if (prodDesp2Seleccionado && cantDesp2Bols > 0) rows.push(['PROD 2', `${prodDesp2Seleccionado} (${cantDesp2Bols} bol)`]);
     rows.push(['FOTOS', `${fotosDespacho.length} foto(s)`]);
   } else {
     rows.push(['UNIDAD', `TT-${valTT}`]);
     rows.push(['PROD 1', `${prod1Seleccionado} (${cant1Bols} bol)`]);
-    if (prod2Seleccionado && cant2Bols > 0) {
-      rows.push(['PROD 2', `${prod2Seleccionado} (${cant2Bols} bol)`]);
-    }
+    if (prod2Seleccionado && cant2Bols > 0) rows.push(['PROD 2', `${prod2Seleccionado} (${cant2Bols} bol)`]);
     rows.push(['FOTOS', `${fotosDescarga.length} foto(s)`]);
   }
 
@@ -1165,22 +1048,14 @@ function cerrarConfirmacionModal() {
 }
 
 async function ejecutarGuardadoFinalDebounced() {
-  // BLOQUEO ANTI-DOBLE CLIC (2.5s)
   if (isSavingLocked) return;
   isSavingLocked = true;
-
-  const btnConfirm = document.getElementById('btnEjecutarGuardadoModal');
-  btnConfirm.disabled = true;
-  btnConfirm.textContent = "⏳ Registrando...";
-
-  setTimeout(() => {
-    isSavingLocked = false;
-    btnConfirm.disabled = false;
-    btnConfirm.textContent = "Sí, Guardar";
-  }, 2500);
+  const btn = document.getElementById('btnEjecutarGuardadoModal');
+  btn.disabled = true;
+  btn.textContent = "⏳ Registrando...";
+  setTimeout(() => { isSavingLocked = false; btn.disabled = false; btn.textContent = "Sí, Guardar"; }, 2500);
 
   cerrarConfirmacionModal();
-
   const isDesp = (puestoActual === 'despacho');
   const d = new Date();
   const pad = n => String(n).padStart(2, '0');
@@ -1192,8 +1067,6 @@ async function ejecutarGuardadoFinalDebounced() {
   const p2 = isDesp ? prodDesp2Seleccionado : prod2Seleccionado;
   const c2 = isDesp ? cantDesp2Bols : cant2Bols;
   const fotosASubir = isDesp ? [...fotosDespacho] : [...fotosDescarga];
-
-  // CLAVE DETERMINISTA DE IDEMPOTENCIA
   const idempKey = generarClaveIdempotencia(puestoActual, naveSeleccionada, ident, p1, c1, p2, c2);
 
   const payload = {
@@ -1213,10 +1086,7 @@ async function ejecutarGuardadoFinalDebounced() {
     }
   };
 
-  const registroCompleto = { payload, fotos: fotosASubir, idempotencyKey: idempKey, fechaHora: fHora };
-
-  // Reseteo de pantalla y retorno al menú
-  volverSelectorPuesto();
+  irAPuestos();
 
   if (navigator.onLine) {
     try {
@@ -1227,22 +1097,18 @@ async function ejecutarGuardadoFinalDebounced() {
       });
       const data = await res.json();
       if (data.ok) {
-        showToast("✅ Registro Guardado en Base de Datos");
+        showToast("✅ Registro Guardado Exitosamente");
         subirFotosEnColaSegundoPlano(data.viajeId, puestoActual, naveSeleccionada, fotosASubir);
         cargarDatosDeNave(naveSeleccionada, true);
         return;
       }
-    } catch (e) {}
+    } catch(e) {}
   }
 
-  // Si falló la red o no hay señal, blindaje en IndexedDB
-  await guardarEnIndexedDB(registroCompleto);
+  await guardarEnIndexedDB({ payload, fotos: fotosASubir, idempotencyKey: idempKey, fechaHora: fHora });
   showToast("🟠 Guardado en Celular (Sin señal). Se enviará solo.", true);
 }
 
-// ============================================================
-// 14. SUBIDA DE FOTOS Y REINTENTOS RESILIENTES
-// ============================================================
 async function subirFotosEnColaSegundoPlano(viajeId, puesto, nave, listaFotos) {
   for (let i = 0; i < listaFotos.length; i++) {
     try {
@@ -1254,61 +1120,38 @@ async function subirFotosEnColaSegundoPlano(viajeId, puesto, nave, listaFotos) {
           data: { viajeId, puesto, nave, fotoBase64: listaFotos[i], index: i }
         })
       });
-    } catch (e) {}
+    } catch(e) {}
   }
 }
 
-// ============================================================
-// 15. SINCRONIZACIÓN OFFLINE RESILIENTE (UNION-MERGE)
-// ============================================================
 function configurarEventosRed() {
-  window.addEventListener('online', () => {
-    actualizarBadgeRed(true);
-    sincronizarColaOfflineSilencioso();
-  });
-  window.addEventListener('offline', () => {
-    actualizarBadgeRed(false);
-  });
+  window.addEventListener('online', () => { actualizarBadgeRed(true); sincronizarColaOfflineSilencioso(); });
+  window.addEventListener('offline', () => { actualizarBadgeRed(false); });
   actualizarBadgeRed(navigator.onLine);
 }
 
 function actualizarBadgeRed(isOnline) {
-  const dot = document.getElementById('netDot');
-  const txt = document.getElementById('netText');
-  if (isOnline) {
-    dot.style.background = "#22c55e";
-    txt.textContent = "En Línea";
-  } else {
-    dot.style.background = "#ea580c";
-    txt.textContent = "Sin Red";
-  }
+  document.getElementById('netDot').style.background = isOnline ? "#22c55e" : "#ea580c";
+  document.getElementById('netText').textContent = isOnline ? "En Línea" : "Sin Red";
 }
 
 async function actualizarBadgeColaOffline() {
-  const pendientes = await obtenerTodosDeIndexedDB();
-  const banner = document.getElementById('offlineBanner');
-  const countSpan = document.getElementById('countOffline');
-
-  if (pendientes.length > 0) {
-    banner.style.display = 'block';
-    countSpan.textContent = pendientes.length;
+  const p = await obtenerTodosDeIndexedDB();
+  const b = document.getElementById('offlineBanner');
+  if (p.length > 0) {
+    b.style.display = 'block';
+    document.getElementById('countOffline').textContent = p.length;
   } else {
-    banner.style.display = 'none';
+    b.style.display = 'none';
   }
-}
-
-async function sincronizarColaOfflineManual() {
-  showToast("🔄 Sincronizando registros pendientes...");
-  await sincronizarColaOfflineSilencioso();
 }
 
 async function sincronizarColaOfflineSilencioso() {
   if (isSyncingOfflineQueue || !navigator.onLine) return;
   isSyncingOfflineQueue = true;
-
   try {
-    const pendientes = await obtenerTodosDeIndexedDB();
-    for (const item of pendientes) {
+    const pend = await obtenerTodosDeIndexedDB();
+    for (const item of pend) {
       try {
         const res = await fetch(GAS_URL, {
           method: 'POST',
@@ -1320,7 +1163,7 @@ async function sincronizarColaOfflineSilencioso() {
           await eliminarDeIndexedDB(item.idempotencyKey);
           subirFotosEnColaSegundoPlano(data.viajeId, item.payload.data.puesto, item.payload.data.nave, item.fotos);
         }
-      } catch (err) {}
+      } catch(err) {}
     }
   } finally {
     isSyncingOfflineQueue = false;
@@ -1328,33 +1171,6 @@ async function sincronizarColaOfflineSilencioso() {
   }
 }
 
-function forzarSincronizacionCompleta() {
-  if (naveSeleccionada) {
-    showToast("🔄 Sincronizando con Excel...");
-    cargarDatosDeNave(naveSeleccionada);
-  }
-  sincronizarColaOfflineManual();
-}
-
-// ============================================================
-// 16. TELEMETRÍA Y SOPORTE EN SEGUNDO PLANO
-// ============================================================
-function enviarLatidoVida() {
-  if (!navigator.onLine || !naveSeleccionada) return;
-  const pName = puestoActual ? `Inspector de ${puestoActual.toUpperCase()}` : 'Inspector (En Menú)';
-  fetch(GAS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({
-      action: 'pingHeartbeat',
-      data: { puesto: `${pName} [${naveSeleccionada.toUpperCase()}]`, fechaHora: new Date().toLocaleTimeString('es-PE'), nave: naveSeleccionada }
-    })
-  }).catch(() => {});
-}
-
-// ============================================================
-// 17. HISTORIAL Y TOAST
-// ============================================================
 let activeHistTab = 'muelle';
 function cambiarHistTab(tab) {
   activeHistTab = tab;
@@ -1367,13 +1183,11 @@ function cambiarHistTab(tab) {
 function renderHistorialTurno() {
   const cont = document.getElementById('contenedorHistorialList');
   if (!cont) return;
-
   const listado = dbGlobal[activeHistTab] || [];
   if (listado.length === 0) {
     cont.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-weight:bold;">Sin registros en este puesto para el turno activo.</div>';
     return;
   }
-
   cont.innerHTML = listado.slice().reverse().map(r => `
     <div class="card" style="margin-bottom:10px;">
       <div style="display:flex; justify-content:space-between; align-items:center;">
