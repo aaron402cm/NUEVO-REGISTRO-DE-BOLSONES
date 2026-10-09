@@ -1030,28 +1030,15 @@ function cerrarConfirmacionModal() {
 }
 
 // ============================================================
-// GUARDADO CON CLAVE DE IDEMPOTENCIA INMUTABLE Y TIMEOUT
+// GUARDADO CON ACTUALIZACIÓN LOCAL INMEDIATA Y BLOQUEO DE DUPLICADOS
 // ============================================================
 async function ejecutarGuardadoFinalDebounced() {
   if (isSavingLocked) return;
   isSavingLocked = true;
 
   const btnModal = document.getElementById('btnEjecutarGuardadoModal');
-  const btnMuelle = document.getElementById('btnGuardarDescarga');
-  const btnDespacho = document.getElementById('btnGuardarDespacho');
-
   btnModal.disabled = true;
-  btnModal.textContent = "⏳ Registrando...";
-  if (btnMuelle) btnMuelle.disabled = true;
-  if (btnDespacho) btnDespacho.disabled = true;
-
-  setTimeout(() => {
-    isSavingLocked = false;
-    btnModal.disabled = false;
-    btnModal.textContent = "Sí, Guardar";
-    if (btnMuelle) btnMuelle.disabled = false;
-    if (btnDespacho) btnDespacho.disabled = false;
-  }, 2500);
+  btnModal.textContent = "⏳ Guardando...";
 
   cerrarConfirmacionModal();
 
@@ -1066,9 +1053,39 @@ async function ejecutarGuardadoFinalDebounced() {
   const p2 = isDesp ? prodDesp2Seleccionado : prod2Seleccionado;
   const c2 = isDesp ? cantDesp2Bols : cant2Bols;
   const fotosASubir = isDesp ? [...fotosDespacho] : [...fotosDescarga];
-
-  // CLAVE GENERADA EXACTAMENTE UNA SOLA VEZ (NUNCA CAMBIA EN REINTENTOS)
   const idempKey = generarClaveIdempotencia(puestoActual, naveSeleccionada, ident, p1, c1, p2, c2);
+
+  const totalBolsLocal = Number(c1) + Number(c2 || 0);
+  const viajeIdParaEnviar = (puestoActual === 'labarthe') ? viajeIdHeredadoLabarthe : '';
+
+  // ACTUALIZACIÓN OPTIMISTA INMEDIATA EN MEMORIA DEL CELULAR (0 milisegundos)
+  const nuevoRegistroLocal = {
+    viajeId: viajeIdParaEnviar || `TEMP_${Date.now()}`,
+    tt: ident,
+    bolsones: totalBolsLocal,
+    producto1: p1,
+    cant1: c1,
+    producto2: p2 || '—',
+    cant2: c2 || 0,
+    productos: `${p1}: ${c1}${p2 && p2 !== '—' ? ' | ' + p2 + ': ' + c2 : ''}`,
+    fechaHora: fHora,
+    puesto: puestoActual,
+    nave: naveSeleccionada
+  };
+
+  // Se agrega a la memoria de la app para que aparezca de inmediato en la pestaña Turno
+  if (dbGlobal[puestoActual]) {
+    dbGlobal[puestoActual].push(nuevoRegistroLocal);
+  }
+
+  // Si fue en Labarthe, elimina de inmediato el botón de la pantalla para que no se pueda volver a tocar
+  if (puestoActual === 'labarthe') {
+    viajeIdHeredadoLabarthe = "";
+    renderListaTTsEnTransitoLabarthe();
+  }
+
+  irAPuestos();
+  showToast("⏳ Enviando registro al servidor...", false);
 
   const payload = {
     action: isDesp ? 'registroDespacho' : 'registroDescarga',
@@ -1082,16 +1099,13 @@ async function ejecutarGuardadoFinalDebounced() {
       producto2: p2 || '—',
       cant2: c2 || 0,
       fechaHora: fHora,
-      viajeId: (puestoActual === 'labarthe') ? viajeIdHeredadoLabarthe : '',
+      viajeId: viajeIdParaEnviar,
       idempotencyKey: idempKey
     }
   };
 
   const registroCompleto = { payload, fotos: fotosASubir, idempotencyKey: idempKey, fechaHora: fHora };
 
-  irAPuestos();
-
-  // INTENTO DIRECTO CON TIMEOUT DE 8 SEGUNDOS
   if (navigator.onLine) {
     try {
       const res = await fetchConTimeout(GAS_URL, {
@@ -1102,19 +1116,21 @@ async function ejecutarGuardadoFinalDebounced() {
 
       const data = await res.json();
       if (data.ok) {
-        showToast("✅ Registro Guardado Exitosamente");
-        subirFotosEnColaSegundoPlano(data.viajeId, puestoActual, naveSeleccionada, fotosASubir);
-        cargarDatosDeNave(naveSeleccionada, true);
+        showToast(data.duplicadoEvitado ? "⚠️ Esta unidad ya estaba registrada" : "✅ Registro Guardado Exitosamente");
+        if (data.viajeId && !data.duplicadoEvitado) {
+          subirFotosEnColaSegundoPlano(data.viajeId, puestoActual, naveSeleccionada, fotosASubir);
+        }
+        await cargarDatosDeNave(naveSeleccionada, true);
+        isSavingLocked = false;
         return;
       }
-    } catch(e) {
-      // Si la grúa bloqueó la señal o el timeout venció, cae automáticamente al respaldo local
-    }
+    } catch(e) {}
   }
 
-  // RESPALDO SEGURO EN EL DISPOSITIVO
+  // Si no hay red, queda respaldado en IndexedDB sin duplicar
   await guardarEnIndexedDB(registroCompleto);
   showToast("🟠 Guardado en Celular (Sin señal). Se enviará solo.", true);
+  isSavingLocked = false;
 }
 
 // ============================================================
