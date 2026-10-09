@@ -597,20 +597,31 @@
 
             <!-- PÁGINA 7: CONDUCTORES -->
             <div id="pageConductores" class="page-container" style="display:none;">
-                <div class="card" style="max-width: 600px;">
-                    <div class="card-head"><h3>Gestionar Conductores y Unidades Autorizadas</h3></div>
+                <div class="card" style="max-width: 650px;">
+                    <div class="card-head">
+                        <h3>👤 Gestionar Conductores y Unidades Autorizadas</h3>
+                        <span id="badgeNaveConductores" style="font-size:12px; font-weight:900; color:#0369a1; background:#e0f2fe; padding:4px 10px; border-radius:6px; border:1px solid #bae6fd;">
+                            Viendo: NAVE 1
+                        </span>
+                    </div>
                     <div style="padding: 20px;">
                         <div style="margin-bottom: 12px;">
-                            <label style="font-weight:bold; display:block; margin-bottom:4px;">Nombre Completo</label>
-                            <input type="text" id="addCondNombre" style="width:100%; padding:10px; border:2px solid var(--border); border-radius:6px;">
+                            <label style="font-weight:bold; display:block; margin-bottom:4px;">Nombre Completo del Conductor</label>
+                            <input type="text" id="addCondNombre" placeholder="Ej: JUAN PEREZ" style="width:100%; padding:10px; border:2px solid var(--border); border-radius:6px; font-weight:bold;">
                         </div>
                         <div style="margin-bottom: 16px;">
-                            <label style="font-weight:bold; display:block; margin-bottom:4px;">N° de Placa</label>
-                            <input type="text" id="addCondPlaca" style="width:100%; padding:10px; border:2px solid var(--border); border-radius:6px; text-transform:uppercase;">
+                            <label style="font-weight:bold; display:block; margin-bottom:4px;">N° de Placa del Camión</label>
+                            <input type="text" id="addCondPlaca" placeholder="Ej: AFB890" style="width:100%; padding:10px; border:2px solid var(--border); border-radius:6px; text-transform:uppercase; font-weight:bold;">
                         </div>
-                        <button class="btn-sm" style="background:var(--blue-btn); color:white; width:100%; padding:12px; justify-content:center;" onclick="registrarConductor()">➕ Agregar Conductor</button>
+                        <button class="btn-sm" id="btnGuardarCond" style="background:var(--blue-btn); color:white; width:100%; padding:12px; justify-content:center; font-size:14px;" onclick="registrarConductor()">➕ Agregar Conductor a esta Nave</button>
+                        
                         <hr style="margin: 20px 0; border:0; border-top:2px solid #e2e8f0;">
-                        <div id="divListaConductores"></div>
+                        
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <strong style="color:var(--navy); font-size:13px;">Relación de Conductores Activos:</strong>
+                            <button class="btn-sm" onclick="syncConductoresUI(true)">🔄 Recargar Lista</button>
+                        </div>
+                        <div id="divListaConductores" style="max-height:380px; overflow-y:auto; padding-right:5px;"></div>
                     </div>
                 </div>
             </div>
@@ -688,7 +699,14 @@
         </div>
     </main>
 </div>
-
+<!-- VENTANA EMERGENTE DE CARGA RÁPIDA -->
+<div id="loadingOverlayCCTV" style="position:fixed; inset:0; background:rgba(15,23,42,0.65); display:none; align-items:center; justify-content:center; z-index:20005;">
+    <div style="background:white; padding:25px 35px; border-radius:16px; text-align:center; box-shadow:0 15px 35px rgba(0,0,0,0.5); border:3px solid #0284c7; max-width:380px; width:85%;">
+        <div style="font-size:2.8rem; margin-bottom:10px; animation: pulseWarnAudio 1s infinite alternate;">⏳</div>
+        <div style="font-weight:900; font-size:16px; color:#0f172a;" id="loadingOverlayTitle">Cargando Conductores...</div>
+        <div style="font-size:12px; color:#64748b; font-weight:bold; margin-top:5px;" id="loadingOverlaySub">Sincronizando relación de conductores con la nave...</div>
+    </div>
+</div>
 <!-- MODAL VISUALIZADOR DE FOTOS -->
 <div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)cerrarModal()">
     <div class="modal-box">
@@ -898,6 +916,10 @@
         document.getElementById('clock').textContent = d.toLocaleDateString('es-PE') + ' ' + d.toLocaleTimeString('es-PE');
     }
 
+    // 1. Memoria rápida en caché para que al cambiar de nave cargue de inmediato
+    let conductoresCachePorNave = { nave1: null, nave2: null };
+
+    // 2. Al hacer clic en Nave 1 o Nave 2 arriba, sincroniza la pestaña si estás en Conductores
     function seleccionarNaveCCTV(naveKey) {
         naveActivaCCTV = naveKey;
         localStorage.setItem("iqbf_cctv_nave_activa", naveKey);
@@ -911,6 +933,11 @@
 
         renderizarTodoDashboard();
         if (document.getElementById('pageKpis').style.display === 'block') renderKpisPage();
+        
+        // SI ESTÁS EN LA PESTAÑA CONDUCTORES, MUESTRA LA CARGA Y ACTUALIZA DE INMEDIATO
+        if (document.getElementById('pageConductores').style.display === 'block') {
+            syncConductoresUI();
+        }
     }
 
     async function sincronizarServidor(silencioso = false) {
@@ -1793,21 +1820,75 @@
     // ========================================================================
     // GESTIÓN DE CONDUCTORES Y PLACAS
     // ========================================================================
-    function syncConductoresUI() {
+   // 3. Sincronizador con ventana emergente de carga y protección de confusión
+    function syncConductoresUI(forzarRecarga = false) {
+        const contenedor = document.getElementById('divListaConductores');
+        const badge = document.getElementById('badgeNaveConductores');
+        const overlay = document.getElementById('loadingOverlayCCTV');
+        const nomBuque = buquesInfo[naveActivaCCTV].nombre || (naveActivaCCTV === 'nave1' ? 'NAVE 1' : 'NAVE 2');
+
+        if (badge) badge.textContent = `Viendo: ${nomBuque.toUpperCase()}`;
+
+        // Limpia la lista previa de inmediato para no confundir al operador con datos del otro buque
+        if (contenedor) {
+            contenedor.innerHTML = `
+                <div style="text-align:center; padding:35px 20px; color:#0284c7; background:#f0f9ff; border-radius:10px; border:2px dashed #bae6fd;">
+                    <div style="font-size:2rem; margin-bottom:6px;">⏳</div>
+                    <strong>Cargando conductores de ${nomBuque}...</strong>
+                    <div style="font-size:11px; color:#64748b; margin-top:4px;">Consultando base de datos en Google Sheets</div>
+                </div>
+            `;
+        }
+
+        // Muestra la ventana emergente modal
+        if (overlay) {
+            document.getElementById('loadingOverlayTitle').textContent = `Cargando Conductores de ${nomBuque}`;
+            document.getElementById('loadingOverlaySub').textContent = `Sincronizando con el archivo Excel correspondiente...`;
+            overlay.style.display = 'flex';
+        }
+
         fetch(`${gasUrl}?action=obtenerConductores&nave=${naveActivaCCTV}`)
         .then(r => r.json())
         .then(d => {
             if (d.ok) {
-                document.getElementById('divListaConductores').innerHTML = (d.conductores || []).map(c => `
-                    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #e2e8f0; align-items:center;">
-                        <div><strong>${c.nombre}</strong> (Placa: ${c.placa})</div>
-                        <button class="btn-sm" style="color:#b91c1c;" onclick="eliminarConductor('${c.nombre}','${c.placa}')">Quitar</button>
-                    </div>
-                `).join('') || '<div style="color:var(--muted); padding:10px;">Sin conductores registrados en esta nave.</div>';
+                const lista = d.conductores || [];
+                conductoresCachePorNave[naveActivaCCTV] = lista;
+                renderListaConductoresUI(lista, nomBuque);
+            } else {
+                if (contenedor) contenedor.innerHTML = `<div style="color:var(--red); padding:15px; text-align:center;">⚠️ Error al obtener conductores.</div>`;
             }
+        })
+        .catch(() => {
+            if (contenedor) contenedor.innerHTML = `<div style="color:var(--red); padding:15px; text-align:center;">⚠️ Error de conexión con el servidor.</div>`;
+        })
+        .finally(() => {
+            // Oculta la ventana emergente apenas terminan de llegar los datos
+            if (overlay) overlay.style.display = 'none';
         });
     }
+    function renderListaConductoresUI(lista, nomBuque) {
+        const contenedor = document.getElementById('divListaConductores');
+        if (!contenedor) return;
 
+        if (lista.length === 0) {
+            contenedor.innerHTML = `
+                <div style="text-align:center; padding:25px; color:var(--muted); background:#f8fafc; border-radius:8px;">
+                    ● Sin conductores registrados para <strong>${nomBuque}</strong>. Agregue el primero arriba.
+                </div>
+            `;
+            return;
+        }
+
+        contenedor.innerHTML = lista.map((c, idx) => `
+            <div style="display:flex; justify-content:space-between; padding:10px 12px; border-bottom:1px solid #e2e8f0; align-items:center; background:${idx % 2 === 0 ? '#ffffff' : '#f8fafc'}; border-radius:6px; margin-bottom:4px;">
+                <div>
+                    <strong style="color:var(--navy); font-size:13px;">${c.nombre}</strong><br>
+                    <span style="color:var(--muted); font-size:12px; font-weight:bold;">Placa: <span style="color:#0284c7;">${c.placa}</span></span>
+                </div>
+                <button class="btn-sm" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; padding:6px 12px;" onclick="eliminarConductor('${c.nombre}','${c.placa}')">Quitar</button>
+            </div>
+        `).join('');
+    }
     function registrarConductor() {
         const nom = document.getElementById('addCondNombre').value.trim();
         const pla = document.getElementById('addCondPlaca').value.trim().toUpperCase();
