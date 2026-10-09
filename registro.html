@@ -31,7 +31,7 @@ html, body {
   font-size: var(--font-base);
 }
 
-/* Pantalla de Login en Bloqueo Total (Evita que se vea nada de fondo) */
+/* Pantalla de Login en Bloqueo Total */
 #screenLogin {
   position: fixed; inset: 0; z-index: 99999;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -196,14 +196,14 @@ html, body {
 </head>
 <body>
 
-<!-- PANTALLA 1: LOGIN (OCULTA TODO HASTA PONER LA CLAVE) -->
+<!-- PANTALLA 1: LOGIN (PANTALLA COMPLETA INFRANQUEABLE) -->
 <div id="screenLogin">
   <div class="login-box">
     <div style="font-size:3.5rem; margin-bottom:8px;">📦</div>
     <h1 style="color:#0284c7; font-size:2rem; font-weight:900; margin-bottom:4px;">IQBF Control</h1>
     <p style="color:#64748b; font-weight:bold; margin-bottom:18px;">Registro Portuario de Bolsones</p>
     <input type="password" id="pwInput" placeholder="••••••••" autocomplete="current-password" onkeypress="if(event.key === 'Enter') doLogin()">
-    <button class="btn-login" onclick="doLogin()">INGRESAR</button>
+    <button class="btn-login" id="btnSubmitLogin" onclick="doLogin()">INGRESAR</button>
     <div id="loginErr" style="color:#dc2626; font-weight:bold; margin-top:12px; min-height:1.2rem;"></div>
   </div>
 </div>
@@ -224,9 +224,10 @@ html, body {
     <button class="btn-tool" onclick="ajustarFuente(-1)">A-</button>
     <button class="btn-tool" onclick="ajustarFuente(1)">A+</button>
   </div>
-  <div style="display:flex; align-items:center; gap:8px;">
-    <button class="btn-tool" onclick="cambiarNaveManual()" style="background:#0369a1;">🚢 Cambiar Nave</button>
+  <div style="display:flex; align-items:center; gap:6px;">
+    <button class="btn-tool" onclick="cambiarNaveManual()" style="background:#0369a1;">🚢 Buque</button>
     <div id="netStatusBadge"><span class="net-dot" id="netDot"></span><span id="netText">En Línea</span></div>
+    <button class="btn-tool" onclick="cerrarSesionInspector()" style="background:#dc2626;">🚪 Salir</button>
   </div>
 </div>
 
@@ -422,11 +423,11 @@ html, body {
 
 <script>
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxZ4qwyvvuWd_IfedsWR1R65niSwlYPKtgcDU_e5f0H4P1cCbOvIGDICksXe3tIdDrfrw/exec";
-const SESSION_KEY = "iqbf_agent_persistent_v7";
-const IDB_NAME = "iqbf_offline_db";
-const IDB_STORE = "pendientes_envio";
+const SESSION_ACTIVE_KEY = "iqbf_active_tab_session_v7";
+const IDB_NAME = "iqbf_port_offline_db";
+const IDB_STORE = "pendientes_puerto";
 
-let naveSeleccionada = localStorage.getItem("iqbf_nave_activa") || null;
+let naveSeleccionada = sessionStorage.getItem("iqbf_nave_activa_session") || null;
 let nombreBuqueActivo = "—";
 let puestoActual = null;
 let productosNave = [];
@@ -452,7 +453,7 @@ let fotosDespacho = [];
 let isSavingLocked = false;
 let isSyncingOfflineQueue = false;
 
-// CONTROLADOR MAESTRO DE PANTALLAS (APAGA TODAS Y MUESTRA SOLO UNA)
+// CONTROLADOR DE PANTALLAS MAESTRO (AISLAMIENTO TOTAL)
 function mostrarPantalla(id) {
   const pantallas = [
     'screenSelectNave',
@@ -468,18 +469,21 @@ function mostrarPantalla(id) {
 
   const nav = document.querySelector('.bottom-nav');
   const hdr = document.getElementById('naveHeaderSticky');
-  const esLoginONave = (id === 'screenSelectNave');
+  const esExclusivo = (id === 'screenSelectNave' || !naveSeleccionada);
 
-  if (nav) nav.style.display = esLoginONave ? 'none' : 'flex';
-  if (hdr) hdr.style.display = (esLoginONave || !naveSeleccionada) ? 'none' : 'block';
+  if (nav) nav.style.display = esExclusivo ? 'none' : 'flex';
+  if (hdr) hdr.style.display = esExclusivo ? 'none' : 'block';
 }
 
+// GESTOR INDEXEDDB CON RESISTENCIA TOTAL
 function openIDB() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(IDB_NAME, 1);
+    const req = indexedDB.open(IDB_NAME, 2);
     req.onupgradeneeded = (e) => {
       const db = e.target.result;
-      if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE, { keyPath: "idempotencyKey" });
+      if (!db.objectStoreNames.contains(IDB_STORE)) {
+        db.createObjectStore(IDB_STORE, { keyPath: "idempotencyKey" });
+      }
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -523,30 +527,33 @@ async function eliminarDeIndexedDB(k) {
   } catch(e) {}
 }
 
+// CLAVE DE IDEMPOTENCIA INMUTABLE (SELLADA EN EL INSTANTE DE CREACIÓN)
 function generarClaveIdempotencia(puesto, nave, ident, p1, c1, p2, c2) {
-  const d = new Date();
-  const v = `${d.getFullYear()}${d.getMonth() + 1}${d.getDate()}_${d.getHours()}_${d.getMinutes()}`;
-  const str = `${puesto}_${nave}_${ident}_${p1}_${c1}_${p2}_${c2}_${v}`.replace(/\s+/g, '').toUpperCase();
+  const ts = Date.now();
+  const raw = `${puesto}_${nave}_${ident}_${p1}_${c1}_${p2}_${c2}_${ts}`.replace(/\s+/g, '').toUpperCase();
   let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+  for (let i = 0; i < raw.length; i++) {
+    hash = ((hash << 5) - hash) + raw.charCodeAt(i);
     hash |= 0;
   }
-  return `IDEMP_${Math.abs(hash)}_${v}`;
+  return `IDEMP_${Math.abs(hash)}_${ts}`;
 }
 
-function cambiarTema() {
-  document.body.classList.toggle('mode-night');
-  localStorage.setItem('iqbf_theme', document.body.classList.contains('mode-night') ? 'night' : 'day');
+// FETCH CON TIMEOUT DE 8 SEGUNDOS (CORTA LA CONEXIÓN MUERTA EN MUELLE)
+async function fetchConTimeout(url, options = {}, timeoutMs = 8000) {
+  const controller = new AbortController();
+  const idTimer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const respuesta = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(idTimer);
+    return respuesta;
+  } catch (error) {
+    clearTimeout(idTimer);
+    throw error;
+  }
 }
 
-let nivelFuente = 16;
-function ajustarFuente(delta) {
-  nivelFuente = Math.min(22, Math.max(14, nivelFuente + delta));
-  document.documentElement.style.setProperty('--font-base', nivelFuente + 'px');
-  localStorage.setItem('iqbf_font_size', nivelFuente);
-}
-
+// INICIALIZACIÓN: EXIGE LOGIN CADA VEZ QUE SE ENTRA A LA APLICACIÓN
 window.onload = async () => {
   if (localStorage.getItem('iqbf_theme') === 'night') document.body.classList.add('mode-night');
   const fSize = localStorage.getItem('iqbf_font_size');
@@ -556,7 +563,9 @@ window.onload = async () => {
   configurarEventosRed();
   actualizarBadgeColaOffline();
 
-  if (verificarSesionValida()) {
+  // VALIDACIÓN DE SESIÓN: Si no hay sesión en la pestaña, abre el Login estrictamente
+  const sesionActiva = sessionStorage.getItem(SESSION_ACTIVE_KEY);
+  if (sesionActiva === "true") {
     document.getElementById('screenLogin').style.display = 'none';
     if (!naveSeleccionada) {
       mostrarSeleccionNave();
@@ -568,68 +577,45 @@ window.onload = async () => {
   }
 
   setInterval(actualizarRelojFinTurno, 1000);
+  setInterval(sincronizarColaOfflineSilencioso, 20000);
 };
 
-function obtenerTurnoActual() {
-  const ahora = new Date();
-  const totalMins = ahora.getHours() * 60 + ahora.getMinutes();
-  const startDiurno = 6 * 60 + 50; 
-  const endDiurno = 18 * 60 + 50;  
-  let fechaClave = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
-  let tipo = (totalMins >= startDiurno && totalMins < endDiurno) ? "diurno" : "nocturno";
-  if (tipo === "nocturno" && totalMins < startDiurno) {
-    const ayer = new Date(ahora);
-    ayer.setDate(ahora.getDate() - 1);
-    fechaClave = `${ayer.getFullYear()}-${String(ayer.getMonth() + 1).padStart(2, '0')}-${String(ayer.getDate()).padStart(2, '0')}`;
-  }
-  return `${fechaClave}_${tipo}`;
-}
-
-function verificarSesionValida() {
-  return localStorage.getItem(SESSION_KEY) === obtenerTurnoActual();
-}
-
-function actualizarRelojFinTurno() {
-  const ahora = new Date();
-  const mins = ahora.getHours() * 60 + ahora.getMinutes();
-  let fin = new Date(ahora);
-  if (mins >= 410 && mins < 1130) fin.setHours(18, 50, 0, 0);
-  else {
-    if (mins >= 1130) fin.setDate(fin.getDate() + 1);
-    fin.setHours(6, 50, 0, 0);
-  }
-  const diffSecs = Math.floor((fin - ahora) / 1000);
-  const banner = document.getElementById('shiftCountdownBanner');
-  const clock = document.getElementById('clockShift');
-  if (diffSecs <= 300 && diffSecs > 0) {
-    banner.style.display = 'block';
-    clock.textContent = `${String(Math.floor(diffSecs / 60)).padStart(2, '0')}:${String(diffSecs % 60).padStart(2, '0')}`;
-  } else {
-    banner.style.display = 'none';
+function cerrarSesionInspector() {
+  if (confirm("¿Cerrar sesión de inspector?")) {
+    sessionStorage.clear();
+    location.reload();
   }
 }
 
 async function doLogin() {
   const pw = document.getElementById('pwInput').value.trim();
   const err = document.getElementById('loginErr');
+  const btn = document.getElementById('btnSubmitLogin');
+
+  if (!pw) return (err.textContent = "Ingrese la contraseña");
+
   err.textContent = "⌛ Verificando...";
+  btn.disabled = true;
 
   try {
-    const res = await fetch(GAS_URL, {
+    const res = await fetchConTimeout(GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action: 'verificarPassword', data: { tipo: 'registros', password: pw } })
-    });
+    }, 7000);
+
     const data = await res.json();
     if (data.ok && data.valid) {
-      localStorage.setItem(SESSION_KEY, obtenerTurnoActual());
+      sessionStorage.setItem(SESSION_ACTIVE_KEY, "true");
       document.getElementById('screenLogin').style.display = 'none';
       mostrarSeleccionNave();
     } else {
       err.textContent = "❌ Contraseña incorrecta";
     }
   } catch(e) {
-    err.textContent = "⚠️ Error de conexión";
+    err.textContent = "⚠️ Error de red o servidor ocupado";
+  } finally {
+    btn.disabled = false;
   }
 }
 
@@ -637,8 +623,8 @@ async function mostrarSeleccionNave() {
   mostrarPantalla('screenSelectNave');
   try {
     const [r1, r2] = await Promise.all([
-      fetch(`${GAS_URL}?action=obtenerProductos&nave=nave1`).then(r => r.json()),
-      fetch(`${GAS_URL}?action=obtenerProductos&nave=nave2`).then(r => r.json())
+      fetchConTimeout(`${GAS_URL}?action=obtenerProductos&nave=nave1`, {}, 6000).then(r => r.json()),
+      fetchConTimeout(`${GAS_URL}?action=obtenerProductos&nave=nave2`, {}, 6000).then(r => r.json())
     ]);
     if (r1.ok && r1.buqueNombre) {
       document.getElementById('btnCardNave1Title').textContent = r1.buqueNombre;
@@ -654,14 +640,14 @@ async function mostrarSeleccionNave() {
 function cambiarNaveManual() {
   if (confirm("¿Deseas cambiar a la otra nave de operaciones?")) {
     naveSeleccionada = null;
-    localStorage.removeItem("iqbf_nave_activa");
+    sessionStorage.removeItem("iqbf_nave_activa_session");
     mostrarSeleccionNave();
   }
 }
 
 function fijarNaveTurno(naveKey) {
   naveSeleccionada = naveKey;
-  localStorage.setItem("iqbf_nave_activa", naveKey);
+  sessionStorage.setItem("iqbf_nave_activa_session", naveKey);
   iniciarAplicacionConNave(naveKey);
 }
 
@@ -673,9 +659,9 @@ async function iniciarAplicacionConNave(naveKey) {
 async function cargarDatosDeNave(naveKey, silencioso = false) {
   try {
     const [pRes, cRes, fRes] = await Promise.all([
-      fetch(`${GAS_URL}?action=obtenerProductos&nave=${naveKey}`).then(r => r.json()),
-      fetch(`${GAS_URL}?action=obtenerConductores&nave=${naveKey}`).then(r => r.json()),
-      fetch(`${GAS_URL}?action=obtenerFilasExcel&nave=${naveKey}`).then(r => r.json())
+      fetchConTimeout(`${GAS_URL}?action=obtenerProductos&nave=${naveKey}`, {}, 7000).then(r => r.json()),
+      fetchConTimeout(`${GAS_URL}?action=obtenerConductores&nave=${naveKey}`, {}, 7000).then(r => r.json()),
+      fetchConTimeout(`${GAS_URL}?action=obtenerFilasExcel&nave=${naveKey}`, {}, 7000).then(r => r.json())
     ]);
 
     if (pRes.ok) {
@@ -704,7 +690,7 @@ async function cargarDatosDeNave(naveKey, silencioso = false) {
       if (puestoActual === 'labarthe') renderListaTTsEnTransitoLabarthe();
     }
   } catch(e) {
-    if (!silencioso) showToast("⚠️ Sin red. Mostrando datos locales");
+    if (!silencioso) showToast("⚠️ Sin red. Operando con datos locales");
   }
 }
 
@@ -760,7 +746,6 @@ function entrarPuesto(puesto) {
   }
 }
 
-// BOTÓN INFERIOR: REGISTRAR (VUELVE A LA LISTA DE PUESTOS)
 function irAPuestos() {
   puestoActual = null;
   document.getElementById('lblPuestoActivoBadge').textContent = "—";
@@ -769,7 +754,6 @@ function irAPuestos() {
   mostrarPantalla('screenSelectPuesto');
 }
 
-// BOTÓN INFERIOR: TURNO (ABRE EL HISTORIAL)
 function irATurno() {
   document.getElementById('btnNavPuestos').classList.remove('active');
   document.getElementById('btnNavHist').classList.add('active');
@@ -777,14 +761,13 @@ function irATurno() {
   renderHistorialTurno();
 }
 
-// BOTÓN INFERIOR: ACTUALIZAR (SINCRONIZA EN VIVO CON GOOGLE SHEETS)
 async function actualizarDatosManual() {
-  showToast("🔄 Actualizando con Excel...");
+  showToast("🔄 Sincronizando con Excel...");
   if (naveSeleccionada) {
     await cargarDatosDeNave(naveSeleccionada, false);
   }
   await sincronizarColaOfflineSilencioso();
-  showToast("✅ Datos actualizados");
+  showToast("✅ Sincronización finalizada");
 }
 
 function construirTeclados() {
@@ -1018,7 +1001,6 @@ function abrirConfirmacionModal() {
     if (fotosDescarga.length < 2) return showToast("⚠️ Requiere mínimo 2 fotos de evidencia");
   }
 
-  // AHORA MUESTRA EL NOMBRE REAL DEL BUQUE
   const rows = [
     ['NAVE', nombreBuqueActivo],
     ['PUESTO', puestoActual.toUpperCase()]
@@ -1047,15 +1029,32 @@ function cerrarConfirmacionModal() {
   document.getElementById('modalConfirm').classList.remove('open');
 }
 
+// ============================================================
+// GUARDADO CON CLAVE DE IDEMPOTENCIA INMUTABLE Y TIMEOUT
+// ============================================================
 async function ejecutarGuardadoFinalDebounced() {
   if (isSavingLocked) return;
   isSavingLocked = true;
-  const btn = document.getElementById('btnEjecutarGuardadoModal');
-  btn.disabled = true;
-  btn.textContent = "⏳ Registrando...";
-  setTimeout(() => { isSavingLocked = false; btn.disabled = false; btn.textContent = "Sí, Guardar"; }, 2500);
+
+  const btnModal = document.getElementById('btnEjecutarGuardadoModal');
+  const btnMuelle = document.getElementById('btnGuardarDescarga');
+  const btnDespacho = document.getElementById('btnGuardarDespacho');
+
+  btnModal.disabled = true;
+  btnModal.textContent = "⏳ Registrando...";
+  if (btnMuelle) btnMuelle.disabled = true;
+  if (btnDespacho) btnDespacho.disabled = true;
+
+  setTimeout(() => {
+    isSavingLocked = false;
+    btnModal.disabled = false;
+    btnModal.textContent = "Sí, Guardar";
+    if (btnMuelle) btnMuelle.disabled = false;
+    if (btnDespacho) btnDespacho.disabled = false;
+  }, 2500);
 
   cerrarConfirmacionModal();
+
   const isDesp = (puestoActual === 'despacho');
   const d = new Date();
   const pad = n => String(n).padStart(2, '0');
@@ -1067,6 +1066,8 @@ async function ejecutarGuardadoFinalDebounced() {
   const p2 = isDesp ? prodDesp2Seleccionado : prod2Seleccionado;
   const c2 = isDesp ? cantDesp2Bols : cant2Bols;
   const fotosASubir = isDesp ? [...fotosDespacho] : [...fotosDescarga];
+
+  // CLAVE GENERADA EXACTAMENTE UNA SOLA VEZ (NUNCA CAMBIA EN REINTENTOS)
   const idempKey = generarClaveIdempotencia(puestoActual, naveSeleccionada, ident, p1, c1, p2, c2);
 
   const payload = {
@@ -1086,15 +1087,19 @@ async function ejecutarGuardadoFinalDebounced() {
     }
   };
 
+  const registroCompleto = { payload, fotos: fotosASubir, idempotencyKey: idempKey, fechaHora: fHora };
+
   irAPuestos();
 
+  // INTENTO DIRECTO CON TIMEOUT DE 8 SEGUNDOS
   if (navigator.onLine) {
     try {
-      const res = await fetch(GAS_URL, {
+      const res = await fetchConTimeout(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(payload)
-      });
+      }, 8000);
+
       const data = await res.json();
       if (data.ok) {
         showToast("✅ Registro Guardado Exitosamente");
@@ -1102,28 +1107,33 @@ async function ejecutarGuardadoFinalDebounced() {
         cargarDatosDeNave(naveSeleccionada, true);
         return;
       }
-    } catch(e) {}
+    } catch(e) {
+      // Si la grúa bloqueó la señal o el timeout venció, cae automáticamente al respaldo local
+    }
   }
 
-  await guardarEnIndexedDB({ payload, fotos: fotosASubir, idempotencyKey: idempKey, fechaHora: fHora });
+  // RESPALDO SEGURO EN EL DISPOSITIVO
+  await guardarEnIndexedDB(registroCompleto);
   showToast("🟠 Guardado en Celular (Sin señal). Se enviará solo.", true);
 }
 
 async function subirFotosEnColaSegundoPlano(viajeId, puesto, nave, listaFotos) {
+  if (!viajeId) return;
   for (let i = 0; i < listaFotos.length; i++) {
     try {
-      await fetch(GAS_URL, {
+      await fetchConTimeout(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           action: 'subirFotoIndividual',
           data: { viajeId, puesto, nave, fotoBase64: listaFotos[i], index: i }
         })
-      });
+      }, 10000);
     } catch(e) {}
   }
 }
 
+// SINCRONIZACIÓN AUTOMÁTICA UNION-MERGE
 function configurarEventosRed() {
   window.addEventListener('online', () => { actualizarBadgeRed(true); sincronizarColaOfflineSilencioso(); });
   window.addEventListener('offline', () => { actualizarBadgeRed(false); });
@@ -1153,15 +1163,18 @@ async function sincronizarColaOfflineSilencioso() {
     const pend = await obtenerTodosDeIndexedDB();
     for (const item of pend) {
       try {
-        const res = await fetch(GAS_URL, {
+        const res = await fetchConTimeout(GAS_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(item.payload)
-        });
+        }, 8000);
+
         const data = await res.json();
         if (data.ok) {
           await eliminarDeIndexedDB(item.idempotencyKey);
-          subirFotosEnColaSegundoPlano(data.viajeId, item.payload.data.puesto, item.payload.data.nave, item.fotos);
+          if (data.viajeId) {
+            subirFotosEnColaSegundoPlano(data.viajeId, item.payload.data.puesto, item.payload.data.nave, item.fotos);
+          }
         }
       } catch(err) {}
     }
@@ -1227,6 +1240,38 @@ function showToast(msg, isWarn = false) {
   t.style.background = isWarn ? "#ea580c" : "#0f172a";
   t.style.display = "block";
   setTimeout(() => { t.style.display = "none"; }, 3200);
+}
+
+function cambiarTema() {
+  document.body.classList.toggle('mode-night');
+  localStorage.setItem('iqbf_theme', document.body.classList.contains('mode-night') ? 'night' : 'day');
+}
+
+let nivelFuente = 16;
+function ajustarFuente(delta) {
+  nivelFuente = Math.min(22, Math.max(14, nivelFuente + delta));
+  document.documentElement.style.setProperty('--font-base', nivelFuente + 'px');
+  localStorage.setItem('iqbf_font_size', nivelFuente);
+}
+
+function actualizarRelojFinTurno() {
+  const ahora = new Date();
+  const mins = ahora.getHours() * 60 + ahora.getMinutes();
+  let fin = new Date(ahora);
+  if (mins >= 410 && mins < 1130) fin.setHours(18, 50, 0, 0);
+  else {
+    if (mins >= 1130) fin.setDate(fin.getDate() + 1);
+    fin.setHours(6, 50, 0, 0);
+  }
+  const diffSecs = Math.floor((fin - ahora) / 1000);
+  const banner = document.getElementById('shiftCountdownBanner');
+  const clock = document.getElementById('clockShift');
+  if (diffSecs <= 300 && diffSecs > 0) {
+    banner.style.display = 'block';
+    clock.textContent = `${String(Math.floor(diffSecs / 60)).padStart(2, '0')}:${String(diffSecs % 60).padStart(2, '0')}`;
+  } else {
+    banner.style.display = 'none';
+  }
 }
 </script>
 </body>
