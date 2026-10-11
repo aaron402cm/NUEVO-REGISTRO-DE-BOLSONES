@@ -1021,11 +1021,19 @@
         location.reload();
     }
 
+    // ========================================================================
+    // 1. ACTIVACIÓN AUTOMÁTICA AL ABRIR EL PANEL (SIN NECESIDAD DE HACER CLIC)
+    // ========================================================================
     function mostrarDashboard() {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('appLayout').style.display = 'flex';
         backgroundWorker.postMessage('start');
         cargarVoces();
+        
+        // Activa de inmediato la nave seleccionada en pantalla al entrar
+        seleccionarNaveCCTV(naveActivaCCTV);
+        
+        // Descarga los datos frescos de Google Sheets de inmediato
         sincronizarServidor();
     }
 
@@ -1055,11 +1063,15 @@
         if (document.getElementById('pageConductores').style.display === 'block') syncConductoresUI();
     }
 
-    // SINCRONIZACIÓN AISLADA PARA EVITAR ERRORES DE CONEXIÓN PARALELOS
+    // ========================================================================
+    // 2. SINCRONIZADOR QUE PINTA LOS DATOS AUTOMÁTICAMENTE AL TERMINAR
+    // ========================================================================
     async function sincronizarServidor(silencioso = false) {
-        if (!silencioso) document.getElementById('syncStatus').textContent = "Sincronizando...";
+        const syncLabel = document.getElementById('syncStatus');
+        if (!silencioso && syncLabel) syncLabel.textContent = "Sincronizando...";
 
         try {
+            // Consultas independientes para que un buque no bloquee al otro
             const resP1 = await fetch(`${gasUrl}?action=obtenerProductos&nave=nave1`).then(r => r.json()).catch(() => ({ ok: false }));
             const resP2 = await fetch(`${gasUrl}?action=obtenerProductos&nave=nave2`).then(r => r.json()).catch(() => ({ ok: false }));
             const resF1 = await fetch(`${gasUrl}?action=obtenerFilasExcel&nave=nave1`).then(r => r.json()).catch(() => ({ ok: false }));
@@ -1081,14 +1093,19 @@
             if (resF1.ok) clasificarFilasPorNave('nave1', resF1.filas || []);
             if (resF2.ok) clasificarFilasPorNave('nave2', resF2.filas || []);
 
+            // Actualiza los contadores de las dos tarjetas superiores
             actualizarCommandDeckCards();
+
+            // Refresca la pantalla automáticamente para la nave activa
+            seleccionarNaveCCTV(naveActivaCCTV);
+
+            // Procesa alertas y demoras
             procesarNuevosRegistrosVoz([...(resF1.filas || []), ...(resF2.filas || [])]);
             analizarAlertasDiscrepanciasYDemoras();
-            renderizarTodoDashboard();
 
-            document.getElementById('syncStatus').textContent = "Sincronizado: " + new Date().toLocaleTimeString('es-PE');
+            if (syncLabel) syncLabel.textContent = "Sincronizado: " + new Date().toLocaleTimeString('es-PE');
         } catch (e) {
-            document.getElementById('syncStatus').textContent = "Sincronizado: " + new Date().toLocaleTimeString('es-PE');
+            if (syncLabel) syncLabel.textContent = "Sincronizado: " + new Date().toLocaleTimeString('es-PE');
         }
     }
 
