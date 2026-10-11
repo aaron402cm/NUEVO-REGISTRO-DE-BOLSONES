@@ -1103,8 +1103,12 @@
                         desactivarSirena();
                         const bannerDiff = document.getElementById('bannerAlertaDiff');
                         if (bannerDiff) {
+                            bannerDiff.className = 'alert-banner warning';
                             bannerDiff.innerHTML = `<div>🔕 SIRENA SILENCIADA GLOBALMENTE POR COORDINADOR (DNI: ${res.muteGlobal.dni}). Discrepancia en revisión.</div>`;
                         }
+                    } else {
+                        // Si el servidor reactivó la alarma o no hay mute global activo
+                        sirenaSilenciada = false;
                     }
                 }
 
