@@ -890,15 +890,17 @@
     let naveActivaCCTV = localStorage.getItem("iqbf_cctv_nave_activa") || 'nave1';
     let naveSiendoEditada = 'nave1';
 
-    let dbNaves = {
+    // CARGA INSTANTÁNEA EN 0.1s DESDE MEMORIA LOCAL (EVITA PANTALLAS EN BLANCO)
+    let dbNaves = JSON.parse(localStorage.getItem('iqbf_cache_dbNaves')) || {
         nave1: { muelle: [], labarthe: [], despacho: [] },
         nave2: { muelle: [], labarthe: [], despacho: [] }
     };
 
-    let catalogoProductos = { nave1: [], nave2: [] };
-    let buquesInfo = {
-        nave1: { nombre: 'Nave 1', muelle: 'Muelle 1A' },
-        nave2: { nombre: 'Nave 2', muelle: 'Muelle 2B' }
+    let catalogoProductos = JSON.parse(localStorage.getItem('iqbf_cache_catalogo')) || { nave1: [], nave2: [] };
+    
+    let buquesInfo = JSON.parse(localStorage.getItem('iqbf_cache_buques')) || {
+        nave1: { nombre: 'LILY GLORY (2A)', muelle: 'Muelle 1A' },
+        nave2: { nombre: 'VICTORIA (11)', muelle: 'Muelle 2B' }
     };
 
     let horaCorteDiurnoStr = "06:50";
@@ -1064,28 +1066,30 @@
     }
 
     // ========================================================================
-    // 2. SINCRONIZADOR QUE PINTA LOS DATOS AUTOMÁTICAMENTE AL TERMINAR
+    // SINCRONIZACIÓN EN PARALELO ULTRA-RÁPIDA (2 A 3 SEGUNDOS)
     // ========================================================================
     async function sincronizarServidor(silencioso = false) {
         const syncLabel = document.getElementById('syncStatus');
         if (!silencioso && syncLabel) syncLabel.textContent = "Sincronizando...";
 
         try {
-            // Consultas independientes para que un buque no bloquee al otro
-            const resP1 = await fetch(`${gasUrl}?action=obtenerProductos&nave=nave1`).then(r => r.json()).catch(() => ({ ok: false }));
-            const resP2 = await fetch(`${gasUrl}?action=obtenerProductos&nave=nave2`).then(r => r.json()).catch(() => ({ ok: false }));
-            const resF1 = await fetch(`${gasUrl}?action=obtenerFilasExcel&nave=nave1`).then(r => r.json()).catch(() => ({ ok: false }));
-            const resF2 = await fetch(`${gasUrl}?action=obtenerFilasExcel&nave=nave2`).then(r => r.json()).catch(() => ({ ok: false }));
+            // LAS 4 CONSULTAS SE DISPARAN SIMULTÁNEAMENTE EN PARALELO CON PROTECCIÓN
+            const [resP1, resP2, resF1, resF2] = await Promise.all([
+                fetch(`${gasUrl}?action=obtenerProductos&nave=nave1`).then(r => r.json()).catch(() => ({ ok: false })),
+                fetch(`${gasUrl}?action=obtenerProductos&nave=nave2`).then(r => r.json()).catch(() => ({ ok: false })),
+                fetch(`${gasUrl}?action=obtenerFilasExcel&nave=nave1`).then(r => r.json()).catch(() => ({ ok: false })),
+                fetch(`${gasUrl}?action=obtenerFilasExcel&nave=nave2`).then(r => r.json()).catch(() => ({ ok: false }))
+            ]);
 
             if (resP1.ok) {
                 catalogoProductos.nave1 = resP1.productos || [];
-                buquesInfo.nave1 = { nombre: resP1.buqueNombre || 'Nave 1', muelle: resP1.buqueMuelle || 'Muelle 1A' };
+                buquesInfo.nave1 = { nombre: resP1.buqueNombre || 'LILY GLORY (2A)', muelle: resP1.buqueMuelle || 'Muelle 1A' };
                 document.getElementById('deckNomNave1').textContent = `🚢 ${buquesInfo.nave1.nombre} (${buquesInfo.nave1.muelle})`;
                 document.getElementById('txtMigrarNave1Nom').textContent = buquesInfo.nave1.nombre;
             }
             if (resP2.ok) {
                 catalogoProductos.nave2 = resP2.productos || [];
-                buquesInfo.nave2 = { nombre: resP2.buqueNombre || 'Nave 2', muelle: resP2.buqueMuelle || 'Muelle 2B' };
+                buquesInfo.nave2 = { nombre: resP2.buqueNombre || 'VICTORIA (11)', muelle: resP2.buqueMuelle || 'Muelle 2B' };
                 document.getElementById('deckNomNave2').textContent = `⚓ ${buquesInfo.nave2.nombre} (${buquesInfo.nave2.muelle})`;
                 document.getElementById('txtMigrarNave2Nom').textContent = buquesInfo.nave2.nombre;
             }
@@ -1093,13 +1097,16 @@
             if (resF1.ok) clasificarFilasPorNave('nave1', resF1.filas || []);
             if (resF2.ok) clasificarFilasPorNave('nave2', resF2.filas || []);
 
-            // Actualiza los contadores de las dos tarjetas superiores
-            actualizarCommandDeckCards();
+            // Guardar en memoria local para que la próxima vez abra en 0.1 segundos
+            localStorage.setItem('iqbf_cache_dbNaves', JSON.stringify(dbNaves));
+            localStorage.setItem('iqbf_cache_catalogo', JSON.stringify(catalogoProductos));
+            localStorage.setItem('iqbf_cache_buques', JSON.stringify(buquesInfo));
 
-            // Refresca la pantalla automáticamente para la nave activa
+            // Actualizar contadores y pintar la pantalla de inmediato
+            actualizarCommandDeckCards();
             seleccionarNaveCCTV(naveActivaCCTV);
 
-            // Procesa alertas y demoras
+            // Alertas
             procesarNuevosRegistrosVoz([...(resF1.filas || []), ...(resF2.filas || [])]);
             analizarAlertasDiscrepanciasYDemoras();
 
