@@ -1059,13 +1059,12 @@ function abrirConfirmacionModal() {
       return;
     }
     
-    // Si no está duplicada, abre el modal normalmente
+    // Si no está duplicada, abre el modal correctamente
     procederAbrirModalConfirmacion(isDesp);
   });
 }
 
 function procederAbrirModalConfirmacion(isDesp) {
-}
   const rows = [
     ['NAVE', nombreBuqueActivo],
     ['PUESTO', puestoActual.toUpperCase()]
