@@ -1167,11 +1167,14 @@ function cerrarConfirmacionModal() {
 }
 
 // ============================================================
-// GUARDADO CON ACTUALIZACIÓN LOCAL INMEDIATA Y TIMEOUT CALIBRADO (20s)
+// GUARDADO CORREGIDO: GUARDA EL PUESTO ANTES DE SALIR DE PANTALLA
 // ============================================================
 async function ejecutarGuardadoFinalDebounced() {
   if (isSavingLocked) return;
   isSavingLocked = true;
+
+  // 1. CAPTURAR EL PUESTO EN UNA VARIABLE FIJA ANTES DE QUE SE BORRE
+  const puestoGuardar = puestoActual || 'muelle';
 
   const btnModal = document.getElementById('btnEjecutarGuardadoModal');
   btnModal.disabled = true;
@@ -1179,7 +1182,7 @@ async function ejecutarGuardadoFinalDebounced() {
 
   cerrarConfirmacionModal();
 
-  const isDesp = (puestoActual === 'despacho');
+  const isDesp = (puestoGuardar === 'despacho');
   const d = new Date();
   const pad = n => String(n).padStart(2, '0');
   const fHora = `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
@@ -1190,12 +1193,12 @@ async function ejecutarGuardadoFinalDebounced() {
   const p2 = isDesp ? prodDesp2Seleccionado : prod2Seleccionado;
   const c2 = isDesp ? cantDesp2Bols : cant2Bols;
   const fotosASubir = isDesp ? [...fotosDespacho] : [...fotosDescarga];
-  const idempKey = generarClaveIdempotencia(puestoActual, naveSeleccionada, ident, p1, c1, p2, c2);
+  const idempKey = generarClaveIdempotencia(puestoGuardar, naveSeleccionada, ident, p1, c1, p2, c2);
 
   const totalBolsLocal = Number(c1) + Number(c2 || 0);
-  const viajeIdParaEnviar = (puestoActual === 'labarthe') ? viajeIdHeredadoLabarthe : '';
+  const viajeIdParaEnviar = (puestoGuardar === 'labarthe') ? viajeIdHeredadoLabarthe : '';
 
-  // REGISTRO INMEDIATO EN MEMORIA PARA QUE NO DESAPAREZCA
+  // 2. REGISTRO LOCAL CON EL PUESTO CORRECTO
   const nuevoRegistroLocal = {
     viajeId: viajeIdParaEnviar || `TEMP_${Date.now()}`,
     tt: ident,
@@ -1206,28 +1209,26 @@ async function ejecutarGuardadoFinalDebounced() {
     cant2: c2 || 0,
     productos: `${p1}: ${c1}${p2 && p2 !== '—' ? ' | ' + p2 + ': ' + c2 : ''}`,
     fechaHora: `${fHora} (⏳ En cola)`,
-    puesto: puestoActual,
+    puesto: puestoGuardar,
     nave: naveSeleccionada,
     idempotencyKey: idempKey
   };
 
-  if (dbGlobal[puestoActual]) {
-    dbGlobal[puestoActual].push(nuevoRegistroLocal);
+  if (dbGlobal[puestoGuardar]) {
+    dbGlobal[puestoGuardar].push(nuevoRegistroLocal);
   }
 
-  if (puestoActual === 'labarthe') {
+  if (puestoGuardar === 'labarthe') {
     viajeIdHeredadoLabarthe = "";
     renderListaTTsEnTransitoLabarthe();
   }
 
-  irAPuestos();
-  showToast("⏳ Transmitiendo registro a Google Sheets...", false);
-
+  // 3. ARMADO DEL PAQUETE CON EL PUESTO SEGURO
   const payload = {
     action: isDesp ? 'registroDespacho' : 'registroDescarga',
     data: {
       nave: naveSeleccionada,
-      puesto: puestoActual,
+      puesto: puestoGuardar, // ✔️ Ahora siempre viaja con el puesto real ('muelle', 'labarthe' o 'despacho')
       tt: ident,
       conductor: isDesp ? conductorSeleccionado : '—',
       producto1: p1,
@@ -1242,20 +1243,23 @@ async function ejecutarGuardadoFinalDebounced() {
 
   const registroCompleto = { payload, fotos: fotosASubir, idempotencyKey: idempKey, fechaHora: fHora };
 
-  // INTENTO DIRECTO CON TOLERANCIA DE 20 SEGUNDOS (EVITA CANCELAR POR ERROR)
+  // Ahora sí cambiamos de pantalla
+  irAPuestos();
+  showToast("⏳ Transmitiendo registro a Google Sheets...", false);
+
   if (navigator.onLine) {
     try {
       const res = await fetchConTimeout(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(payload)
-      }, 20000); // 20 segundos de tolerancia
+      }, 20000);
 
       const data = await res.json();
       if (data.ok) {
         showToast(data.duplicadoEvitado ? "⚠️ Unidad confirmada previamente en Excel" : "✅ Registro Guardado Exitosamente");
         if (data.viajeId && !data.duplicadoEvitado) {
-          subirFotosEnColaSegundoPlano(data.viajeId, puestoActual, naveSeleccionada, fotosASubir);
+          subirFotosEnColaSegundoPlano(data.viajeId, puestoGuardar, naveSeleccionada, fotosASubir);
         }
         await cargarDatosDeNave(naveSeleccionada, true);
         isSavingLocked = false;
@@ -1264,7 +1268,7 @@ async function ejecutarGuardadoFinalDebounced() {
     } catch(e) {}
   }
 
-  // SI NO HAY RED O DEMORA MÁS DE 20s, QUEDA EN LA COLA DEL CELULAR
+  // Si falló la red, queda en IndexedDB
   await guardarEnIndexedDB(registroCompleto);
   showToast("🟠 Guardado en Celular (Sin señal). Toca el banner naranja para enviar.", true);
   isSavingLocked = false;
@@ -1318,7 +1322,7 @@ async function encolarFotoFallida(viajeId, puesto, nave, fotoB64, index) {
 }
 
 // ============================================================
-// REENVÍO SEGURO DE COLA CON LIMPIEZA DE REGISTROS YA GUARDADOS
+// SINCRONIZACIÓN CON AUTO-REPARACIÓN DE VIAJES ANTERIORES
 // ============================================================
 async function sincronizarColaOfflineSilencioso() {
   if (isSyncingOfflineQueue || !navigator.onLine) return;
@@ -1342,7 +1346,11 @@ async function sincronizarColaOfflineSilencioso() {
         continue;
       }
 
-      // Reenvío del viaje a Excel con 20s de tolerancia
+      // AUTO-REPARACIÓN: Si el viaje atrapado tenía puesto null, lo repara a muelle
+      if (item.payload && item.payload.data && !item.payload.data.puesto) {
+        item.payload.data.puesto = 'muelle';
+      }
+
       try {
         const res = await fetchConTimeout(GAS_URL, {
           method: 'POST',
@@ -1351,7 +1359,6 @@ async function sincronizarColaOfflineSilencioso() {
         }, 20000);
 
         const data = await res.json();
-        // Si el servidor lo guardó o confirma que ya existía, se borra de la cola del celular
         if (data.ok) {
           await eliminarDeIndexedDB(item.idempotencyKey);
           if (data.viajeId && !data.duplicadoEvitado) {
