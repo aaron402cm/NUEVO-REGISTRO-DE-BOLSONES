@@ -554,16 +554,11 @@ async function solicitarPersistenciaAlmacenamiento() {
   }
 }
 // CLAVE DE IDEMPOTENCIA DETERMINISTA POR BLOQUE DE 10 MINUTOS
-function generarClaveIdempotencia(puesto, nave, ident, p1, c1, p2, c2) {
-  // Bloque de tiempo de 10 minutos: si reintenta o reescribe el mismo camión dentro de 10 min, genera la MISMA clave
-  const bloque10Min = Math.floor(Date.now() / (10 * 60 * 1000));
-  const raw = `${puesto}_${nave}_${ident}_${p1}_${c1}_${p2}_${c2}_${bloque10Min}`.replace(/\s+/g, '').toUpperCase();
-  let hash = 0;
-  for (let i = 0; i < raw.length; i++) {
-    hash = ((hash << 5) - hash) + raw.charCodeAt(i);
-    hash |= 0;
-  }
-  return `IDEMP_${Math.abs(hash)}_${bloque10Min}`;
+function generarClaveIdempotencia(puesto, nave, ident) {
+  // Genera un token inmutable en el momento del registro.
+  // No cambia si el reintento ocurre minutos después.
+  const randomPart = Math.random().toString(36).substring(2, 9).toUpperCase();
+  return `IDEMP_${puesto.toUpperCase()}_${nave.toUpperCase()}_${ident}_${Date.now()}_${randomPart}`;
 }
 
 // FETCH CON TIMEOUT DE 8 SEGUNDOS (CORTA LA CONEXIÓN MUERTA EN MUELLE)
@@ -614,7 +609,10 @@ async function actualizarBadgeColaOffline() {
 }
 
 // CONTROLADORES DE LA VENTANA EMERGENTE EXPLICATIVA
-function abrirModalAyudaOffline() {
+async function abrirModalAyudaOffline() {
+  const pend = await obtenerTodosDeIndexedDB();
+  const txt = document.getElementById('modalCountOfflineTxt');
+  if (txt) txt.textContent = pend.length;
   document.getElementById('modalAyudaOffline').classList.add('open');
 }
 
@@ -1352,26 +1350,29 @@ async function sincronizarColaOfflineSilencioso() {
       }
 
       try {
-        const res = await fetchConTimeout(GAS_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(item.payload)
-        }, 20000);
+        // MODIFICACIÓN DE LA TRANSACCIÓN: No eliminar de IndexedDB hasta que las fotos estén guardadas o encoladas
+const res = await fetchConTimeout(GAS_URL, {
+  method: 'POST',
+  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+  body: JSON.stringify(item.payload)
+}, 20000);
 
-        const data = await res.json();
-        if (data.ok) {
-          // SE ELIMINA DE LA MEMORIA DEL CELULAR SI EL SERVIDOR CONFIRMÓ
-          await eliminarDeIndexedDB(item.idempotencyKey);
-          showToast("✅ Registro procesado en Google Sheets con éxito");
-          if (data.viajeId && !data.duplicadoEvitado) {
-            subirFotosEnColaSegundoPlano(data.viajeId, item.payload.data.puesto, item.payload.data.nave, item.fotos);
-          }
-        } else {
-          showToast(`⚠️ Servidor: ${data.error || 'No se pudo guardar'}`, true);
-        }
-      } catch(err) {
-        showToast("⚠️ Fallo de conexión al intentar enviar la cola", true);
-      }
+const data = await res.json();
+if (data.ok) {
+  // Primero se asegura el viajeId para las fotos
+  const viajeIdFinal = data.viajeId;
+  
+  // Si traía fotos, se suben o se reconvierten a tareas de subida individuales seguras
+  if (viajeIdFinal && item.fotos && item.fotos.length > 0 && !data.duplicadoEvitado) {
+    for (let fIdx = 0; fIdx < item.fotos.length; fIdx++) {
+      await encolarFotoFallida(viajeIdFinal, item.payload.data.puesto, item.payload.data.nave, item.fotos[fIdx], fIdx);
+    }
+  }
+  
+  // Ahora es 100% seguro eliminar el registro principal
+  await eliminarDeIndexedDB(item.idempotencyKey);
+  showToast("✅ Registro textual procesado en Google Sheets");
+}
     }
   } finally {
     isSyncingOfflineQueue = false;
@@ -1494,6 +1495,31 @@ function actualizarRelojFinTurno() {
   }
 }
 </script>
+<!-- MODAL DE AYUDA Y GESTIÓN DE COLA OFFLINE -->
 <div class="modal-overlay" id="modalAyudaOffline">
+  <div class="modal-box" style="border: 3px solid #ea580c;">
+    <h2 style="font-size: 1.4rem; font-weight: 900; color: #ea580c; text-align: center; margin-bottom: 12px;">
+      📡 Cola de Seguridad Local
+    </h2>
+    <p style="font-size: 0.95rem; color: var(--muted); line-height: 1.4; margin-bottom: 15px;">
+      Los viajes mostrados aquí están <strong>completamente a salvo</strong> en la memoria protegida de tu dispositivo. No necesitas volver a escribirlos.
+    </p>
+    <div style="background: #f8fafc; border: 2px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 18px; text-align: center;">
+      <span style="font-size: 2rem; font-weight: 900; color: #ea580c;" id="modalCountOfflineTxt">0</span>
+      <div style="font-weight: bold; font-size: 0.9rem; color: #475569;">Registros pendientes de sincronización</div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <button class="btn-tool" style="padding: 14px; background: #0284c7; font-size: 1.05rem;" onclick="forzarReenvioDesdeModal()">
+        🔄 Reintentar Transmisión Ahora
+      </button>
+      <button class="btn-tool" style="padding: 12px; background: #64748b; font-size: 0.95rem;" onclick="cerrarModalAyudaOffline()">
+        Volver a la Operación
+      </button>
+      <button class="btn-tool" style="padding: 10px; background: #fee2e2; color: #dc2626; border: 1px solid #f87171; font-size: 0.85rem; margin-top: 10px;" onclick="limpiarColaManualForzada()">
+        ⚠️ Forzar Limpieza de Registros Trabados
+      </button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
