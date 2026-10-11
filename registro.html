@@ -291,10 +291,16 @@ html, body {
     <div class="keypad-grid" id="gridKeypadTT"></div>
   </div>
 
+  <!-- Puesto Labarthe: Control Ciego Selección TT con Auxilio Manual -->
   <div class="card" id="cardTTLabarthe" style="display:none;">
     <div class="card-header-flex"><span class="card-title">🚛 Unidades Arribadas de Muelle</span></div>
     <p style="font-size:0.9rem; color:var(--muted); margin-bottom:10px; font-weight:bold;">Selecciona el TT en balanza para conteo ciego:</p>
     <div id="listaTTsEnTransito"></div>
+    <div style="margin-top:12px; text-align:center;">
+      <button type="button" class="btn-tool" style="background:#475569; padding:10px 14px; width:100%; border-radius:10px; font-size:0.95rem;" onclick="activarModoLabartheManual()">
+        🆘 ¿No figura el camión? Digitar TT manual (Muelle sin red)
+      </button>
+    </div>
   </div>
 
   <div class="card" style="border-color:#0284c7;">
@@ -903,7 +909,25 @@ function seleccionarTTLabartheCiego(viajeId) {
   renderChipsProductos();
   renderListaTTsEnTransitoLabarthe();
 }
-
+// MODO DE AUXILIO: Permite registrar en Labarthe si Muelle se quedó sin red
+function activarModoLabartheManual() {
+  viajeIdHeredadoLabarthe = "";
+  valTT = "";
+  document.getElementById('displayTT').textContent = "TT - ___";
+  
+  // Muestra el teclado numérico de TT
+  document.getElementById('cardTTMuelle').style.display = 'block';
+  document.getElementById('cardTTLabarthe').style.display = 'none';
+  
+  // Habilita selección libre de productos
+  prod1Seleccionado = null;
+  cant1Bols = 0;
+  document.getElementById('displayBols1').textContent = "00 Bolsones";
+  document.getElementById('btnAddProd2').style.display = 'flex';
+  
+  renderChipsProductos();
+  showToast("ℹ️ Ingrese el número de TT y su conteo físico");
+}
 function obtenerBaseId(vid) {
   return vid ? vid.split('_').slice(0, 2).join('_') : "";
 }
