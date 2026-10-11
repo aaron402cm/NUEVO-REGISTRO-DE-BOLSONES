@@ -532,17 +532,33 @@ async function eliminarDeIndexedDB(k) {
     actualizarBadgeColaOffline();
   } catch(e) {}
 }
-
-// CLAVE DE IDEMPOTENCIA INMUTABLE (SELLADA EN EL INSTANTE DE CREACIÓN)
+// ============================================================
+// BLINDAJE DE MEMORIA PERSISTENTE (IMPIDE QUE ANDROID BORRE DATOS)
+// ============================================================
+async function solicitarPersistenciaAlmacenamiento() {
+  if (navigator.storage && navigator.storage.persist) {
+    try {
+      const yaEsPersistente = await navigator.storage.persisted();
+      if (!yaEsPersistente) {
+        const concedido = await navigator.storage.persist();
+        if (concedido) {
+          console.log("🛡️ Almacenamiento persistente blindado con éxito en Android.");
+        }
+      }
+    } catch(e) {}
+  }
+}
+// CLAVE DE IDEMPOTENCIA DETERMINISTA POR BLOQUE DE 10 MINUTOS
 function generarClaveIdempotencia(puesto, nave, ident, p1, c1, p2, c2) {
-  const ts = Date.now();
-  const raw = `${puesto}_${nave}_${ident}_${p1}_${c1}_${p2}_${c2}_${ts}`.replace(/\s+/g, '').toUpperCase();
+  // Bloque de tiempo de 10 minutos: si reintenta o reescribe el mismo camión dentro de 10 min, genera la MISMA clave
+  const bloque10Min = Math.floor(Date.now() / (10 * 60 * 1000));
+  const raw = `${puesto}_${nave}_${ident}_${p1}_${c1}_${p2}_${c2}_${bloque10Min}`.replace(/\s+/g, '').toUpperCase();
   let hash = 0;
   for (let i = 0; i < raw.length; i++) {
     hash = ((hash << 5) - hash) + raw.charCodeAt(i);
     hash |= 0;
   }
-  return `IDEMP_${Math.abs(hash)}_${ts}`;
+  return `IDEMP_${Math.abs(hash)}_${bloque10Min}`;
 }
 
 // FETCH CON TIMEOUT DE 8 SEGUNDOS (CORTA LA CONEXIÓN MUERTA EN MUELLE)
@@ -561,6 +577,9 @@ async function fetchConTimeout(url, options = {}, timeoutMs = 8000) {
 
 // INICIALIZACIÓN: EXIGE LOGIN CADA VEZ QUE SE ENTRA A LA APLICACIÓN
 window.onload = async () => {
+  // 1. Bloquea la memoria contra limpiezas de disco de Android
+  solicitarPersistenciaAlmacenamiento();
+
   if (localStorage.getItem('iqbf_theme') === 'night') document.body.classList.add('mode-night');
   const fSize = localStorage.getItem('iqbf_font_size');
   if (fSize) document.documentElement.style.setProperty('--font-base', fSize + 'px');
@@ -1024,7 +1043,29 @@ function abrirConfirmacionModal() {
     if (!prod1Seleccionado || cant1Bols <= 0) return showToast("⚠️ Ingresa el producto 1 y cantidad");
     if (fotosDescarga.length < 2) return showToast("⚠️ Requiere mínimo 2 fotos de evidencia");
   }
+  const identActual = isDesp ? placaSeleccionada : `TT-${valTT}`;
 
+  // FRENO ANTI-DUPLICADO: Revisa si este mismo camión ya está esperando en la memoria del celular
+  obtenerTodosDeIndexedDB().then(pendientes => {
+    const yaEnCola = pendientes.find(p => 
+      !p.esSoloFoto && 
+      p.payload && 
+      p.payload.data && 
+      p.payload.data.puesto === puestoActual && 
+      p.payload.data.tt === identActual
+    );
+    if (yaEnCola) {
+      showToast(`⚠️ ${identActual} ya está registrada y en cola de envío en este celular.`, true);
+      return;
+    }
+    
+    // Si no está duplicada, abre el modal normalmente
+    procederAbrirModalConfirmacion(isDesp);
+  });
+}
+
+function procederAbrirModalConfirmacion(isDesp) {
+}
   const rows = [
     ['NAVE', nombreBuqueActivo],
     ['PUESTO', puestoActual.toUpperCase()]
@@ -1158,34 +1199,38 @@ async function ejecutarGuardadoFinalDebounced() {
 }
 
 // ============================================================
-// SUBIDA DE FOTOS RESILIENTE (NUNCA PIERDE FOTOS SI SE CAE LA RED)
+// SUBIDA DE FOTOS RESILIENTE (TOLERANCIA DE 25s PARA REDES LENTAS)
 // ============================================================
 async function subirFotosEnColaSegundoPlano(viajeId, puesto, nave, listaFotos) {
   if (!viajeId || !listaFotos || listaFotos.length === 0) return;
 
   for (let i = 0; i < listaFotos.length; i++) {
+    showToast(`📸 Transmitiendo foto ${i + 1} de ${listaFotos.length}...`);
+
     const fotoPayload = {
       action: 'subirFotoIndividual',
       data: { viajeId, puesto, nave, fotoBase64: listaFotos[i], index: i }
     };
 
     try {
+      // Tolerancia de 25 segundos para conexiones 2G/3G débiles de puerto
       const res = await fetchConTimeout(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(fotoPayload)
-      }, 10000); // 10s de tolerancia por foto
+      }, 25000);
 
       const resJson = await res.json();
       if (!resJson.ok) {
-        // Si el servidor rechazó, la guarda en IndexedDB para reintentar
         await encolarFotoFallida(viajeId, puesto, nave, listaFotos[i], i);
       }
     } catch (err) {
-      // Si la grúa cortó la señal a mitad de subida, la foto se asegura en el celular
+      // Si la grúa cortó la señal por completo, la foto queda segura en el celular
       await encolarFotoFallida(viajeId, puesto, nave, listaFotos[i], i);
     }
   }
+
+  showToast("✅ Todas las fotos se transmitieron correctamente");
 }
 
 async function encolarFotoFallida(viajeId, puesto, nave, fotoB64, index) {
@@ -1211,13 +1256,14 @@ async function sincronizarColaOfflineSilencioso() {
     const pend = await obtenerTodosDeIndexedDB();
     for (const item of pend) {
       // 1. Si es una foto que se quedó a mitad de camino
+      // 1. Si es una foto que se quedó a mitad de camino
       if (item.esSoloFoto) {
         try {
           const resFoto = await fetchConTimeout(GAS_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify(item.payload)
-          }, 10000);
+          }, 25000); // 25s de tolerancia en el reintento de fondo
           const resFotoJson = await resFoto.json();
           if (resFotoJson.ok) {
             await eliminarDeIndexedDB(item.idempotencyKey);
