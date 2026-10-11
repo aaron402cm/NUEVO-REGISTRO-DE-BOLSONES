@@ -2174,9 +2174,6 @@ function procesarNuevosRegistrosVoz(filas) {
         `).join('');
     }
 
-    // ========================================================================
-    // CONDUCTORES Y PLACAS
-    // ========================================================================
     function syncConductoresUI(forzarRecarga = false) {
         const contenedor = document.getElementById('divListaConductores');
         const badge = document.getElementById('badgeNaveConductores');
@@ -2185,17 +2182,8 @@ function procesarNuevosRegistrosVoz(filas) {
 
         if (badge) badge.textContent = `Viendo: ${nomBuque.toUpperCase()}`;
 
-        if (contenedor) {
-            contenedor.innerHTML = `
-                <div style="text-align:center; padding:35px 20px; color:#0284c7; background:#f0f9ff; border-radius:10px; border:2px dashed #bae6fd;">
-                    <div style="font-size:2rem; margin-bottom:6px;">⏳</div>
-                    <strong>Cargando conductores de ${nomBuque}...</strong>
-                    <div style="font-size:11px; color:#64748b; margin-top:4px;">Consultando base de datos en Google Sheets</div>
-                </div>
-            `;
-        }
-
-        if (overlay) {
+        // Solo mostrar cartel invasivo si el usuario presionó el botón manual de recargar
+        if (overlay && forzarRecarga) {
             document.getElementById('loadingOverlayTitle').textContent = `Cargando Conductores de ${nomBuque}`;
             document.getElementById('loadingOverlaySub').textContent = `Sincronizando con el archivo Excel correspondiente...`;
             overlay.style.display = 'flex';
