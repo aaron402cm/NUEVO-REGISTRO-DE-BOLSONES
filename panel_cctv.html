@@ -1314,10 +1314,7 @@ function evaluarCumplimientoMeta100() {
         }
     }
 
-    // ========================================================================
-    // RADAR Y ESCALAMIENTO EN 3 FASES (RESTAURADA COMPLETAMENTE)
-    // ========================================================================
-    function renderRadarAutovia() {
+   function renderRadarAutovia() {
         const pista = document.getElementById('radarAutoviaPista');
         const blipsContainer = document.getElementById('sonarBlipsContainer');
         const targetsCount = document.getElementById('radarTargetsCount');
@@ -1338,6 +1335,26 @@ function evaluarCumplimientoMeta100() {
 
         enRuta = [...enRuta, ...camionesSimulados.filter(s => s.nave === naveActivaCCTV)];
         if (targetsCount) targetsCount.textContent = `TARGETS: ${enRuta.length}`;
+
+        // ============================================================
+        // PURGA AUTOMÁTICA DE ALERTAS: Si un camión ya ingresó a balanza,
+        // se retira del mapa para que la sirena y avisos se apaguen.
+        // ============================================================
+        const idsActivosEnRuta = new Set(enRuta.map(c => c.id));
+        for (const uidRegistrado of alertasVocalesEmitidasMap.keys()) {
+            if (!idsActivosEnRuta.has(uidRegistrado)) {
+                alertasVocalesEmitidasMap.delete(uidRegistrado);
+            }
+        }
+        // Si ya no quedan camiones en fase 3 ni discrepancias, apagar sirena y banner
+        const hayDemoraCritica = Array.from(alertasVocalesEmitidasMap.values()).some(f => f >= 3);
+        if (!hayDemoraCritica) {
+            const bannerTrans = document.getElementById('bannerAlertaTransito');
+            if (bannerTrans && bannerTrans.className.includes('danger')) {
+                bannerTrans.style.display = 'none';
+            }
+            desactivarSirena();
+        }
 
         if (enRuta.length === 0) {
             pista.innerHTML = `<div style="color:#64748b; font-weight:bold; font-size:13px; margin:auto;">● No hay camiones transitando en este momento para la nave seleccionada.</div>`;
