@@ -192,6 +192,10 @@ html, body {
   color: white; padding: 12px 24px; border-radius: 30px; font-weight: bold; z-index: 10008;
   display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-size: 1rem;
 }
+  @keyframes pulsoBannerOffline {
+  from { background-color: #ea580c; transform: scale(1); }
+  to { background-color: #c2410c; transform: scale(1.01); }
+}
 </style>
 </head>
 <body>
@@ -208,9 +212,10 @@ html, body {
   </div>
 </div>
 
-<!-- BANNERS -->
-<div id="offlineBanner" onclick="actualizarDatosManual()">
-  🟠 TRABAJANDO SIN RED (<span id="countOffline">0</span> PENDIENTES) — TOCA PARA ENVIAR 🔄
+<!-- BANNER PALPITANTE DE ALTO IMPACTO EN EL ENCABEZADO -->
+<div id="offlineBanner" onclick="abrirModalAyudaOffline()" style="display:none; background:#ea580c; color:white; padding:12px 16px; text-align:center; font-weight:900; position:sticky; top:0; z-index:10001; cursor:pointer; box-shadow:0 4px 15px rgba(234,88,12,0.4); animation:pulsoBannerOffline 1.2s infinite alternate;">
+  <div style="font-size:1.05rem; text-transform:uppercase;">📡 ¡REGISTRO GUARDADO EN TU CELULAR! (SIN SEÑAL)</div>
+  <div style="font-size:0.9rem; opacity:0.95; margin-top:2px;">⚠️ <span id="countOffline">0</span> viaje(s) en cola seguro(s). Toca aquí para ver detalles o enviar 🔄</div>
 </div>
 
 <div id="shiftCountdownBanner">
@@ -574,7 +579,54 @@ async function fetchConTimeout(url, options = {}, timeoutMs = 8000) {
     throw error;
   }
 }
+// ============================================================
+// FUNCIONES DE CONTROL DE RED Y GESTIÓN DE COLA (RESTAURADAS)
+// ============================================================
+function configurarEventosRed() {
+  window.addEventListener('online', () => { 
+    actualizarBadgeRed(true); 
+    sincronizarColaOfflineSilencioso(); 
+  });
+  window.addEventListener('offline', () => { 
+    actualizarBadgeRed(false); 
+  });
+  actualizarBadgeRed(navigator.onLine);
+}
 
+function actualizarBadgeRed(isOnline) {
+  const dot = document.getElementById('netDot');
+  const txt = document.getElementById('netText');
+  if (dot) dot.style.background = isOnline ? "#22c55e" : "#ea580c";
+  if (txt) txt.textContent = isOnline ? "En Línea" : "Sin Red";
+}
+
+async function actualizarBadgeColaOffline() {
+  const p = await obtenerTodosDeIndexedDB();
+  const b = document.getElementById('offlineBanner');
+  const countSpan = document.getElementById('countOffline');
+
+  if (p.length > 0) {
+    if (b) b.style.display = 'block';
+    if (countSpan) countSpan.textContent = p.length;
+  } else {
+    if (b) b.style.display = 'none';
+  }
+}
+
+// CONTROLADORES DE LA VENTANA EMERGENTE EXPLICATIVA
+function abrirModalAyudaOffline() {
+  document.getElementById('modalAyudaOffline').classList.add('open');
+}
+
+function cerrarModalAyudaOffline() {
+  document.getElementById('modalAyudaOffline').classList.remove('open');
+}
+
+async function forzarReenvioDesdeModal() {
+  cerrarModalAyudaOffline();
+  showToast("🔄 Intentando enviar registros a Excel...");
+  await sincronizarColaOfflineSilencioso();
+}
 // INICIALIZACIÓN: EXIGE LOGIN CADA VEZ QUE SE ENTRA A LA APLICACIÓN
 window.onload = async () => {
   // 1. Bloquea la memoria contra limpiezas de disco de Android
@@ -711,6 +763,27 @@ async function cargarDatosDeNave(naveKey, silencioso = false) {
         else if (f.puesto === 'labarthe') dbGlobal.labarthe.push(f);
         else if (f.puesto === 'despacho') dbGlobal.despacho.push(f);
       });
+
+      // FUSIÓN RESILIENTE: Agrega los viajes guardados en el celular que aún no han llegado a Excel
+      const pendientesLocales = await obtenerTodosDeIndexedDB();
+      pendientesLocales.forEach(item => {
+        if (!item.esSoloFoto && item.payload && item.payload.data) {
+          const d = item.payload.data;
+          const yaEnBase = (dbGlobal[d.puesto] || []).some(x => x.viajeId === d.viajeId || x.tt === d.tt);
+          if (!yaEnBase && dbGlobal[d.puesto]) {
+            dbGlobal[d.puesto].push({
+              viajeId: d.viajeId || 'PENDIENTE_RED',
+              tt: d.tt,
+              bolsones: Number(d.cant1) + Number(d.cant2 || 0),
+              productos: `${d.producto1}: ${d.cant1}${d.producto2 && d.producto2 !== '—' ? ' | ' + d.producto2 + ': ' + d.cant2 : ''}`,
+              fechaHora: `${d.fechaHora} (⏳ En cola)`,
+              puesto: d.puesto,
+              nave: d.nave
+            });
+          }
+        }
+      });
+
       renderHistorialTurno();
       if (puestoActual === 'labarthe') renderListaTTsEnTransitoLabarthe();
     }
@@ -1384,5 +1457,27 @@ function actualizarRelojFinTurno() {
   }
 }
 </script>
+  <!-- VENTANA EMERGENTE DE AYUDA Y DIAGNÓSTICO OFFLINE -->
+<div class="modal-overlay" id="modalAyudaOffline">
+  <div class="modal-box" style="border:4px solid #ea580c; text-align:center;">
+    <div style="font-size:3.5rem; margin-bottom:10px;">📡</div>
+    <h2 style="color:#c2410c; font-size:1.4rem; font-weight:900; margin-bottom:10px;">
+      REGISTRO SEGURO EN TU TELÉFONO
+    </h2>
+    <div style="background:#fff7ed; border:2px solid #fdba74; padding:12px; border-radius:10px; margin-bottom:15px; font-size:0.95rem; text-align:left; color:#9a3412;">
+      <p style="margin-bottom:8px;"><strong>¿Por qué sale este aviso?</strong><br>
+      La grúa pórtico o el buque bloquearon la señal de internet al momento de guardar.</p>
+      <p style="margin-bottom:8px;"><strong>¿Qué pasó con tu registro?</strong><br>
+      Tu conteo de bolsones y tus fotos <strong>están 100% seguros y respaldados</strong> en la memoria de este celular.</p>
+      <p><strong>⚠️ ¿Qué debes hacer?</strong><br>
+      <span style="color:#b91c1c; font-weight:900;">NO vuelvas a registrar este camión.</span> Camina unos pasos hacia una zona abierta o presiona el botón de abajo para intentar enviar a Excel ahora.</p>
+    </div>
+
+    <div style="display:flex; gap:10px;">
+      <button class="btn-tool" style="flex:1; padding:14px; background:#64748b; font-size:1rem;" onclick="cerrarModalAyudaOffline()">Entendido 👍</button>
+      <button class="btn-tool" style="flex:1; padding:14px; background:#16a34a; font-size:1rem; font-weight:900;" onclick="forzarReenvioDesdeModal()">🔄 Enviar Ahora</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
