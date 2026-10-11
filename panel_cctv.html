@@ -1066,54 +1066,67 @@
     }
 
     async function sincronizarServidor(silencioso = false) {
-  const syncLabel = document.getElementById('syncStatus');
-  if (!silencioso && syncLabel) syncLabel.textContent = "Sincronizando...";
+        const syncLabel = document.getElementById('syncStatus');
+        if (!silencioso && syncLabel) syncLabel.textContent = "Sincronizando...";
 
-  try {
-    // 1 sola petición que trae ambas naves y catálogos en paralelo interno
-    const res = await fetch(`${gasUrl}?action=obtenerEstadoBiNaveGlobal`).then(r => r.json());
-    
-    if (res.ok && res.naves) {
-      const dN1 = res.naves.nave1;
-      const dN2 = res.naves.nave2;
+        try {
+            const res = await fetch(`${gasUrl}?action=obtenerEstadoBiNaveGlobal`).then(r => r.json());
+            
+            if (res.ok && res.naves) {
+                const dN1 = res.naves.nave1;
+                const dN2 = res.naves.nave2;
 
-      // Nave 1
-      if (dN1.catalogo) {
-        catalogoProductos.nave1 = dN1.catalogo.productos || [];
-        buquesInfo.nave1 = { nombre: dN1.catalogo.buqueNombre || 'NAVE 1', muelle: dN1.catalogo.buqueMuelle || 'Muelle 1A' };
-        document.getElementById('deckNomNave1').textContent = `🚢 ${buquesInfo.nave1.nombre} (${buquesInfo.nave1.muelle})`;
-        document.getElementById('txtMigrarNave1Nom').textContent = buquesInfo.nave1.nombre;
-      }
-      clasificarFilasPorNave('nave1', dN1.filas || []);
+                // Nave 1
+                if (dN1.catalogo) {
+                    catalogoProductos.nave1 = dN1.catalogo.productos || [];
+                    buquesInfo.nave1 = { nombre: dN1.catalogo.buqueNombre || 'NAVE 1', muelle: dN1.catalogo.buqueMuelle || 'Muelle 1A' };
+                    document.getElementById('deckNomNave1').textContent = `🚢 ${buquesInfo.nave1.nombre} (${buquesInfo.nave1.muelle})`;
+                    document.getElementById('txtMigrarNave1Nom').textContent = buquesInfo.nave1.nombre;
+                }
+                clasificarFilasPorNave('nave1', dN1.filas || []);
 
-      // Nave 2
-      if (dN2.catalogo) {
-        catalogoProductos.nave2 = dN2.catalogo.productos || [];
-        buquesInfo.nave2 = { nombre: dN2.catalogo.buqueNombre || 'NAVE 2', muelle: dN2.catalogo.buqueMuelle || 'Muelle 2B' };
-        document.getElementById('deckNomNave2').textContent = `⚓ ${buquesInfo.nave2.nombre} (${buquesInfo.nave2.muelle})`;
-        document.getElementById('txtMigrarNave2Nom').textContent = buquesInfo.nave2.nombre;
-      }
-      clasificarFilasPorNave('nave2', dN2.filas || []);
+                // Nave 2
+                if (dN2.catalogo) {
+                    catalogoProductos.nave2 = dN2.catalogo.productos || [];
+                    buquesInfo.nave2 = { nombre: dN2.catalogo.buqueNombre || 'NAVE 2', muelle: dN2.catalogo.buqueMuelle || 'Muelle 2B' };
+                    document.getElementById('deckNomNave2').textContent = `⚓ ${buquesInfo.nave2.nombre} (${buquesInfo.nave2.muelle})`;
+                    document.getElementById('txtMigrarNave2Nom').textContent = buquesInfo.nave2.nombre;
+                }
+                clasificarFilasPorNave('nave2', dN2.filas || []);
 
-      // Caché local ultrarrápido
-      localStorage.setItem('iqbf_cache_dbNaves', JSON.stringify(dbNaves));
-      localStorage.setItem('iqbf_cache_catalogo', JSON.stringify(catalogoProductos));
-      localStorage.setItem('iqbf_cache_buques', JSON.stringify(buquesInfo));
+                // ========================================================
+                // SINCRONIZACIÓN MULTI-PANTALLA: MUTE GLOBAL DE SIRENA
+                // ========================================================
+                if (res.muteGlobal) {
+                    if (res.muteGlobal.muteado) {
+                        sirenaSilenciada = true;
+                        desactivarSirena();
+                        const bannerDiff = document.getElementById('bannerAlertaDiff');
+                        if (bannerDiff) {
+                            bannerDiff.innerHTML = `<div>🔕 SIRENA SILENCIADA GLOBALMENTE POR COORDINADOR (DNI: ${res.muteGlobal.dni}). Discrepancia en revisión.</div>`;
+                        }
+                    }
+                }
 
-      actualizarCommandDeckCards();
-      seleccionarNaveCCTV(naveActivaCCTV);
+                // Caché local ultrarrápido
+                localStorage.setItem('iqbf_cache_dbNaves', JSON.stringify(dbNaves));
+                localStorage.setItem('iqbf_cache_catalogo', JSON.stringify(catalogoProductos));
+                localStorage.setItem('iqbf_cache_buques', JSON.stringify(buquesInfo));
 
-      // Ahora la locución sí funciona correctamente
-      procesarNuevosRegistrosVoz([...(dN1.filas || []), ...(dN2.filas || [])]);
-      analizarAlertasDiscrepanciasYDemoras();
-      evaluarCumplimientoMeta100();
+                actualizarCommandDeckCards();
+                seleccionarNaveCCTV(naveActivaCCTV);
 
-      if (syncLabel) syncLabel.textContent = "Sincronizado: " + new Date().toLocaleTimeString('es-PE');
+                // Detección vocal sensual
+                procesarNuevosRegistrosVoz([...(dN1.filas || []), ...(dN2.filas || [])]);
+                analizarAlertasDiscrepanciasYDemoras();
+                evaluarCumplimientoMeta100();
+
+                if (syncLabel) syncLabel.textContent = "Sincronizado: " + new Date().toLocaleTimeString('es-PE');
+            }
+        } catch (err) {
+            if (syncLabel) syncLabel.textContent = "Reintentando conexión: " + new Date().toLocaleTimeString('es-PE');
+        }
     }
-  } catch (err) {
-    if (syncLabel) syncLabel.textContent = "Reintentando conexión: " + new Date().toLocaleTimeString('es-PE');
-  }
-}
 
 // ACTIVACIÓN AUTOMÁTICA DEL MODAL DE CELEBRACIÓN AL COMPLETAR LA DESCARGA
 function evaluarCumplimientoMeta100() {
@@ -1226,41 +1239,37 @@ function evaluarCumplimientoMeta100() {
         }, 400);
     }
 
-    function probarVozFemeninaEnVivo() {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        cargarVoces();
-
-        const nom = (buquesInfo[naveActivaCCTV]?.nombre || 'BUQUE ACTIVO').toUpperCase();
-        const testTexto = `Prueba de audio correcta. Centro de control monitoreando el buque ${nom}. Registro en Muelle, unidad T T 14, con 20 bolsones.`;
-        emitirLocucionFemeninaPausada(testTexto);
-    }
+    // ========================================================================
+    // MOTOR DE VOZ FEMENINA SENSUAL Y TÁCTICA
+    // ========================================================================
+    let esPrimerCargueHistorial = true;
 
     function cargarVoces() {
         if (!('speechSynthesis' in window)) return;
         const voces = window.speechSynthesis.getVoices();
         if (!voces || voces.length === 0) return;
 
-        const patronMujer = /salome|salomé|paulina|dalia|sabina|elena|helena|sofia|sofía|monica|mónica|camila|laura|paloma|zira|female|mujer|natural/i;
-        const patronHombre = /raul|raúl|david|jorge|pablo|alvaro|álvaro|carlos|diego|manuel|pedro|julio|andres|andrés|male|hombre|male|miguel|enrique/i;
+        // Búsqueda prioritaria de voces femeninas naturales y suaves
+        const patronSensual = /salome|salomé|paulina|dalia|sabina|elena|helena|sofia|sofía|monica|mónica|camila|laura|paloma|zira|female|mujer|natural/i;
+        const patronHombre = /raul|raúl|david|jorge|pablo|alvaro|álvaro|carlos|diego|manuel|pedro|julio|andres|andrés|male|hombre|miguel|enrique/i;
 
-        // 1. Prioridad: Salomé (Colombia - Edge Online Natural)
+        // 1. Máxima Prioridad: Microsoft Salomé (Voz cálida, suave y natural)
         let candidata = voces.find(v => /salome|salomé/i.test(v.name) && !patronHombre.test(v.name));
 
-        // 2. Prioridad: Voces femeninas de Colombia / Latinoamérica
+        // 2. Voces Colombianas / Latinoamericanas naturales
         if (!candidata) {
             candidata = voces.find(v => 
-                (v.lang === 'es-CO' || v.lang === 'es_CO' || v.name.toLowerCase().includes('colombia')) &&
-                patronMujer.test(v.name) && !patronHombre.test(v.name)
+                (v.lang === 'es-CO' || v.lang === 'es_CO' || v.lang === 'es-MX' || v.lang === 'es_MX') &&
+                patronSensual.test(v.name) && !patronHombre.test(v.name)
             );
         }
 
-        // 3. Prioridad: Voces femeninas latinas conocidas (Paulina, Sabina, Dalia, Elena)
+        // 3. Cualquier voz en español femenina reconocida
         if (!candidata) {
-            candidata = voces.find(v => v.lang.startsWith('es') && patronMujer.test(v.name) && !patronHombre.test(v.name));
+            candidata = voces.find(v => v.lang.startsWith('es') && patronSensual.test(v.name) && !patronHombre.test(v.name));
         }
 
-        // 4. Si está en Chrome y solo hay voces genéricas, tomar español que no tenga nombre de hombre
+        // 4. Fallback: Primer español femenino disponible
         if (!candidata) {
             candidata = voces.find(v => v.lang.startsWith('es') && !patronHombre.test(v.name));
         }
@@ -1272,7 +1281,10 @@ function evaluarCumplimientoMeta100() {
     if ('speechSynthesis' in window) window.speechSynthesis.onvoiceschanged = cargarVoces;
 
     function emitirLocucionFemeninaPausada(texto) {
-        if (!('speechSynthesis' in window)) return;
+        if (!('speechSynthesis' in window) || avisoVozSilenciado) return;
+
+        // Despierta activamente el motor de síntesis de Chrome/Edge
+        window.speechSynthesis.resume();
         window.speechSynthesis.cancel();
 
         if (!vozFemeninaSeleccionada) cargarVoces();
@@ -1285,33 +1297,66 @@ function evaluarCumplimientoMeta100() {
             globalUtteranceInstance.lang = 'es-CO';
         }
 
-        // Modulación para asegurar timbre femenino dulce
-        globalUtteranceInstance.pitch = 1.25;
-        globalUtteranceInstance.rate = 0.92;
+        // Modulación para voz sensual: tono suave y cadencia pausada y seductora
+        globalUtteranceInstance.pitch = 1.08;  // Timbre cálido y envolvente
+        globalUtteranceInstance.rate = 0.88;   // Ritmo pausado y relajante
+        globalUtteranceInstance.volume = 1.0;
 
         window.speechSynthesis.speak(globalUtteranceInstance);
     }
 
     function anunciarMovimientoPorVoz(reg) {
-        if (!('speechSynthesis' in window) || avisoVozSilenciado) return;
-        if (!vozFemeninaSeleccionada) cargarVoces();
-
         const ttLimpio = (reg.tt || 'unidad').toString().replace('TT-', 'T T ').replace('-', ' ');
         const bols = reg.bolsones || 0;
-        const buqueActivo = (buquesInfo[reg.nave || naveActivaCCTV]?.nombre || 'el buque activo').toUpperCase();
+        const buqueActivo = (buquesInfo[reg.nave || naveActivaCCTV]?.nombre || 'el buque').toUpperCase();
+        const prods = (reg.productos && reg.productos !== '—') ? reg.productos : 'su carga';
 
         let mensaje = "";
         if (reg.puesto === 'muelle') {
-            mensaje = `Atención. Registro en Muelle del buque ${buqueActivo}. Unidad ${ttLimpio}, con ${bols} bolsones descargados.`;
+            mensaje = `Atención centro de control... Se confirma una nueva descarga en Muelle para ${buqueActivo}. La unidad ${ttLimpio} va en camino con ${bols} bolsones de ${prods}. Buen viaje...`;
         } else if (reg.puesto === 'labarthe') {
-            mensaje = `Recepción confirmada en Balanza del buque ${buqueActivo}. Unidad ${ttLimpio}, con ${bols} bolsones.`;
+            mensaje = `Confirmado en Balanza Labarthe... La unidad ${ttLimpio} del buque ${buqueActivo} ha ingresado con ${bols} bolsones de ${prods}. Pesaje conforme...`;
         } else if (reg.puesto === 'despacho') {
-            mensaje = `Despacho de salida del buque ${buqueActivo}. Unidad ${ttLimpio}, con ${bols} bolsones.`;
+            const chofer = (reg.conductor && reg.conductor !== '—') ? `con el conductor ${reg.conductor}` : '';
+            mensaje = `Salida de Despacho confirmada... El camión ${ttLimpio} ${chofer} parte con ${bols} bolsones de ${prods}. Todo en orden...`;
         }
 
         if (mensaje) {
             emitirLocucionFemeninaPausada(mensaje);
         }
+    }
+
+    function procesarNuevosRegistrosVoz(filas) {
+        if (!filas || filas.length === 0) return;
+
+        // Primer cargue al abrir la página: solo memoriza sin hablar para no abrumar con 400 registros viejos
+        if (esPrimerCargueHistorial) {
+            filas.forEach(r => {
+                const txId = r.idempotencyKey || (r.viajeId + '_' + r.puesto);
+                knownTransactionIds.add(txId);
+            });
+            esPrimerCargueHistorial = false;
+            return;
+        }
+
+        // A partir del segundo ciclo: CUALQUIER registro nuevo se anuncia de inmediato
+        filas.forEach(r => {
+            const txId = r.idempotencyKey || (r.viajeId + '_' + r.puesto);
+            if (!knownTransactionIds.has(txId)) {
+                knownTransactionIds.add(txId);
+                anunciarMovimientoPorVoz(r);
+            }
+        });
+    }
+
+    function probarVozFemeninaEnVivo() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        cargarVoces();
+
+        const nom = (buquesInfo[naveActivaCCTV]?.nombre || 'LILY GLORY').toUpperCase();
+        const testTexto = `Hola centro de control... Sistema de voz activado. Monitoreando buque ${nom}. La unidad T T 14 lleva 20 bolsones descargados en Muelle... Todo bajo control...`;
+        emitirLocucionFemeninaPausada(testTexto);
     }
 
    function renderRadarAutovia() {
@@ -1661,10 +1706,11 @@ function procesarNuevosRegistrosVoz(filas) {
         const dni = inp.value.trim();
         if (!dni) return;
 
+        // Transmisión inmediata a Google Sheets para silenciar TODAS las PCs en simultáneo
         fetch(gasUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'verificarDniMute', data: { dni, nave: naveActivaCCTV } })
+            body: JSON.stringify({ action: 'silenciarSirenaGlobal', data: { dni: dni, nave: naveActivaCCTV } })
         })
         .then(res => res.json())
         .then(d => {
@@ -1673,10 +1719,14 @@ function procesarNuevosRegistrosVoz(filas) {
                 desactivarSirena();
                 inp.style.display = "none";
                 inp.value = "";
-                alert("🔕 Sirena silenciada correctamente por Coordinador.");
+                alert("🔕 Sirena silenciada correctamente. Se ha silenciado en TODAS las pantallas CCTV abiertas.");
+                sincronizarServidor(true);
             } else {
                 alert("❌ DNI no autorizado para silenciar.");
             }
+        })
+        .catch(() => {
+            alert("⚠️ Error de conexión al silenciar.");
         });
     }
 
