@@ -961,7 +961,7 @@
         self.onmessage = function(e) {
             if (e.data === 'start') {
                 if (timer) clearInterval(timer);
-                timer = setInterval(() => { self.postMessage('tick'); }, 8000);
+                timer = setInterval(() => { self.postMessage('tick'); }, 15000);
             } else if (e.data === 'stop') {
                 if (timer) clearInterval(timer);
             }
@@ -1065,56 +1065,76 @@
         if (document.getElementById('pageConductores').style.display === 'block') syncConductoresUI();
     }
 
-    // ========================================================================
-    // SINCRONIZACIÓN EN PARALELO ULTRA-RÁPIDA (2 A 3 SEGUNDOS)
-    // ========================================================================
     async function sincronizarServidor(silencioso = false) {
-        const syncLabel = document.getElementById('syncStatus');
-        if (!silencioso && syncLabel) syncLabel.textContent = "Sincronizando...";
+  const syncLabel = document.getElementById('syncStatus');
+  if (!silencioso && syncLabel) syncLabel.textContent = "Sincronizando...";
 
-        try {
-            // LAS 4 CONSULTAS SE DISPARAN SIMULTÁNEAMENTE EN PARALELO CON PROTECCIÓN
-            const [resP1, resP2, resF1, resF2] = await Promise.all([
-                fetch(`${gasUrl}?action=obtenerProductos&nave=nave1`).then(r => r.json()).catch(() => ({ ok: false })),
-                fetch(`${gasUrl}?action=obtenerProductos&nave=nave2`).then(r => r.json()).catch(() => ({ ok: false })),
-                fetch(`${gasUrl}?action=obtenerFilasExcel&nave=nave1`).then(r => r.json()).catch(() => ({ ok: false })),
-                fetch(`${gasUrl}?action=obtenerFilasExcel&nave=nave2`).then(r => r.json()).catch(() => ({ ok: false }))
-            ]);
+  try {
+    // 1 sola petición que trae ambas naves y catálogos en paralelo interno
+    const res = await fetch(`${gasUrl}?action=obtenerEstadoBiNaveGlobal`).then(r => r.json());
+    
+    if (res.ok && res.naves) {
+      const dN1 = res.naves.nave1;
+      const dN2 = res.naves.nave2;
 
-            if (resP1.ok) {
-                catalogoProductos.nave1 = resP1.productos || [];
-                buquesInfo.nave1 = { nombre: resP1.buqueNombre || 'LILY GLORY (2A)', muelle: resP1.buqueMuelle || 'Muelle 1A' };
-                document.getElementById('deckNomNave1').textContent = `🚢 ${buquesInfo.nave1.nombre} (${buquesInfo.nave1.muelle})`;
-                document.getElementById('txtMigrarNave1Nom').textContent = buquesInfo.nave1.nombre;
-            }
-            if (resP2.ok) {
-                catalogoProductos.nave2 = resP2.productos || [];
-                buquesInfo.nave2 = { nombre: resP2.buqueNombre || 'VICTORIA (11)', muelle: resP2.buqueMuelle || 'Muelle 2B' };
-                document.getElementById('deckNomNave2').textContent = `⚓ ${buquesInfo.nave2.nombre} (${buquesInfo.nave2.muelle})`;
-                document.getElementById('txtMigrarNave2Nom').textContent = buquesInfo.nave2.nombre;
-            }
+      // Nave 1
+      if (dN1.catalogo) {
+        catalogoProductos.nave1 = dN1.catalogo.productos || [];
+        buquesInfo.nave1 = { nombre: dN1.catalogo.buqueNombre || 'NAVE 1', muelle: dN1.catalogo.buqueMuelle || 'Muelle 1A' };
+        document.getElementById('deckNomNave1').textContent = `🚢 ${buquesInfo.nave1.nombre} (${buquesInfo.nave1.muelle})`;
+        document.getElementById('txtMigrarNave1Nom').textContent = buquesInfo.nave1.nombre;
+      }
+      clasificarFilasPorNave('nave1', dN1.filas || []);
 
-            if (resF1.ok) clasificarFilasPorNave('nave1', resF1.filas || []);
-            if (resF2.ok) clasificarFilasPorNave('nave2', resF2.filas || []);
+      // Nave 2
+      if (dN2.catalogo) {
+        catalogoProductos.nave2 = dN2.catalogo.productos || [];
+        buquesInfo.nave2 = { nombre: dN2.catalogo.buqueNombre || 'NAVE 2', muelle: dN2.catalogo.buqueMuelle || 'Muelle 2B' };
+        document.getElementById('deckNomNave2').textContent = `⚓ ${buquesInfo.nave2.nombre} (${buquesInfo.nave2.muelle})`;
+        document.getElementById('txtMigrarNave2Nom').textContent = buquesInfo.nave2.nombre;
+      }
+      clasificarFilasPorNave('nave2', dN2.filas || []);
 
-            // Guardar en memoria local para que la próxima vez abra en 0.1 segundos
-            localStorage.setItem('iqbf_cache_dbNaves', JSON.stringify(dbNaves));
-            localStorage.setItem('iqbf_cache_catalogo', JSON.stringify(catalogoProductos));
-            localStorage.setItem('iqbf_cache_buques', JSON.stringify(buquesInfo));
+      // Caché local ultrarrápido
+      localStorage.setItem('iqbf_cache_dbNaves', JSON.stringify(dbNaves));
+      localStorage.setItem('iqbf_cache_catalogo', JSON.stringify(catalogoProductos));
+      localStorage.setItem('iqbf_cache_buques', JSON.stringify(buquesInfo));
 
-            // Actualizar contadores y pintar la pantalla de inmediato
-            actualizarCommandDeckCards();
-            seleccionarNaveCCTV(naveActivaCCTV);
+      actualizarCommandDeckCards();
+      seleccionarNaveCCTV(naveActivaCCTV);
 
-            // Alertas
-            procesarNuevosRegistrosVoz([...(resF1.filas || []), ...(resF2.filas || [])]);
-            analizarAlertasDiscrepanciasYDemoras();
+      // Ahora la locución sí funciona correctamente
+      procesarNuevosRegistrosVoz([...(dN1.filas || []), ...(dN2.filas || [])]);
+      analizarAlertasDiscrepanciasYDemoras();
+      evaluarCumplimientoMeta100();
 
-            if (syncLabel) syncLabel.textContent = "Sincronizado: " + new Date().toLocaleTimeString('es-PE');
-        } catch (e) {
-            if (syncLabel) syncLabel.textContent = "Sincronizado: " + new Date().toLocaleTimeString('es-PE');
-        }
+      if (syncLabel) syncLabel.textContent = "Sincronizado: " + new Date().toLocaleTimeString('es-PE');
     }
+  } catch (err) {
+    if (syncLabel) syncLabel.textContent = "Reintentando conexión: " + new Date().toLocaleTimeString('es-PE');
+  }
+}
+
+// ACTIVACIÓN AUTOMÁTICA DEL MODAL DE CELEBRACIÓN AL COMPLETAR LA DESCARGA
+function evaluarCumplimientoMeta100() {
+  const prods = catalogoProductos[naveActivaCCTV] || [];
+  if (prods.length === 0) return;
+  const dbActiva = dbNaves[naveActivaCCTV];
+  
+  prods.forEach(p => {
+    if (p.cantidadBuque > 0) {
+      const totalDesc = dbActiva.labarthe.reduce((s, r) => s + sumarBolsonesProd(r, p.producto), 0);
+      const claveMeta = `meta_notificada_${naveActivaCCTV}_${p.producto}_${p.cantidadBuque}`;
+      
+      if (totalDesc >= p.cantidadBuque && !sessionStorage.getItem(claveMeta)) {
+        sessionStorage.setItem(claveMeta, 'true');
+        document.getElementById('celebTitle').textContent = `¡DESCARGA COMPLETADA!`;
+        document.getElementById('celebMessage').textContent = `Se ha alcanzado el 100% de ${p.producto} (${totalDesc} / ${p.cantidadBuque} bolsones) en ${buquesInfo[naveActivaCCTV].nombre}.`;
+        document.getElementById('celebrationOverlay').style.display = 'flex';
+      }
+    }
+  });
+}
 
     function clasificarFilasPorNave(nKey, filas) {
         dbNaves[nKey] = { muelle: [], labarthe: [], despacho: [] };
@@ -1454,7 +1474,27 @@
         }
         reproducirSiguiente();
     }
-
+    // ========================================================================
+// IMPLEMENTACIÓN DE LA FUNCIÓN HUÉRFANA QUE ROMPÍA EL SCRIPT
+// ========================================================================
+function procesarNuevosRegistrosVoz(filas) {
+  if (!filas || filas.length === 0) return;
+  
+  filas.forEach(r => {
+    const txId = r.idempotencyKey || (r.viajeId + '_' + r.puesto);
+    
+    // Si la transacción no se conocía y es del turno actual, se anuncia
+    if (!knownTransactionIds.has(txId)) {
+      knownTransactionIds.add(txId);
+      
+      // Solo anunciar si el registro ocurrió hace menos de 4 minutos (evita leer el historial al entrar)
+      const fObj = parsearFechaFlexible(r.fechaHora);
+      if (fObj && (Date.now() - fObj.getTime()) < (4 * 60 * 1000)) {
+        anunciarMovimientoPorVoz(r);
+      }
+    }
+  });
+}
     function limpiarNombreTT(tt) {
         return (tt || '').replace('TT-', 'T T ').replace('-', ' ');
     }
