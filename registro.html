@@ -1194,7 +1194,12 @@ async function ejecutarGuardadoFinalDebounced() {
   const idempKey = generarClaveIdempotencia(puestoGuardar, naveSeleccionada, ident, p1, c1, p2, c2);
 
   const totalBolsLocal = Number(c1) + Number(c2 || 0);
-  const viajeIdParaEnviar = (puestoGuardar === 'labarthe') ? viajeIdHeredadoLabarthe : '';
+  let viajeIdParaEnviar = '';
+  if (puestoGuardar === 'labarthe' && viajeIdHeredadoLabarthe) {
+    if (!viajeIdHeredadoLabarthe.startsWith('PENDIENTE') && !viajeIdHeredadoLabarthe.startsWith('TEMP')) {
+      viajeIdParaEnviar = viajeIdHeredadoLabarthe;
+    }
+  }
 
   // 2. REGISTRO LOCAL CON EL PUESTO CORRECTO
   const nuevoRegistroLocal = {
