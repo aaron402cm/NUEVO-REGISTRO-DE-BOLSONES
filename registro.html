@@ -1322,7 +1322,7 @@ async function encolarFotoFallida(viajeId, puesto, nave, fotoB64, index) {
 }
 
 // ============================================================
-// SINCRONIZACIÓN CON AUTO-REPARACIÓN DE VIAJES ANTERIORES
+// REENVÍO SEGURO CON AVISO REAL DE ÉXITO O ERROR
 // ============================================================
 async function sincronizarColaOfflineSilencioso() {
   if (isSyncingOfflineQueue || !navigator.onLine) return;
@@ -1346,7 +1346,7 @@ async function sincronizarColaOfflineSilencioso() {
         continue;
       }
 
-      // AUTO-REPARACIÓN: Si el viaje atrapado tenía puesto null, lo repara a muelle
+      // Reparación de emergencia para registros con puesto nulo
       if (item.payload && item.payload.data && !item.payload.data.puesto) {
         item.payload.data.puesto = 'muelle';
       }
@@ -1360,12 +1360,18 @@ async function sincronizarColaOfflineSilencioso() {
 
         const data = await res.json();
         if (data.ok) {
+          // SE ELIMINA DE LA MEMORIA DEL CELULAR SI EL SERVIDOR CONFIRMÓ
           await eliminarDeIndexedDB(item.idempotencyKey);
+          showToast("✅ Registro procesado en Google Sheets con éxito");
           if (data.viajeId && !data.duplicadoEvitado) {
             subirFotosEnColaSegundoPlano(data.viajeId, item.payload.data.puesto, item.payload.data.nave, item.fotos);
           }
+        } else {
+          showToast(`⚠️ Servidor: ${data.error || 'No se pudo guardar'}`, true);
         }
-      } catch(err) {}
+      } catch(err) {
+        showToast("⚠️ Fallo de conexión al intentar enviar la cola", true);
+      }
     }
   } finally {
     isSyncingOfflineQueue = false;
@@ -1375,12 +1381,28 @@ async function sincronizarColaOfflineSilencioso() {
 
 async function forzarReenvioDesdeModal() {
   cerrarModalAyudaOffline();
-  showToast("🔄 Enviando registros a Google Sheets...");
+  showToast("🔄 Transmitiendo cola a Google Sheets...");
   await sincronizarColaOfflineSilencioso();
   if (naveSeleccionada) {
     await cargarDatosDeNave(naveSeleccionada, false);
   }
-  showToast("✅ Sincronización finalizada");
+}
+
+// FUNCIÓN PARA DESTRABAR EL CELULAR SI UN REGISTRO VIEJO QUEDÓ DAÑADO
+async function limpiarColaManualForzada() {
+  if (confirm("¿Deseas vaciar los registros trabados en la memoria de este celular?")) {
+    try {
+      const db = await openIDB();
+      const tx = db.transaction(IDB_STORE, "readwrite");
+      tx.objectStore(IDB_STORE).clear();
+      await new Promise(r => { tx.oncomplete = r; });
+      cerrarModalAyudaOffline();
+      await actualizarBadgeColaOffline();
+      showToast("🗑️ Cola local limpiada correctamente");
+    } catch(e) {
+      showToast("Error al limpiar cola", true);
+    }
+  }
 }
 let activeHistTab = 'muelle';
 function cambiarHistTab(tab) {
@@ -1472,27 +1494,6 @@ function actualizarRelojFinTurno() {
   }
 }
 </script>
-  <!-- VENTANA EMERGENTE DE AYUDA Y DIAGNÓSTICO OFFLINE -->
 <div class="modal-overlay" id="modalAyudaOffline">
-  <div class="modal-box" style="border:4px solid #ea580c; text-align:center;">
-    <div style="font-size:3.5rem; margin-bottom:10px;">📡</div>
-    <h2 style="color:#c2410c; font-size:1.4rem; font-weight:900; margin-bottom:10px;">
-      REGISTRO SEGURO EN TU TELÉFONO
-    </h2>
-    <div style="background:#fff7ed; border:2px solid #fdba74; padding:12px; border-radius:10px; margin-bottom:15px; font-size:0.95rem; text-align:left; color:#9a3412;">
-      <p style="margin-bottom:8px;"><strong>¿Por qué sale este aviso?</strong><br>
-      La grúa pórtico o el buque bloquearon la señal de internet al momento de guardar.</p>
-      <p style="margin-bottom:8px;"><strong>¿Qué pasó con tu registro?</strong><br>
-      Tu conteo de bolsones y tus fotos <strong>están 100% seguros y respaldados</strong> en la memoria de este celular.</p>
-      <p><strong>⚠️ ¿Qué debes hacer?</strong><br>
-      <span style="color:#b91c1c; font-weight:900;">NO vuelvas a registrar este camión.</span> Camina unos pasos hacia una zona abierta o presiona el botón de abajo para intentar enviar a Excel ahora.</p>
-    </div>
-
-    <div style="display:flex; gap:10px;">
-      <button class="btn-tool" style="flex:1; padding:14px; background:#64748b; font-size:1rem;" onclick="cerrarModalAyudaOffline()">Entendido 👍</button>
-      <button class="btn-tool" style="flex:1; padding:14px; background:#16a34a; font-size:1rem; font-weight:900;" onclick="forzarReenvioDesdeModal()">🔄 Enviar Ahora</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
