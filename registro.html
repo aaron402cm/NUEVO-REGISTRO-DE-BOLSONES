@@ -622,11 +622,6 @@ function cerrarModalAyudaOffline() {
   document.getElementById('modalAyudaOffline').classList.remove('open');
 }
 
-async function forzarReenvioDesdeModal() {
-  cerrarModalAyudaOffline();
-  showToast("🔄 Intentando enviar registros a Excel...");
-  await sincronizarColaOfflineSilencioso();
-}
 // INICIALIZACIÓN: EXIGE LOGIN CADA VEZ QUE SE ENTRA A LA APLICACIÓN
 window.onload = async () => {
   // 1. Bloquea la memoria contra limpiezas de disco de Android
@@ -736,9 +731,9 @@ async function iniciarAplicacionConNave(naveKey) {
 async function cargarDatosDeNave(naveKey, silencioso = false) {
   try {
     const [pRes, cRes, fRes] = await Promise.all([
-      fetchConTimeout(`${GAS_URL}?action=obtenerProductos&nave=${naveKey}`, {}, 7000).then(r => r.json()),
-      fetchConTimeout(`${GAS_URL}?action=obtenerConductores&nave=${naveKey}`, {}, 7000).then(r => r.json()),
-      fetchConTimeout(`${GAS_URL}?action=obtenerFilasExcel&nave=${naveKey}`, {}, 7000).then(r => r.json())
+      fetchConTimeout(`${GAS_URL}?action=obtenerProductos&nave=${naveKey}`, {}, 12000).then(r => r.json()),
+      fetchConTimeout(`${GAS_URL}?action=obtenerConductores&nave=${naveKey}`, {}, 12000).then(r => r.json()),
+      fetchConTimeout(`${GAS_URL}?action=obtenerFilasExcel&nave=${naveKey}`, {}, 12000).then(r => r.json())
     ]);
 
     if (pRes.ok) {
@@ -764,12 +759,13 @@ async function cargarDatosDeNave(naveKey, silencioso = false) {
         else if (f.puesto === 'despacho') dbGlobal.despacho.push(f);
       });
 
-      // FUSIÓN RESILIENTE: Agrega los viajes guardados en el celular que aún no han llegado a Excel
+      // FUSIÓN EXACTA POR CLAVE ÚNICA (EVITA BORRAR REGISTROS DE LA PANTALLA)
       const pendientesLocales = await obtenerTodosDeIndexedDB();
       pendientesLocales.forEach(item => {
         if (!item.esSoloFoto && item.payload && item.payload.data) {
           const d = item.payload.data;
-          const yaEnBase = (dbGlobal[d.puesto] || []).some(x => x.viajeId === d.viajeId || x.tt === d.tt);
+          // Compara estrictamente por clave única para no confundir camiones repetidos
+          const yaEnBase = (dbGlobal[d.puesto] || []).some(x => x.idempotencyKey === item.idempotencyKey);
           if (!yaEnBase && dbGlobal[d.puesto]) {
             dbGlobal[d.puesto].push({
               viajeId: d.viajeId || 'PENDIENTE_RED',
@@ -778,7 +774,8 @@ async function cargarDatosDeNave(naveKey, silencioso = false) {
               productos: `${d.producto1}: ${d.cant1}${d.producto2 && d.producto2 !== '—' ? ' | ' + d.producto2 + ': ' + d.cant2 : ''}`,
               fechaHora: `${d.fechaHora} (⏳ En cola)`,
               puesto: d.puesto,
-              nave: d.nave
+              nave: d.nave,
+              idempotencyKey: item.idempotencyKey
             });
           }
         }
@@ -859,13 +856,17 @@ function irATurno() {
   renderHistorialTurno();
 }
 
+// BOTÓN ACTUALIZAR: ENVÍA PRIMERO LA COLA Y LUEGO DESCARGA DE EXCEL
 async function actualizarDatosManual() {
-  showToast("🔄 Sincronizando con Excel...");
+  showToast("🔄 Transmitiendo cola a Google Sheets...");
+  // 1. Envía primero los registros pendientes para que Excel los reciba
+  await sincronizarColaOfflineSilencioso();
+  
+  // 2. Luego descarga las filas actualizadas de Excel
   if (naveSeleccionada) {
     await cargarDatosDeNave(naveSeleccionada, false);
   }
-  await sincronizarColaOfflineSilencioso();
-  showToast("✅ Sincronización finalizada");
+  showToast("✅ Base de datos actualizada");
 }
 
 function construirTeclados() {
@@ -1166,7 +1167,7 @@ function cerrarConfirmacionModal() {
 }
 
 // ============================================================
-// GUARDADO CON ACTUALIZACIÓN LOCAL INMEDIATA Y BLOQUEO DE DUPLICADOS
+// GUARDADO CON ACTUALIZACIÓN LOCAL INMEDIATA Y TIMEOUT CALIBRADO (20s)
 // ============================================================
 async function ejecutarGuardadoFinalDebounced() {
   if (isSavingLocked) return;
@@ -1194,7 +1195,7 @@ async function ejecutarGuardadoFinalDebounced() {
   const totalBolsLocal = Number(c1) + Number(c2 || 0);
   const viajeIdParaEnviar = (puestoActual === 'labarthe') ? viajeIdHeredadoLabarthe : '';
 
-  // ACTUALIZACIÓN OPTIMISTA INMEDIATA EN MEMORIA DEL CELULAR (0 milisegundos)
+  // REGISTRO INMEDIATO EN MEMORIA PARA QUE NO DESAPAREZCA
   const nuevoRegistroLocal = {
     viajeId: viajeIdParaEnviar || `TEMP_${Date.now()}`,
     tt: ident,
@@ -1204,24 +1205,23 @@ async function ejecutarGuardadoFinalDebounced() {
     producto2: p2 || '—',
     cant2: c2 || 0,
     productos: `${p1}: ${c1}${p2 && p2 !== '—' ? ' | ' + p2 + ': ' + c2 : ''}`,
-    fechaHora: fHora,
+    fechaHora: `${fHora} (⏳ En cola)`,
     puesto: puestoActual,
-    nave: naveSeleccionada
+    nave: naveSeleccionada,
+    idempotencyKey: idempKey
   };
 
-  // Se agrega a la memoria de la app para que aparezca de inmediato en la pestaña Turno
   if (dbGlobal[puestoActual]) {
     dbGlobal[puestoActual].push(nuevoRegistroLocal);
   }
 
-  // Si fue en Labarthe, elimina de inmediato el botón de la pantalla para que no se pueda volver a tocar
   if (puestoActual === 'labarthe') {
     viajeIdHeredadoLabarthe = "";
     renderListaTTsEnTransitoLabarthe();
   }
 
   irAPuestos();
-  showToast("⏳ Enviando registro al servidor...", false);
+  showToast("⏳ Transmitiendo registro a Google Sheets...", false);
 
   const payload = {
     action: isDesp ? 'registroDespacho' : 'registroDescarga',
@@ -1242,17 +1242,18 @@ async function ejecutarGuardadoFinalDebounced() {
 
   const registroCompleto = { payload, fotos: fotosASubir, idempotencyKey: idempKey, fechaHora: fHora };
 
+  // INTENTO DIRECTO CON TOLERANCIA DE 20 SEGUNDOS (EVITA CANCELAR POR ERROR)
   if (navigator.onLine) {
     try {
       const res = await fetchConTimeout(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(payload)
-      }, 8000);
+      }, 20000); // 20 segundos de tolerancia
 
       const data = await res.json();
       if (data.ok) {
-        showToast(data.duplicadoEvitado ? "⚠️ Esta unidad ya estaba registrada" : "✅ Registro Guardado Exitosamente");
+        showToast(data.duplicadoEvitado ? "⚠️ Unidad confirmada previamente en Excel" : "✅ Registro Guardado Exitosamente");
         if (data.viajeId && !data.duplicadoEvitado) {
           subirFotosEnColaSegundoPlano(data.viajeId, puestoActual, naveSeleccionada, fotosASubir);
         }
@@ -1263,9 +1264,9 @@ async function ejecutarGuardadoFinalDebounced() {
     } catch(e) {}
   }
 
-  // Si no hay red, queda respaldado en IndexedDB sin duplicar
+  // SI NO HAY RED O DEMORA MÁS DE 20s, QUEDA EN LA COLA DEL CELULAR
   await guardarEnIndexedDB(registroCompleto);
-  showToast("🟠 Guardado en Celular (Sin señal). Se enviará solo.", true);
+  showToast("🟠 Guardado en Celular (Sin señal). Toca el banner naranja para enviar.", true);
   isSavingLocked = false;
 }
 
@@ -1317,7 +1318,7 @@ async function encolarFotoFallida(viajeId, puesto, nave, fotoB64, index) {
 }
 
 // ============================================================
-// SINCRONIZACIÓN AUTOMÁTICA UNION-MERGE (TEXTOS + FOTOS)
+// REENVÍO SEGURO DE COLA CON LIMPIEZA DE REGISTROS YA GUARDADOS
 // ============================================================
 async function sincronizarColaOfflineSilencioso() {
   if (isSyncingOfflineQueue || !navigator.onLine) return;
@@ -1326,15 +1327,13 @@ async function sincronizarColaOfflineSilencioso() {
   try {
     const pend = await obtenerTodosDeIndexedDB();
     for (const item of pend) {
-      // 1. Si es una foto que se quedó a mitad de camino
-      // 1. Si es una foto que se quedó a mitad de camino
       if (item.esSoloFoto) {
         try {
           const resFoto = await fetchConTimeout(GAS_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify(item.payload)
-          }, 25000); // 25s de tolerancia en el reintento de fondo
+          }, 25000);
           const resFotoJson = await resFoto.json();
           if (resFotoJson.ok) {
             await eliminarDeIndexedDB(item.idempotencyKey);
@@ -1343,18 +1342,19 @@ async function sincronizarColaOfflineSilencioso() {
         continue;
       }
 
-      // 2. Si es un registro completo de viaje
+      // Reenvío del viaje a Excel con 20s de tolerancia
       try {
         const res = await fetchConTimeout(GAS_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(item.payload)
-        }, 8000);
+        }, 20000);
 
         const data = await res.json();
+        // Si el servidor lo guardó o confirma que ya existía, se borra de la cola del celular
         if (data.ok) {
           await eliminarDeIndexedDB(item.idempotencyKey);
-          if (data.viajeId) {
+          if (data.viajeId && !data.duplicadoEvitado) {
             subirFotosEnColaSegundoPlano(data.viajeId, item.payload.data.puesto, item.payload.data.nave, item.fotos);
           }
         }
@@ -1362,10 +1362,19 @@ async function sincronizarColaOfflineSilencioso() {
     }
   } finally {
     isSyncingOfflineQueue = false;
-    actualizarBadgeColaOffline();
+    await actualizarBadgeColaOffline();
   }
 }
 
+async function forzarReenvioDesdeModal() {
+  cerrarModalAyudaOffline();
+  showToast("🔄 Enviando registros a Google Sheets...");
+  await sincronizarColaOfflineSilencioso();
+  if (naveSeleccionada) {
+    await cargarDatosDeNave(naveSeleccionada, false);
+  }
+  showToast("✅ Sincronización finalizada");
+}
 let activeHistTab = 'muelle';
 function cambiarHistTab(tab) {
   activeHistTab = tab;
