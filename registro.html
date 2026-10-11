@@ -1320,7 +1320,7 @@ async function encolarFotoFallida(viajeId, puesto, nave, fotoB64, index) {
 }
 
 // ============================================================
-// REENVÍO SEGURO CON AVISO REAL DE ÉXITO O ERROR
+// REENVÍO SEGURO CON AVISO REAL DE ÉXITO O ERROR (CORREGIDO)
 // ============================================================
 async function sincronizarColaOfflineSilencioso() {
   if (isSyncingOfflineQueue || !navigator.onLine) return;
@@ -1350,36 +1350,36 @@ async function sincronizarColaOfflineSilencioso() {
       }
 
       try {
-        // MODIFICACIÓN DE LA TRANSACCIÓN: No eliminar de IndexedDB hasta que las fotos estén guardadas o encoladas
-const res = await fetchConTimeout(GAS_URL, {
-  method: 'POST',
-  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-  body: JSON.stringify(item.payload)
-}, 20000);
+        const res = await fetchConTimeout(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(item.payload)
+        }, 20000);
 
-const data = await res.json();
-if (data.ok) {
-  // Primero se asegura el viajeId para las fotos
-  const viajeIdFinal = data.viajeId;
-  
-  // Si traía fotos, se suben o se reconvierten a tareas de subida individuales seguras
-  if (viajeIdFinal && item.fotos && item.fotos.length > 0 && !data.duplicadoEvitado) {
-    for (let fIdx = 0; fIdx < item.fotos.length; fIdx++) {
-      await encolarFotoFallida(viajeIdFinal, item.payload.data.puesto, item.payload.data.nave, item.fotos[fIdx], fIdx);
-    }
-  }
-  
-  // Ahora es 100% seguro eliminar el registro principal
-  await eliminarDeIndexedDB(item.idempotencyKey);
-  showToast("✅ Registro textual procesado en Google Sheets");
-}
+        const data = await res.json();
+        if (data.ok) {
+          const viajeIdFinal = data.viajeId;
+          
+          // Si traía fotos, se encolan como tareas seguras individuales
+          if (viajeIdFinal && item.fotos && item.fotos.length > 0 && !data.duplicadoEvitado) {
+            for (let fIdx = 0; fIdx < item.fotos.length; fIdx++) {
+              await encolarFotoFallida(viajeIdFinal, item.payload.data.puesto, item.payload.data.nave, item.fotos[fIdx], fIdx);
+            }
+          }
+          
+          // Se elimina el registro de datos principal de la memoria local
+          await eliminarDeIndexedDB(item.idempotencyKey);
+          showToast("✅ Registro procesado en Google Sheets");
+        }
+      } catch (errPost) {
+        // Silencioso: reintentará en el próximo ciclo
+      }
     }
   } finally {
     isSyncingOfflineQueue = false;
     await actualizarBadgeColaOffline();
   }
 }
-
 async function forzarReenvioDesdeModal() {
   cerrarModalAyudaOffline();
   showToast("🔄 Transmitiendo cola a Google Sheets...");
