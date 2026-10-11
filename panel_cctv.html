@@ -1346,16 +1346,21 @@ function evaluarCumplimientoMeta100() {
                 alertasVocalesEmitidasMap.delete(uidRegistrado);
             }
         }
-        // Si ya no quedan camiones en fase 3 ni discrepancias, apagar sirena y banner
+        // Si ya no quedan camiones en fase 3, apagar banner de tránsito
         const hayDemoraCritica = Array.from(alertasVocalesEmitidasMap.values()).some(f => f >= 3);
+        const bannerDiff = document.getElementById('bannerAlertaDiff');
+        const hayDiscrepanciaActiva = bannerDiff && bannerDiff.style.display === 'flex' && !sirenaSilenciada;
+
         if (!hayDemoraCritica) {
             const bannerTrans = document.getElementById('bannerAlertaTransito');
             if (bannerTrans && bannerTrans.className.includes('danger')) {
                 bannerTrans.style.display = 'none';
             }
-            desactivarSirena();
+            // Solo apagar la sirena si TAMPOCO hay una discrepancia de carga sonando
+            if (!hayDiscrepanciaActiva) {
+                desactivarSirena();
+            }
         }
-
         if (enRuta.length === 0) {
             pista.innerHTML = `<div style="color:#64748b; font-weight:bold; font-size:13px; margin:auto;">● No hay camiones transitando en este momento para la nave seleccionada.</div>`;
             blipsContainer.innerHTML = '';
