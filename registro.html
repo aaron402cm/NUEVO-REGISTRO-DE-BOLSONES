@@ -1164,119 +1164,61 @@ function cerrarConfirmacionModal() {
   document.getElementById('modalConfirm').classList.remove('open');
 }
 
-// ============================================================
-// GUARDADO CORREGIDO: GUARDA EL PUESTO ANTES DE SALIR DE PANTALLA
-// ============================================================
 async function ejecutarGuardadoFinalDebounced() {
   if (isSavingLocked) return;
   isSavingLocked = true;
 
-  // 1. CAPTURAR EL PUESTO EN UNA VARIABLE FIJA ANTES DE QUE SE BORRE
-  const puestoGuardar = puestoActual || 'muelle';
-
   const btnModal = document.getElementById('btnEjecutarGuardadoModal');
-  btnModal.disabled = true;
   btnModal.textContent = "⏳ Guardando...";
+  btnModal.disabled = true;
 
-  cerrarConfirmacionModal();
-
+  const puestoGuardar = puestoActual || 'muelle';
   const isDesp = (puestoGuardar === 'despacho');
   const d = new Date();
-  const pad = n => String(n).padStart(2, '0');
-  const fHora = `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  const fHora = d.toLocaleString();
 
   const ident = isDesp ? placaSeleccionada : `TT-${valTT}`;
-  const p1 = isDesp ? prodDesp1Seleccionado : prod1Seleccionado;
-  const c1 = isDesp ? cantDesp1Bols : cant1Bols;
-  const p2 = isDesp ? prodDesp2Seleccionado : prod2Seleccionado;
-  const c2 = isDesp ? cantDesp2Bols : cant2Bols;
-  const fotosASubir = isDesp ? [...fotosDespacho] : [...fotosDescarga];
-  const idempKey = generarClaveIdempotencia(puestoGuardar, naveSeleccionada, ident, p1, c1, p2, c2);
+  const idempKey = generarClaveIdempotencia(puestoGuardar, naveSeleccionada, ident, Date.now());
 
-  const totalBolsLocal = Number(c1) + Number(c2 || 0);
-  let viajeIdParaEnviar = '';
-  if (puestoGuardar === 'labarthe' && viajeIdHeredadoLabarthe) {
-    if (!viajeIdHeredadoLabarthe.startsWith('PENDIENTE') && !viajeIdHeredadoLabarthe.startsWith('TEMP')) {
-      viajeIdParaEnviar = viajeIdHeredadoLabarthe;
-    }
-  }
-
-  // 2. REGISTRO LOCAL CON EL PUESTO CORRECTO
   const nuevoRegistroLocal = {
-    viajeId: viajeIdParaEnviar || `TEMP_${Date.now()}`,
-    tt: ident,
-    bolsones: totalBolsLocal,
-    producto1: p1,
-    cant1: c1,
-    producto2: p2 || '—',
-    cant2: c2 || 0,
-    productos: `${p1}: ${c1}${p2 && p2 !== '—' ? ' | ' + p2 + ': ' + c2 : ''}`,
-    fechaHora: `${fHora} (⏳ En cola)`,
-    puesto: puestoGuardar,
-    nave: naveSeleccionada,
-    idempotencyKey: idempKey
-  };
-
-  if (dbGlobal[puestoGuardar]) {
-    dbGlobal[puestoGuardar].push(nuevoRegistroLocal);
-  }
-
-  if (puestoGuardar === 'labarthe') {
-    viajeIdHeredadoLabarthe = "";
-    renderListaTTsEnTransitoLabarthe();
-  }
-
-  // 3. ARMADO DEL PAQUETE CON EL PUESTO SEGURO
-  const payload = {
-    action: isDesp ? 'registroDespacho' : 'registroDescarga',
-    data: {
-      nave: naveSeleccionada,
-      puesto: puestoGuardar, // ✔️ Ahora siempre viaja con el puesto real ('muelle', 'labarthe' o 'despacho')
-      tt: ident,
-      conductor: isDesp ? conductorSeleccionado : '—',
-      producto1: p1,
-      cant1: c1,
-      producto2: p2 || '—',
-      cant2: c2 || 0,
-      fechaHora: fHora,
-      viajeId: viajeIdParaEnviar,
-      idempotencyKey: idempKey
-    }
-  };
-
-  const registroCompleto = { payload, fotos: fotosASubir, idempotencyKey: idempKey, fechaHora: fHora };
-
-  // Ahora sí cambiamos de pantalla
-  irAPuestos();
-  showToast("⏳ Transmitiendo registro a Google Sheets...", false);
-
-  if (navigator.onLine) {
-    try {
-      const res = await fetchConTimeout(GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-      }, 20000);
-
-      const data = await res.json();
-      if (data.ok) {
-        showToast(data.duplicadoEvitado ? "⚠️ Unidad confirmada previamente en Excel" : "✅ Registro Guardado Exitosamente");
-        if (data.viajeId && !data.duplicadoEvitado) {
-          subirFotosEnColaSegundoPlano(data.viajeId, puestoGuardar, naveSeleccionada, fotosASubir);
-        }
-        await cargarDatosDeNave(naveSeleccionada, true);
-        isSavingLocked = false;
-        return;
+    idempotencyKey: idempKey,
+    payload: {
+      action: isDesp ? 'registroDespacho' : 'registroDescarga',
+      data: {
+        nave: naveSeleccionada,
+        puesto: puestoGuardar,
+        tt: ident,
+        conductor: isDesp ? conductorSeleccionado : '—',
+        producto1: isDesp ? prodDesp1Seleccionado : prod1Seleccionado,
+        cant1: isDesp ? cantDesp1Bols : cant1Bols,
+        producto2: (isDesp ? prodDesp2Seleccionado : prod2Seleccionado) || '—',
+        cant2: (isDesp ? cantDesp2Bols : cant2Bols) || 0,
+        fechaHora: fHora,
+        idempotencyKey: idempKey
       }
-    } catch(e) {}
-  }
+    },
+    fotos: isDesp ? [...fotosDespacho] : [...fotosDescarga]
+  };
 
-  // Si falló la red, queda en IndexedDB
-  await guardarEnIndexedDB(registroCompleto);
-  showToast("🟠 Guardado en Celular (Sin señal). Toca el banner naranja para enviar.", true);
+  // 1. Guardado local de alta velocidad
+  await guardarEnIndexedDB(nuevoRegistroLocal);
+
+  // 2. Limpieza de formularios inmediata (Feedback visual instantáneo)
+  cerrarConfirmacionModal();
+  if (puestoGuardar === 'despacho') resetFormularioDespacho();
+  else resetFormularioDescarga();
+  
+  irAPuestos();
+  showToast("✅ Registro en cola local. Sincronizando...");
+
+  // 3. Reset de estados
   isSavingLocked = false;
-}
+  btnModal.disabled = false;
+  btnModal.textContent = "Sí, Guardar";
 
+  // 4. Intento de sincronización background (sin bloquear al usuario)
+  sincronizarColaOfflineSilencioso();
+}
 // ============================================================
 // SUBIDA DE FOTOS RESILIENTE (TOLERANCIA DE 25s PARA REDES LENTAS)
 // ============================================================
@@ -1331,67 +1273,35 @@ async function sincronizarColaOfflineSilencioso() {
   if (isSyncingOfflineQueue || !navigator.onLine) return;
   isSyncingOfflineQueue = true;
 
-  try {
-    const pend = await obtenerTodosDeIndexedDB();
-    for (const item of pend) {
-      if (item.esSoloFoto) {
-        try {
-          const resFoto = await fetchConTimeout(GAS_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(item.payload)
-          }, 25000);
-          const resFotoJson = await resFoto.json();
-          if (resFotoJson.ok) {
-            await eliminarDeIndexedDB(item.idempotencyKey);
-          }
-        } catch(e) {}
-        continue;
-      }
+  const pend = await obtenerTodosDeIndexedDB();
+  
+  for (const item of pend) {
+    try {
+      // Intento de subida con timeout corto
+      const res = await fetchConTimeout(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(item.payload)
+      }, 15000);
 
-      // Reparación de emergencia para registros con puesto nulo
-      if (item.payload && item.payload.data && !item.payload.data.puesto) {
-        item.payload.data.puesto = 'muelle';
-      }
-
-      try {
-        const res = await fetchConTimeout(GAS_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(item.payload)
-        }, 20000);
-
-        const data = await res.json();
-        if (data.ok) {
-          const viajeIdFinal = data.viajeId;
-          
-          // Si traía fotos, se encolan como tareas seguras individuales
-          if (viajeIdFinal && item.fotos && item.fotos.length > 0 && !data.duplicadoEvitado) {
-            for (let fIdx = 0; fIdx < item.fotos.length; fIdx++) {
-              await encolarFotoFallida(viajeIdFinal, item.payload.data.puesto, item.payload.data.nave, item.fotos[fIdx], fIdx);
-            }
-          }
-          
-          // Se elimina el registro de datos principal de la memoria local
-          await eliminarDeIndexedDB(item.idempotencyKey);
-          showToast("✅ Registro procesado en Google Sheets");
+      const data = await res.json();
+      
+      // Si el servidor confirma (sea nuevo o duplicado), procedemos a fotos
+      if (data.ok) {
+        // Si hay fotos, las subimos individualmente
+        if (item.fotos && item.fotos.length > 0) {
+          await subirFotosEnColaSegundoPlano(data.viajeId || 'PENDIENTE', item.payload.data.puesto, item.payload.data.nave, item.fotos);
         }
-      } catch (errPost) {
-        // Silencioso: reintentará en el próximo ciclo
+        await eliminarDeIndexedDB(item.idempotencyKey);
       }
+    } catch (e) {
+      // Si falla, dejamos el registro en IndexedDB para el próximo ciclo
+      console.warn("Fallo en sincronización, reintentando luego...");
+      break; 
     }
-  } finally {
-    isSyncingOfflineQueue = false;
-    await actualizarBadgeColaOffline();
   }
-}
-async function forzarReenvioDesdeModal() {
-  cerrarModalAyudaOffline();
-  showToast("🔄 Transmitiendo cola a Google Sheets...");
-  await sincronizarColaOfflineSilencioso();
-  if (naveSeleccionada) {
-    await cargarDatosDeNave(naveSeleccionada, false);
-  }
+  isSyncingOfflineQueue = false;
+  actualizarBadgeColaOffline();
 }
 
 // FUNCIÓN PARA DESTRABAR EL CELULAR SI UN REGISTRO VIEJO QUEDÓ DAÑADO
